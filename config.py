@@ -5,7 +5,10 @@ class Production(_Base):
     CORE_URL = '' # todo
     CORE_PORT = 0 # todo
     _CORE_ADDRESS = CORE_URL
-    CLIEN_VERIFY_CERTIFICATE = True
+    
+    CLIENT_VERIFY_CERTIFICATE = True
+
+    ELAB_URL = 
 
 class Development(Production):
     CORE_URL = 'localhost'
