@@ -1,26 +1,21 @@
 from enum import Enum
-from utils import SerializableTime
-
-############################################################
-# Sample
-############################################################
-
-class Sample:
-    def __init__(self) -> None:
-        self.Name = ''
-        self.ParentId = ''
-        self.Location = ''
-        self.DateCreated = SerializableTime.now()
-
-############################################################
-# Responses
-############################################################
+from typing import Callable
+from common.data import Sample
+import requests as py_requests
 
 class HttpMethod(Enum):
-    GET = 1
-    POST = 2
-    PUT = 3
+    GET = 1, py_requests.get
+    POST = 2, py_requests.post
+    PUT = 3, py_requests.put
 
+    def __new__(cls, *args, **kwds):
+        obj = object.__new__(cls)
+        obj._value_ = args[0]
+        return obj
+
+    def __init__(self, _: int, function: Callable[..., py_requests.Response]) -> None:
+        self.PyRequestFunction = function
+        
 class ResponseType(Enum):
     HTML = 1
     JSON = 2

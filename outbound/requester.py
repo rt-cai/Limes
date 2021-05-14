@@ -1,9 +1,9 @@
+from common.network import HttpMethod
 from enum import Enum
 import requests as py_requests
 from json import JSONDecoder
 
-from common import Sample, SampleResponse
-from config import Active as Config
+from common.config import ActiveGeneric as Config
 
 class SearchMethod(Enum):
     NAME = 1
@@ -32,37 +32,26 @@ class NameQuery(_Query):
         return str(json)
 
 class Requester:
-    _Core_Address = Config.GetCoreAddress()
-    _VERIFY = Config.CLIENT_VERIFY_CERTIFICATE
-
     def __init__(self) -> None:
-        self._apiToken = ''
+        self._VERIFY = Config.VERIFY_CERTIFICATE
         pass
 
-    def _getPath(endpoint: str):
-        return '%s/%s' % (Requester._Core_Address, endpoint)
+    def MakeRequest(self, url: str, endpoint: str, method: HttpMethod, body: dict) -> py_requests.Response:
+        fullUrl = url + endpoint
 
-    def _send(self, url: str, method: SearchMethod, body: str):
-        pass
+        # print(fullUrl)
+        # raise Exception
+        return method.PyRequestFunction(url=fullUrl, verify=Config.VERIFY_CERTIFICATE, data=body)
 
-    def Login(self, username: str, password: str) -> None:
-        pass
-
-    def GetSample(self, sampleID: str) -> Sample:
-        pass
-
-    def Search(self, method: SearchMethod, query: _Query) -> list[Sample]:
-        pass
-
-    def Get(self):
-        path = Requester._getPath('test')
-        res = py_requests.get(path, verify=self._VERIFY)
-        jd = JSONDecoder()
-        js = jd.decode(res.text.replace('\'', '"'))   
-        print('--')
-        print(str(res.content))
-        print('--')
-        print(res.text)
-        print('--')
-        print(js)
-        print('--')
+    # def Test(self):
+    #     path = self._getPath('test')
+    #     res = py_requests.get(path, verify=self._VERIFY)
+    #     jd = JSONDecoder()
+    #     js = jd.decode(res.text.replace('\'', '"'))   
+    #     print('--')
+    #     print(str(res.content))
+    #     print('--')
+    #     print(res.text)
+    #     print('--')
+    #     print(js)
+    #     print('--')

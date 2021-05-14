@@ -1,17 +1,10 @@
 from json import JSONEncoder, dumps
 
-class a:
-    def f(self, x, y):
-        return x + y
+from common.data import Sample
 
-class b:
-    def f(self, y, z):
-        return y - z
-
-class c(a, b):
-    pass
-
-print(c().f())
+s = Sample({'Name': 'gar'})
+s.Name
+print(s.G)
 
 # import asyncio
 
@@ -29,7 +22,7 @@ print(c().f())
 # async def main():
 #     t1 = asyncio.create_task(pa(3, 'first'))
 #     t2 = asyncio.create_task(pa(2, 'second'))
-    
+
 #     await pa(4, 'pa1')
 #     print('m1')
 #     await t1
