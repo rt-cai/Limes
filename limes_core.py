@@ -1,8 +1,7 @@
-from inbound.server import Server
+from core.server import Server
 from common.config import ActiveCore as Config
 from common.network import HtmlResponse, HttpMethod, Request, SampleResponse
-from common.data import Sample
-from outbound.requester import Requester
+from common.models import Sample
 
 class CoreServer(Server):
     _URL = Config.CORE_URL
@@ -17,8 +16,12 @@ class CoreServer(Server):
             return SampleResponse(s)
 
         self._Add('test', HttpMethod.GET, test)
+        self._Add('register', HttpMethod.POST, self._registerDataSource)
 
-class CoreRequester(Requester):
+    def _registerDataSource(self, request: Request):
+        pass
+
+class CoreRequester():
     def _verifyUser(self, token: str):
         pass
 

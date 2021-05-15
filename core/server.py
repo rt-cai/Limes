@@ -3,7 +3,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import ssl
 from typing import Callable
 
-from common import HttpMethod, Request, Response, ErrorResponse, HtmlResponse, ResponseType
+from common.network import HttpMethod, Request, Response, ErrorResponse, HtmlResponse, ResponseType
 
 class Server:
     class Node:

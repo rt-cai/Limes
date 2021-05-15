@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Callable
-from common.data import Sample
+from common.models import Sample
 import requests as py_requests
 
 class HttpMethod(Enum):
@@ -14,8 +14,9 @@ class HttpMethod(Enum):
         return obj
 
     def __init__(self, _: int, function: Callable[..., py_requests.Response]) -> None:
-        self.PyRequestFunction = function
-        
+        self.Send = function
+
+# request types
 class ResponseType(Enum):
     HTML = 1
     JSON = 2
@@ -26,6 +27,7 @@ class Request:
         self.Path = path
     pass
 
+# response types
 class Response:
     def __init__(self, code: int, type: ResponseType, body) -> None:
         self.Type = type
