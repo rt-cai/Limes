@@ -1,0 +1,4 @@
+conda installs:
+
+for fosdb
+pyodbc

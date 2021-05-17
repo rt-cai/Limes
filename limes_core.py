@@ -1,7 +1,7 @@
-from core.server import Server
+from network.server import Server
 from common.config import ActiveCore as Config
-from common.network import HtmlResponse, HttpMethod, Request, SampleResponse
-from common.models import Sample
+from models.network import HtmlResponse, HttpMethod, Request, SampleResponse
+from models.inventory import Sample
 
 class CoreServer(Server):
     _URL = Config.CORE_URL

@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Callable
-from common.models import Sample
+from models.inventory import Sample
 import requests as py_requests
 
 class HttpMethod(Enum):
