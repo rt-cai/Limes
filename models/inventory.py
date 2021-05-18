@@ -1,7 +1,6 @@
-from common.utils import SerializableTime
 from common.config import ActiveGeneric as Config
-
-class Sample:
+from models.basic import PublicOnlyDict, SerializableTime
+class Sample(PublicOnlyDict):
     def __init__(self, data: dict, timeFormat: str) -> None:
         self._id = data['sampleID']
         self._storageLayerId = data['storageLayerID']
@@ -16,10 +15,3 @@ class Sample:
         self.DateCreated = SerializableTime.strptime(data['created'], timeFormat)
         self.Description = data['description']
         self.Note = data['note']
-
-    def __str__(self):
-        public = {}
-        for k, v in self.__dict__.items():
-            if not k.startswith('_'):
-                public[k] = v
-        return str(public)

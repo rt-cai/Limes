@@ -1,13 +1,23 @@
 from json import JSONEncoder, dumps
 import requests as py_requests
+from requests.sessions import Request
+from models.network import JsonResponse
 from common.config import ActiveClient as Config
 from datetime import datetime
+from models.network import Endpoints, HttpMethod
 
-from common.models import Sample
+import limes_provider
 
 time = '2021-03-04T16:24:24Z'
 o = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
-print(o)
+# print(o)
+
+x = Endpoints.REGISTER
+print(x)
+
+
+limes_provider.AddEndpoint('test', HttpMethod.GET, lambda r: JsonResponse({'from': 'le fosDB (scratch.py)'}))
+limes_provider.Start()
 
 # class a:
 

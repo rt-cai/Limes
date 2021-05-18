@@ -2,3 +2,9 @@ conda installs:
 
 for fosdb
 pyodbc
+
+todo:
+json encoder/decoder
+fosdb
+url class
+promises?

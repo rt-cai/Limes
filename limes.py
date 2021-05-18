@@ -1,12 +1,10 @@
 from models.inventory import Sample
-from json.decoder import JSONDecoder
 from typing import Tuple
-from requests.api import head
-
 from requests.models import parse_header_links
 from common.config import ActiveClient as Config
 from models.network import HttpMethod
-from requests import Request as py_Requester
+from coms.requester import Requester
+# from requests import Request as py_Requester
 
 
 class Query():
@@ -30,8 +28,8 @@ _VERIFY = Config.VERIFY_CERTIFICATE
 
 _apiToken = None
 _Core_Address = Config.CORE_ADDRESS
-_jsonDecoder = JSONDecoder()
-_py_requester = py_Requester()
+_requester = Requester()
+# _py_requester = py_Requester()
 
 
 def Login() -> bool:
@@ -50,7 +48,6 @@ def Login() -> bool:
     def parseLine(): return credentials.readline().replace('\n', '')
     username = parseLine()
     password = parseLine()
-    username, password = _readCredentials()
 
     if not username or not password:
         print('credential file error * note, make this more secure')
@@ -61,7 +58,7 @@ def Login() -> bool:
         'password': password
     }
 
-    succeed, data = _sendRequest(
+    succeed, data = _requester.SendRequest(
         Config.ELAB_URL, ENDPOINT, HttpMethod.POST, body=body)
     if succeed:
         print(data)
@@ -70,25 +67,15 @@ def Login() -> bool:
         return True
     else:
         return False
-
-
-def _sendRequest(url: str, endpoint: str, method: HttpMethod, headers: dict = None, body: dict = None) -> Tuple[bool, dict]:
-    fullurl = url + endpoint
-    res = method.Send(fullurl, headers=headers, data=body)
-    data = _jsonDecoder.decode(res.text)
-    if res.status_code == 200:
-        return True, data
-    else:
-        data['code'] = res.status_code
-        return False, data
-
+def Test(endpoint: str, body: dict = None) -> Tuple[bool, dict]:
+    return _sendAuthenticatedRequest(Config.CORE_ADDRESS, endpoint, HttpMethod.GET, body=body)
 
 def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
     if _apiToken is not None:
         headers = {
             'Authorization': _apiToken
         }
-        return _sendRequest(url, endpoint, method, headers, body)
+        return _requester.SendRequest(url, endpoint, method, headers, body)
     else:
         print('You must login first with `Limes.Login()`')
         return False, None

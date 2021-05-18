@@ -1,5 +1,5 @@
 */certificate/private
-*/__pycache__
+__pycache__
 .vscode
 credentials
 .ipynb_checkpoints
