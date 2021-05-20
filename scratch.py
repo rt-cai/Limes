@@ -1,33 +1,33 @@
-from json import JSONEncoder, dumps
-import requests as py_requests
-from requests.sessions import Request
-from models.network import JsonResponse
-from common.config import ActiveClient as Config
-from datetime import datetime
-from models.network import Endpoints, HttpMethod
+# from json import JSONEncoder, dumps
+# import requests as py_requests
+# from requests.sessions import Request
+# from models.network import JsonResponse
+# from common.config import ActiveClient as Config
+# from datetime import datetime
+# from models.network import Endpoints, HttpMethod
 
-import limes_provider
+# import limes_provider
 
-time = '2021-03-04T16:24:24Z'
-o = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
-# print(o)
+# time = '2021-03-04T16:24:24Z'
+# o = datetime.strptime(time, '%Y-%m-%dT%H:%M:%SZ')
+# # print(o)
 
-x = Endpoints.REGISTER
-print(x)
-
-
-limes_provider.AddEndpoint('test', HttpMethod.GET, lambda r: JsonResponse({'from': 'le fosDB (scratch.py)'}))
-limes_provider.Start()
+# x = Endpoints.REGISTER
+# print(x)
 
 
-SAMPLE_ID = 1
-PATH_TO_FILE = 2
+# limes_provider.AddEndpoint('test', HttpMethod.GET, lambda r: JsonResponse({'from': 'le fosDB (scratch.py)'}))
+# limes_provider.Start()
 
-import limes
 
-limes.Login()
-data = limes.Get(SAMPLE_ID)
-data.Add(PATH_TO_FILE)
+# SAMPLE_ID = 1
+# PATH_TO_FILE = 2
+
+# import limes
+
+# limes.Login()
+# data = limes.Get(SAMPLE_ID)
+# data.Add(PATH_TO_FILE)
 
 
 # class a:
