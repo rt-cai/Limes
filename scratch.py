@@ -19,6 +19,17 @@ print(x)
 limes_provider.AddEndpoint('test', HttpMethod.GET, lambda r: JsonResponse({'from': 'le fosDB (scratch.py)'}))
 limes_provider.Start()
 
+
+SAMPLE_ID = 1
+PATH_TO_FILE = 2
+
+import limes
+
+limes.Login()
+data = limes.Get(SAMPLE_ID)
+data.Add(PATH_TO_FILE)
+
+
 # class a:
 
 #     def test(self, x):
