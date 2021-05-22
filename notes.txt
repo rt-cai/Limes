@@ -1,7 +1,5 @@
 conda installs:
-
-for fosdb
-pyodbc
+ - none
 
 todo:
 json encoder/decoder

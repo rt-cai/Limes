@@ -1,6 +1,6 @@
 from enum import Enum
 from json.encoder import JSONEncoder
-from typing import Tuple
+from typing import Tuple, List
 from models.basic import AbbreviatedEnum, PublicOnlyDict
 
 class Responsibility(AbbreviatedEnum):
@@ -13,7 +13,7 @@ class RegistrationForm(PublicOnlyDict):
         
 
 class RegistrationForm_Explicit(RegistrationForm):
-    def __init__(self, address: str, responsibilities: list[Responsibility]) -> None:
+    def __init__(self, address: str, responsibilities: List[Responsibility]) -> None:
         json = {
             'Address': address,
             'Responsibilities': responsibilities

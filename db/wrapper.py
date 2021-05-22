@@ -11,26 +11,31 @@ def genRand(c):
 
 con = db.connect('db/test/test_man.db')
 cur = con.cursor()
-tableNames = ['sm', 'med', 'lrg']
-ex = 2
-# for table in tableNames:
-#     cmd = 'CREATE TABLE IF NOT EXISTS %s (ID INTEGER PRIMARY KEY AUTOINCREMENT, val TEXT)' % table
-#     cur.execute(cmd)
-#     for i in range(10 ** ex):
-#         cur.execute('INSERT INTO %s (val) VALUES ("val - %s")' % (table, i))
-#     print(10 ** ex)
-#     ex += 2
+
+table = 'vacTest'
+cur.execute('CREATE TABLE %s (ID INTEGER PRIMARY KEY AUTOINCREMENT, i INTEGER, val TEXT)' % table)
+count: int = 1000000
+slice = count / 10
+for i in range(count):
+    cur.execute('INSERT INTO %s (i, val) VALUES (%s, "old - %s")' % (table, genRand(count), i))
+    if i % slice == 0:
+        print('%f' % (i/count))
+
+print('del')
+cur.execute('DELETE FROM %s WHERE ID < %s' % (table, 4 * count / 5))
+print('/del')
+
+print('com')
 con.commit()
-ex = 2
-print('----')
-for table in tableNames:
-    print(table)
-    for i in range(10000):
-        id = genRand(10 ** ex)
-        cur.execute('SELECT * FROM %s WHERE ID = %s' %(table, id))
-    print(table)
-    ex += 2
-    
+print('/com')
+
+print('vac')
+cur.execute('VACUUM')
+print('/vac')
+
+
+
+
 
 class Database:
     def __init__(self) -> None:
