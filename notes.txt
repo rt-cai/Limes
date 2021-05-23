@@ -2,7 +2,7 @@ conda installs:
  - none
 
 todo:
-json encoder/decoder
+x json encoder/decoder
 fosdb
 url class
 promises?

@@ -1,14 +1,12 @@
 from models.inventory import Sample
-from typing import Tuple
-from requests.models import parse_header_links
+from typing import Tuple, List
 from common.config import ActiveClient as Config
 from models.network import HttpMethod
 from coms.requester import Requester
 # from requests import Request as py_Requester
 
-
 class Query():
-    def ByAll(searchString: str) -> Tuple[bool, list[Sample]]:
+    def ByAll(searchString: str) -> Tuple[bool, List[Sample]]:
         ENDPOINT = 'samples'
         endpointWithParam = '%s?search=%s' % (ENDPOINT, searchString)
         succeed, response = _sendAuthenticatedRequest(
