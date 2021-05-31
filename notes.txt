@@ -3,6 +3,8 @@ conda installs:
 
 todo:
 x json encoder/decoder
+x url class -- ishm used enum
 fosdb
-url class
+* cookies + login
+redo the responses
 promises?

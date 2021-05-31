@@ -4,11 +4,10 @@ from common.config import ActiveGeneric as Config
 from json.decoder import JSONDecoder
 from typing import Callable, Tuple
 from models.inventory import Sample
-from models.provider import RegistrationForm as _providerRegistration
-from models.basic import PublicOnlyDict, AdvancedEnum
+from models.basic import AbbreviatedEnum, AdvancedEnum
 import requests as py_requests
 
-class HttpMethod(AdvancedEnum):
+class HttpMethod(AdvancedEnum, AbbreviatedEnum):
     GET = 1, py_requests.get
     POST = 2, py_requests.post
     PUT = 3, py_requests.put
@@ -16,21 +15,19 @@ class HttpMethod(AdvancedEnum):
     def __init__(self, _: int, function: Callable[..., py_requests.Response]) -> None:
         self.Invoke = function
 
-class Endpoints(AdvancedEnum):
-    REGISTER = 1, _providerRegistration
-
-    def __init__(self, _: int, data: PublicOnlyDict) -> None:
-        self.DataModel = data
-
-    def __str__(self) -> str:
-        default = super().__str__()
-        start = default.find(self.name)
-        return default[start:].lower()
-
 # request types
-class ResponseType(Enum):
+class ContentType(AbbreviatedEnum):
     HTML = 1
     JSON = 2
+    CSS = 3
+    JAVASCRIPT = 4
+
+    PNG = 5
+    def __str__(self) -> str:
+        prefix = 'text'
+        if self.value == 5:
+            prefix = 'image'
+        return ('%s/%s' % (prefix, super().__str__())).lower()
 
 class Request:
     def __init__(self, headers: dict, path: str, body:bytes=None):
@@ -47,44 +44,44 @@ class Request:
 
 # response types
 class Response:
-    def __init__(self, code: int, type: ResponseType, body) -> None:
+    def __init__(self, code: int, type: ContentType, body) -> None:
         self.Type = type
         self.Code = code
         self.Body = body
+        self.Bytes = None
 
-    def Serialize(self):
-        raise NotImplementedError
+    def Serialize(self) -> str:
+        return str(self.Body)
 
 class ErrorResponse(Response):
-    def __init__(self, code: str, type: ResponseType, body):
+    def __init__(self, code: int, type: ContentType, body: str):
         assert code != 200
         super().__init__(code, type, body)
-
 
 class ServerErrorResponse(ErrorResponse):
     def __init__(self, message: str):
         body = {
             'message': message
         }
-        super().__init__(500, ResponseType.JSON, body)
+        super().__init__(500, ContentType.JSON, body)
 
     def Serialize(self):
         return json.dumps(self.Body)
 
 class SuccessResponse(Response):
-    def __init__(self, type: ResponseType, body):
+    def __init__(self, type: ContentType, body):
         super().__init__(200, type, body)
 
 class HtmlResponse(SuccessResponse):
     def __init__(self, body: str) -> None:
-        super().__init__(ResponseType.HTML, body)
+        super().__init__(ContentType.HTML, body)
 
     def Serialize(self):
         return self.Body
 
 class JsonResponse(SuccessResponse):
     def __init__(self, body: dict) -> None:
-        super().__init__(ResponseType.JSON, body)
+        super().__init__(ContentType.JSON, body)
 
     def Serialize(self):
         return json.dumps(self.Body)
