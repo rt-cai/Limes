@@ -17,7 +17,6 @@ class Pages(AbbreviatedEnum):
 
 def ServeFolder() -> Callable[[Request], Response]:
     def fn(req: Request) -> Response:
-        print(req.Path)
         allowedTypes = {
             '.css': ContentType.CSS,
             '.js': ContentType.JAVASCRIPT,

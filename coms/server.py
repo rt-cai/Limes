@@ -21,18 +21,18 @@ class Server:
         self._PORT = port
 
         self._endpoints = {}
-        self._Add('', HttpMethod.GET, lambda _: HtmlResponse('LIMES Home'))
+        self._Add('', HttpMethod.GET, lambda _: HtmlResponse('root'))
 
     def _Add(self, path: str, method: HttpMethod, callback: Callable[[Request], Response]):
         path = str(path)
         path = '/' + path
         key = self._toEndpointKey(path, method)
         # print(self._endpoints.keys())
-        if path in self._endpoints.keys():
+        if key in self._endpoints.keys():
             status = 'updated'
         else:
             status = 'added'
-        print('endpoint [%s] %s' % (path, status))
+        print('[%s] %s' % (path, status))
         self._endpoints[key] = callback
 
     def Serve(server):
@@ -72,14 +72,17 @@ class Server:
                     # print(rawBody)
                     # print(self.headers)
                     response = callback(Request(headersDict, self.path, body=rawBody))
+                    print('%s:%s' % (method, self.path))
                 else:
                     # todo change this
                     response = ErrorResponse(404, ContentType.HTML, "endpoint doesn't exist! [%s:%s]" % (method, self.path))
-                    print('-- 404 -- [%s] \n' % self.path)
+                    print('-- 404 -- [%s]' % self.path)
 
                 self.send_response(response.Code)
                 self.send_header('Content-type', str(response.Type))
                 self.end_headers()
+                print(type(response.Bytes))
+                print(type(response.Body))
                 if not response.Bytes is None:
                     self.wfile.write(response.Bytes)
                 else:
