@@ -1,5 +1,9 @@
 */certificate/private
 __pycache__
 .vscode
+.vs
 credentials
 .ipynb_checkpoints
+*/dist
+*/build
+*.egg-info
