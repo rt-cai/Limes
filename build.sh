@@ -1,19 +1,22 @@
 #!/bin/bash
 
 # use test pypi for dev
-PYPI=testpypi
-#PYPI=pypi
+# PYPI=testpypi
+PYPI=pypi
 
 TOKEN=`cat credentials/${PYPI}`
-packages=(common server inventory)
+allPackages=(common inventory)
+# allPackages=(common inventory server)
+packages=("${allPackages[@]}")
 
-# prebuild
+upload=false
+
 for arg in "$@"; do
     case $arg in
     -clean)
         echo "cleaning previous builds..."
         wdir=`pwd`
-        for package in "${packages[@]}"; do
+        for package in "${allPackages[@]}"; do
             cd limes_$package
             rm -rf build
             rm -rf dist
@@ -25,6 +28,14 @@ for arg in "$@"; do
             done
             cd $wdir
         done
+        exit 0
+        ;;
+    -com-only)
+        echo "only building common"
+        packages=(common)
+        ;;
+    -upload)
+        upload=true
         ;;
     *)
         echo "ignoring unknown option [$arg]"
@@ -45,23 +56,9 @@ for package in "${packages[@]}"; do
     
     python -m build
 
-    cd $wdir
-done
-
-# post build
-for arg in "$@"; do
-    case $arg in
-    -upload)
+    if $upload ; then
         echo "uploading ..."
-        wdir=`pwd`
-        for package in "${packages[@]}"; do
-            cd limes_$package
-            python -m twine upload --repository $PYPI dist/* -u __token__ -p $TOKEN
-            cd $wdir
-        done
-        ;;
-    *)
-        echo "ignoring unknown option [$arg]"
-        ;;
-    esac
+        python -m twine upload --repository $PYPI dist/* -u __token__ -p $TOKEN
+    fi
+    cd $wdir
 done

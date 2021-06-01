@@ -5,6 +5,7 @@ from models.network import HttpMethod
 from coms.requester import Requester
 # from requests import Request as py_Requester
 
+
 class Query():
     def ByAll(searchString: str) -> Tuple[bool, List[Sample]]:
         ENDPOINT = 'samples'
