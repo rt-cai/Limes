@@ -1,0 +1,96 @@
+#qr-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -10;
+    background-color: black;
+}
+
+#title {
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px;
+    height: 70px;
+    width: 100%;
+    border-radius: 0px;
+    margin: 0px;
+    background-color: #0c2343;
+    color: #FFFFFF;
+}
+
+#side-bar {
+    position: absolute;
+    height: 100%;
+    width: 100px;
+    z-index: -1;
+    top: 0;
+    right: 0;
+    background-color: #111111cc;
+    border-left: 2px solid black;
+}
+
+#side-block {
+    margin: 5px;
+}
+
+.btn-side {
+    height: 80px;
+    margin-bottom: 15px;
+    margin-right: -25px;
+    padding: 0;
+}
+
+#btn-mode {
+    background-color: #004F73;
+    color: white;
+    border-radius: 10px;
+    border: 2px solid transparent;
+}
+#btn-reset {
+    background-color: #F9F871;
+    color: black;
+    border-radius: 10px;
+}
+#btn-confirm {
+    background-color: #82D77C;
+    color: black;
+    border-radius: 10px;
+    margin-bottom: 100px;
+}
+#btn-sleep {
+    background-color: #d62619;
+    color: black;
+    border-radius: 10px;
+}
+
+#log-container{
+    position: absolute;
+    bottom: 0px;
+    height: 40%;
+    width: fill;
+    z-index: -2;
+
+    padding: 0px;
+    padding-bottom: 10px;
+    /* border: 2px cyan solid; */
+}
+#log-row{
+    height: 100%;
+    margin: 0;
+}
+#log-pad{
+    /* border: 2px red solid; */
+    width: 100px;
+}
+#log{
+    background-color: #111111;
+    border: 5px black solid;
+    color: #E4F0FF;
+    border-radius: 10px;
+    margin: 10px;
+    margin-bottom: 0px;
+    padding: 10px;
+    padding-left: 15px;
+}
