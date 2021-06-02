@@ -7,3 +7,7 @@ credentials
 */dist
 */build
 *.egg-info
+package/README.md
+package/setup.cfg
+package/LICENSE
+package/pyproject.toml
