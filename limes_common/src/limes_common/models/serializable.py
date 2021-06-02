@@ -9,7 +9,7 @@ class Serializable:
     def _deserialize(self, string: str) -> None:
         raise NotImplementedError()
 
-    def Serialize(self) -> str:
+    def __str__(self) -> str:
         raise NotImplementedError()
 
     def _formatObject(self, string: str) -> Dict[str, str]:

@@ -1,4 +1,4 @@
-#!/bin/bash
+                        
 source build.sh
 # source build.sh -com-only
 

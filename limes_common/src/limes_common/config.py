@@ -4,7 +4,7 @@ class Prod():
     ENCODING = 'utf-8'
 
 class Dev(Prod):
-    VERIFY_CERTIFICATE = False
+    # VERIFY_CERTIFICATE = False
     KEEP_RAW_DATA = True
 
 class ActiveGeneric(Dev):

@@ -1,10 +1,11 @@
-#!/bin/bash
+
 
 # use test pypi for dev
 # PYPI=testpypi
 PYPI=pypi
 
 TOKEN=`cat credentials/${PYPI}`
+# allPackages=(inventory)
 allPackages=(common inventory)
 # allPackages=(common inventory server)
 packages=("${allPackages[@]}")
@@ -45,20 +46,20 @@ done
 
 wdir=`pwd`
 for package in "${packages[@]}"; do
-    echo "#########################################################"
-    echo "building $package"
-    echo "#########################################################"
-    echo ""
-    echo ""
-    echo ""
-    
     cd limes_$package
-    
-    python -m build
 
     if $upload ; then
-        echo "uploading ..."
+        echo "#########################################################"
+        echo "uploading $package"
         python -m twine upload --repository $PYPI dist/* -u __token__ -p $TOKEN
+    else
+        echo "#########################################################"
+        echo "building $package"
+        echo "#########################################################"
+        echo ""
+        echo ""
+        echo ""
+        python -m build
     fi
     cd $wdir
 done

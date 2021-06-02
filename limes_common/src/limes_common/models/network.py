@@ -1,10 +1,10 @@
 from enum import Enum
 import json
-from common.config import ActiveGeneric as Config
+from limes_common.config import ActiveGeneric as Config
 from json.decoder import JSONDecoder
 from typing import Callable, Tuple
-from models.inventory import Sample
-from models.basic import AbbreviatedEnum, AdvancedEnum
+from .inventory import Sample
+from .basic import AbbreviatedEnum, AdvancedEnum
 import requests as py_requests
 
 class HttpMethod(AdvancedEnum, AbbreviatedEnum):
@@ -14,6 +14,8 @@ class HttpMethod(AdvancedEnum, AbbreviatedEnum):
 
     def __init__(self, _: int, function: Callable[..., py_requests.Response]) -> None:
         self.Invoke = function
+
+
 
 # request types
 class ContentType(AbbreviatedEnum):
@@ -40,7 +42,7 @@ class Request:
         try:
             return True, jsonDecoder.decode(strBody)
         except:
-            return False, None
+            return False, {}
 
 # response types
 class Response:
@@ -63,7 +65,7 @@ class ServerErrorResponse(ErrorResponse):
         body = {
             'message': message
         }
-        super().__init__(500, ContentType.JSON, body)
+        super().__init__(500, ContentType.JSON, str(body))
 
     def Serialize(self):
         return json.dumps(self.Body)

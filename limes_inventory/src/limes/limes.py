@@ -1,26 +1,31 @@
-from models.inventory import Sample
 from typing import Tuple, List
-from common.config import ActiveClient as Config
-from models.network import HttpMethod
-from coms.requester import Requester
+import os
+
+from limes_common.config import ActiveClient as Config
+from limes_common.coms.requester import Requester
+from limes_common.models.network import HttpMethod
+
+# from  import Sample
+# from models.network import HttpMethod
+# from coms.requester import Requester
 # from requests import Request as py_Requester
 
 
-class Query():
-    def ByAll(searchString: str) -> Tuple[bool, List[Sample]]:
-        ENDPOINT = 'samples'
-        endpointWithParam = '%s?search=%s' % (ENDPOINT, searchString)
-        succeed, response = _sendAuthenticatedRequest(
-            Config.ELAB_URL, endpointWithParam, HttpMethod.GET)
-        if succeed:
-            count = response['recordCount']
-            total = response['totalRecords']
-            if total > count:
-                print('too many hits (%s total), truncated to %s results' %
-                    (total, count))
-            return True, list(map(lambda x: Sample(x, Config.ELAB_TIME_FORMAT), response['data']))
-        else:
-            return False, None
+# class Query():
+#     def ByAll(searchString: str) -> Tuple[bool, List[Sample]]:
+#         ENDPOINT = 'samples'
+#         endpointWithParam = '%s?search=%s' % (ENDPOINT, searchString)
+#         succeed, response = _sendAuthenticatedRequest(
+#             Config.ELAB_URL, endpointWithParam, HttpMethod.GET)
+#         if succeed:
+#             count = response['recordCount']
+#             total = response['totalRecords']
+#             if total > count:
+#                 print('too many hits (%s total), truncated to %s results' %
+#                     (total, count))
+#             return True, list(map(lambda x: Sample(x, Config.ELAB_TIME_FORMAT), response['data']))
+#         else:
+#             return False, None
 
 
 _VERIFY = Config.VERIFY_CERTIFICATE
@@ -31,22 +36,23 @@ _requester = Requester()
 # _py_requester = py_Requester()
 
 
-def Login() -> bool:
+def Login(username, password) -> bool:
     global _apiToken
-    # dev
-    print('# using temporary dev token, remember to change!')
-    cred = open('credentials')
-    cred.readline()
-    cred.readline()
-    _apiToken = cred.readline()
-    return True
-
     ENDPOINT = 'auth/user'
-    # todo: make login more secure
-    credentials = open(Config.CREDENTIALS_PATH, 'r')
-    def parseLine(): return credentials.readline().replace('\n', '')
-    username = parseLine()
-    password = parseLine()
+
+    # # dev-token
+    # print('# using temporary dev token, remember to change!')
+    # cred = open('credentials')
+    # cred.readline()
+    # cred.readline()
+    # _apiToken = cred.readline()
+    # return True
+
+    # # dev-credentials-file
+    # credentials = open(Config.CREDENTIALS_PATH, 'r')
+    # def parseLine(): return credentials.readline().replace('\n', '')
+    # username = parseLine()
+    # password = parseLine()
 
     if not username or not password:
         print('credential file error * note, make this more secure')
@@ -55,29 +61,36 @@ def Login() -> bool:
     body = {
         'username': username,
         'password': password
-    }
+    } 
 
     succeed, data = _requester.SendRequest(
         Config.ELAB_URL, ENDPOINT, HttpMethod.POST, body=body)
     if succeed:
-        print(data)
+        # print(data)
         _apiToken = data['token']
-        print(_apiToken)
+        # print(_apiToken)
+        meta = data['user']
+        fname = meta['firstName']
+        lname = meta['lastName']
+        print('logged in as %s %s' %(fname, lname))
         return True
     else:
         return False
-def Test(endpoint: str, body: dict = None) -> Tuple[bool, dict]:
-    return _sendAuthenticatedRequest(Config.CORE_ADDRESS, endpoint, HttpMethod.GET, body=body)
+
+def Test() -> None:
+    f = open('delme', 'w')
+    f.close()
 
 def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
     if _apiToken is not None:
         headers = {
             'Authorization': _apiToken
         }
-        return _requester.SendRequest(url, endpoint, method, headers, body)
+        return _requester.SendRequest(url, endpoint, method, headers, str(body))
     else:
         print('You must login first with `Limes.Login()`')
-        return False, None
+        return False, {}
+
 
 # print(Login())
 # s, q = Query.ByAll('sample 12345')
