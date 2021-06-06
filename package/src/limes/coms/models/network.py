@@ -1,6 +1,6 @@
 from enum import Enum
 import json
-from ..config import ActiveGeneric as Config
+from ...config import ActiveGeneric as Config
 from json.decoder import JSONDecoder
 from typing import Callable, Tuple
 from .inventory import Sample

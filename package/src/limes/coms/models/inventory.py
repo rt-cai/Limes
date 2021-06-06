@@ -1,4 +1,4 @@
-from ..config import ActiveGeneric as Config
+from ...config import ActiveGeneric as Config
 from .basic import PublicOnlyDict, SerializableTime
 class Sample(PublicOnlyDict):
     def __init__(self, data: dict, timeFormat: str) -> None:

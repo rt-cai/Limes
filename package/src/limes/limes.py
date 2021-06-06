@@ -2,8 +2,8 @@ from typing import Tuple, List
 import os
 
 from .config import ActiveClient as Config
-from .coms.requester import Requester
-from .models.network import HttpMethod
+from .coms.requester import SendRequest
+from .coms.models.network import HttpMethod
 
 # from  import Sample
 # from models.network import HttpMethod
@@ -32,7 +32,6 @@ _VERIFY = Config.VERIFY_CERTIFICATE
 
 _apiToken = None
 _Core_Address = Config.CORE_ADDRESS
-_requester = Requester()
 # _py_requester = py_Requester()
 
 
@@ -63,7 +62,7 @@ def Login(username, password) -> bool:
         'password': password
     } 
 
-    succeed, data = _requester.SendRequest(
+    succeed, data = SendRequest(
         Config.ELAB_URL, ENDPOINT, HttpMethod.POST, body=body)
     if succeed:
         # print(data)
@@ -88,7 +87,7 @@ def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body:
         headers = {
             'Authorization': _apiToken
         }
-        return _requester.SendRequest(url, endpoint, method, headers, str(body))
+        return SendRequest(url, endpoint, method, headers, str(body))
     else:
         print('You must login first with `Limes.Login()`')
         return False, {}
