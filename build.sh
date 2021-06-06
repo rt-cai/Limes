@@ -81,11 +81,12 @@ for package in "${packages[@]}"; do
         versionLine=`grep 'version' ../config.$package/setup.cfg`
         sed -i "s/$versionLine/version = $ver/" ../config.$package/setup.cfg
         if ! $doneOnce ; then
-            versionLine=`grep 'limes version' ./src/limes/res/help.py`
-            sed -i "s/$versionLine\\/limes version = $ver\\\\n\\\\/" ./src/limes/res/help.py
+            versionLine=$(grep 'limes version' ./src/limes/res/help.py | sed 's/\\n\\//')
+            sed -i "s/$versionLine/limes version $ver/" ./src/limes/res/help.py
+            versionLine=$(grep 'limes version' ./src/limes/res/ver.py)
+            sed -i "s/$versionLine/msg = 'limes version $ver'/" ./src/limes/res/ver.py
             doneOnce=true
         fi
-
 
         # copy over config files
         for file in "${configs[@]}"; do

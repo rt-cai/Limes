@@ -79,8 +79,9 @@ def Login(username, password) -> bool:
         return False
 
 def Test() -> None:
-    f = open('delme', 'w')
-    f.close()
+#     f = open('delme', 'w')
+#     f.close()
+    from .coms import test
 
 def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
     if _apiToken is not None:

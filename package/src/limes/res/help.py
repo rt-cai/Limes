@@ -1,5 +1,5 @@
 msg = '\n\n\
-limes version = 0.1.dev4\n\
+limes version 0.1.dev5\n\
 \n\
 To run limes, one of the following is required:\n\
 \n\
