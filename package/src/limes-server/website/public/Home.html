@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+
+<head>
+    <script src="lib/qr.min.js"></script>
+    <script src="lib/bar.min.js"></script>
+
+    <link rel="stylesheet" href="lib/bs4.min.css">
+    <link rel="stylesheet" href="src/main.css">
+
+    <!-- dont scale for mobile -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+</head>
+
+<body>
+    <!-- must be named this due to library -->
+    <canvas id="qr-canvas"></canvas>
+
+    <div class="jumbotron" id="title">
+        <h5>LIMES</h1>
+            <p>Powered by eLab</p>
+    </div>
+
+    <div class="d-flex align-items-center" id="side-bar">
+        <div class="btn-group-vertical btn-block" id="side-block">
+            <button type="button" class="btn btn-side font-weight-bold" id="btn-sleep" value="Redirect">Sleep</button>
+            <button type="button" class="btn btn-side font-weight-bold" id="btn-reset">Reset</button>
+            <button type="button" class="btn btn-side font-weight-bold" id="btn-confirm">Confirm</button>
+
+            <button type="button" class="btn btn-side font-weight-bold" id="btn-mode">Move Sample</button>
+            <button type="button" class="btn btn-side font-weight-bold" id="btn-mode">Continue Lineage</button>
+        </div>
+    </div>
+
+    <div class="container-fluid" id="log-container">
+        <div class="row justify-content-end" id="log-row">
+            <div class="col" id=log>
+                <label id="lblLog"> log here</label>
+            </div>
+            <div class="col-xs" id="log-pad"></div>
+        </div>
+    </div>
+
+    <!-- <div class="container" >
+        <div class="row" id="title-row">
+            <div class="jumbotron" id="title">
+                <h5>Hallam Lab Inventory Scanner</h1>
+                    <p>Instructions here</p>
+            </div>
+        </div>
+
+        <div class="row" id="content-row">
+            <div class="col" id="content-col">
+                <div class="container-fluid" id="main-container">
+                    <label id="lblLog"> log here</label>
+                </div>
+            </div>
+
+            <div class="col">
+                <div class="sidenav">
+                    <a href="#">Move Sample</a>
+                    <a href="#">Continue Lineage</a>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <!-- <audio id="snapSound" src="audio/snap.wav" preload = "auto"></audio> -->
+
+    <script src="src/main.js"></script>
+</body>
+
+</html>

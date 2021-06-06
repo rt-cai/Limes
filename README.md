@@ -10,6 +10,9 @@ pip install limes
 # usage
 - todo
 
+# contributing
+- may want to add extra python path to common package, to run without building
+- todo
 # todo:
 - use flask
 - responses to common
