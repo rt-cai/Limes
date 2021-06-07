@@ -1,1 +1,1 @@
-from . import limes, __main__
+from . import limes

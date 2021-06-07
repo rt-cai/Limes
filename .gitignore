@@ -11,3 +11,5 @@ package/README.md
 package/setup.cfg
 package/LICENSE
 package/pyproject.toml
+package/src/limes_server/certificate/private/cert.pem
+package/src/limes_server/certificate/private/key.pem

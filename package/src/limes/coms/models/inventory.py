@@ -1,5 +1,5 @@
 from ...config import ActiveGeneric as Config
-from .basic import PublicOnlyDict, SerializableTime
+from limes_common.models.basic import PublicOnlyDict, SerializableTime
 class Sample(PublicOnlyDict):
     def __init__(self, data: dict, timeFormat: str) -> None:
         self._id = data['sampleID']

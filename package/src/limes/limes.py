@@ -1,6 +1,8 @@
 from typing import Tuple, List
 import os
 
+from limes_common.connections import ServerConnection
+
 from .config import ActiveClient as Config
 from .coms.requester import SendRequest
 from .coms.models.network import HttpMethod
@@ -27,13 +29,7 @@ from .coms.models.network import HttpMethod
 #         else:
 #             return False, None
 
-
-_VERIFY = Config.VERIFY_CERTIFICATE
-
-_apiToken = None
-_Core_Address = Config.CORE_ADDRESS
-# _py_requester = py_Requester()
-
+_server = ServerConnection()
 
 def Login(username, password) -> bool:
     global _apiToken
@@ -52,45 +48,28 @@ def Login(username, password) -> bool:
     # def parseLine(): return credentials.readline().replace('\n', '')
     # username = parseLine()
     # password = parseLine()
+    # if not username or not password:
+    #     print('credential file error * note, make this more secure')
+    #     return False
 
-    if not username or not password:
-        print('credential file error * note, make this more secure')
-        return False
-
-    body = {
-        'username': username,
-        'password': password
-    } 
-
-    succeed, data = SendRequest(
-        Config.ELAB_URL, ENDPOINT, HttpMethod.POST, body=body)
-    if succeed:
-        # print(data)
-        _apiToken = data['token']
-        # print(_apiToken)
-        meta = data['user']
-        fname = meta['firstName']
-        lname = meta['lastName']
-        print('logged in as %s %s' %(fname, lname))
-        return True
-    else:
-        print('incorrect credentials')
-        return False
+    return _server.Login(username, password)
 
 def Test() -> None:
 #     f = open('delme', 'w')
 #     f.close()
-    from .coms import test
+    from limes_common.connections import ServerConnection
+    s = ServerConnection()
+    print(s.Login('s', 'e'))
 
-def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
-    if _apiToken is not None:
-        headers = {
-            'Authorization': _apiToken
-        }
-        return SendRequest(url, endpoint, method, headers, str(body))
-    else:
-        print('You must login first with `Limes.Login()`')
-        return False, {}
+# def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
+#     if _apiToken is not None:
+#         headers = {
+#             'Authorization': _apiToken
+#         }
+#         return SendRequest(url, endpoint, method, headers, str(body))
+#     else:
+#         print('You must login first with `Limes.Login()`')
+#         return False, {}
 
 
 # print(Login())

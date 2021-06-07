@@ -56,12 +56,15 @@ def main(args:List[str] = sys.argv[1:]):
         return False, ""
 
     arg = args[0] if len(args) > 0 else ''
-    fs = frozenset
+
+    # the switch doesn't need to be fast, make it easier to make
+    # also need to add hints here
     return Switch(arg, {
         '': lambda: ver.msg,
-        fs(['-h', '--help']): lambda: help.msg,
-        'login': lambda: Login(),
-        'test': lambda: Test(),
+        '-h': lambda: help.msg,
+        '--help': lambda: help.msg,
+        'login': Login,
+        'test': Test,
     }, lambda: _printHelp(arg))
 
 if __name__ == "__main__":
