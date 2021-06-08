@@ -1,3 +1,4 @@
-bind = '127.0.0.1:8000'
-certfile = '/etc/letsencrypt/live/example.com/fullchain.pem'
-keyfile = '/etc/letsencrypt/live/example.com/privkey.pem'
+bind = '127.0.0.1:8001'
+# certPath = 'limes_common/certificate/certFiles'
+# certfile = '%s/cert.pem' % certPath
+# keyfile = '%s/key.pem' % certPath

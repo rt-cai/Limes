@@ -1,15 +1,16 @@
+
+dir=`pwd`
 cd package/src/
 
 sw=$1
-set -- "${@:2}" #removed the 1st parameter
 case $sw in
     server | -s)
-    ori=`pwd`
-    cd package/src
-    gunicorn limes_server.wsgi
-    cd $ori
+    set -- "${@:2}" #removed the 1st parameter
+    gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
     ;;
     *)
-    python -m limes $args
+    python -m limes $1 $2 $3
     ;;
 esac
+
+cd $dir

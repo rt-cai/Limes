@@ -1,4 +1,4 @@
-out="private"
+out="certFiles"
 mkdir $out
 openssl genrsa -out $out/key.pem
 openssl req -new -key $out/key.pem -out $out/csr.pem

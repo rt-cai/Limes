@@ -57,10 +57,14 @@ def main(args:List[str] = sys.argv[1:]):
 
     arg = args[0] if len(args) > 0 else ''
 
+    def base():
+        print(ver.msg)
+        limes._auth()
+
     # the switch doesn't need to be fast, make it easier to make
     # also need to add hints here
     return Switch(arg, {
-        '': lambda: ver.msg,
+        '': base,
         '-h': lambda: help.msg,
         '--help': lambda: help.msg,
         'login': Login,

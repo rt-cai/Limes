@@ -1,67 +1,58 @@
-from enum import Enum
-from typing import Callable, ClassVar, overload
 import requests as Requests
 import uuid
 from getpass import getuser
 import os
 
-from limes_common.models.basic import AdvancedEnum, AbbreviatedEnum
-
-from .models.network import IServer
-
-class HttpMethod(AdvancedEnum, AbbreviatedEnum):
-    GET = 1, Requests.get
-    POST = 2, Requests.post
-    PUT = 3, Requests.put
-    def __init__(self, _: int, function: Callable[..., Requests.Response]) -> None:
-        self.Invoke = function
+import limes_common.models.network.server as Server
+import limes_common.models.network.elab as ELab
+from limes_common.models.network.endpoints import ELabEndpoint, ServerEndpoint, Endpoint
+from . import config
 
 class Connection:
-    @classmethod
-    def _req(cls, method: HttpMethod, endpoint: str, headers=None, body=None) -> tuple[int, str]:
-        res = method.Invoke('%s%s' % (cls._getUrl(), endpoint), headers=headers, data=body)
-        return res.status_code, res.text
+    def __init__(self, url) -> None:
+        self.session = Requests.session()
+        self._URL: str = url
 
-    @classmethod
-    def _getUrl(cls) -> str:
-        raise NotImplementedError
+    def _makeUrl(self, ep: Endpoint):
+        return (self._URL if self._URL.endswith('/') else self._URL[:-1]) + ep.path
 
 class ServerConnection(Connection):
     def __init__(self) -> None:
-        self.id = '%s-%s-%012x' % (os.ctermid(), getuser(), uuid.getnode())
-
-    def Login(self, username: str, password: str) -> bool:
-        code, raw = ServerConnection._req(HttpMethod.POST, 'login', body={
-            'username':username,
-            'password': password,
-            'id': self.id
-        })
-        if code ==200:
-            print(raw)
+        super().__init__(config.SERVER_URL)
+        self._id = ('%012x:%s:%s' % (uuid.getnode(), getuser(), os.getppid()))
+        # todo, handle server not there
+        res = Server.Init.Response(self.session.get(self._makeUrl(ServerEndpoint.INIT)))
+        if res.Code == 200:
+            self._csrf = res.Csrf
         else:
-            print(code)
-        return code==200
+            raise Exception('failed to reach server')
+            
+    def Authenticate(self) -> Server.Authenticate.Response:
+        SA = Server.Authenticate
+        return SA.Response(self.session.post(
+            self._makeUrl(ServerEndpoint.AUTHENTICATE),
+            data=SA.MakeRequest(self._id, self._csrf)
+        ))
 
-    @classmethod
-    def _getUrl(cls):
-        return 'https://127.0.0.1:8000/api/d1/'
+    def Login(self, eLabKey: str, firstName: str, lastName: str) -> Server.Login.Response:
+        return Server.Login.Response(self.session.post(
+            self._makeUrl(ServerEndpoint.LOGIN),
+            data=Server.Login.MakeRequest(self._id, eLabKey, firstName, lastName, self._csrf)
+            ))
 
 class ELabConnection(Connection):
     def __init__(self) -> None:
-        pass
+        super().__init__(config.ELAB_URL)
+        self._token: str = ''
 
     def SetToken(self, token:str) -> None:
-        pass
+        self._token = token
 
-    def Login(self, username: str, password: str) -> tuple[bool, str]:
-        code, raw = ELabConnection._req(HttpMethod.POST, 'user/auth', body = {
-            'username': username,
-            'password': password,
-        })
-        print(code)
-        print(raw)
-        return code==200, ''
+    def LoggedIn(self) -> bool:
+        return self._token != ''
 
-    @classmethod
-    def _getUrl(cls):
-        return 'https://us.elabjournal.com/api/v1/'
+    def Login(self, username: str, password: str) -> ELab.Login.Response:
+        return ELab.Login.Response(self.session.post(
+            self._makeUrl(ELabEndpoint.Login),
+            data=ELab.Login.MakeRequest(username, password)
+        ))
