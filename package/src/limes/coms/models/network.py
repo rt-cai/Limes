@@ -1,10 +1,10 @@
 from enum import Enum
 import json
-from ..config import ActiveGeneric as Config
+from ...config import ActiveGeneric as Config
 from json.decoder import JSONDecoder
 from typing import Callable, Tuple
 from .inventory import Sample
-from .basic import AbbreviatedEnum, AdvancedEnum
+from limes_common.models.basic import AbbreviatedEnum, AdvancedEnum
 import requests as py_requests
 
 class HttpMethod(AdvancedEnum, AbbreviatedEnum):

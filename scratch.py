@@ -1,4 +1,31 @@
-import limes_common as lc
+from enum import Enum
+import os
+# from limes_common.models.basic import AdvancedEnum
+
+# def dec(x):
+#     print('x %s' % x)
+#     def dec2(b):
+#         print('2 %s' % b)
+#         return b
+#     return dec2
+
+# @dec('s')
+# class A:
+#     pass
+
+# print(type(A))
+# print(type(A()))
+
+class E(Enum):
+    A = 1
+    B = 2
+
+
+print(os.getpid())
+print(os.getppid())
+# print(list(map(str, E)))
+# for e in E:
+#     print(type(e))
 
 # from json import JSONEncoder, dumps
 # import requests as py_requests

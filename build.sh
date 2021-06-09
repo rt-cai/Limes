@@ -12,6 +12,7 @@ allPackages=(inventory server)
 packages=(inventory)
 
 install=false
+build=true
 
 for arg in "$@"; do
     case $arg in
@@ -46,6 +47,10 @@ for arg in "$@"; do
         ;;
     --install | -i)
         install=true
+        build=false
+        ;;
+    --build-install | -bi)
+        install=true
         ;;
     test)
         echo "***build script test branch ***"
@@ -64,14 +69,7 @@ wdir=`pwd`
 cd package
 doneOnce=false
 for package in "${packages[@]}"; do
-    if $install ; then
-        echo ""
-        echo "#########################################################"
-        echo "installing $package"
-        echo ""
-        pip uninstall -y limes-$package
-        pip install ./dist/limes-$package-$ver.tar.gz
-    else
+    if $build ; then
         echo ""
         echo "#########################################################"
         echo "building $package"
@@ -94,5 +92,14 @@ for package in "${packages[@]}"; do
         done
 
         python -m build
+    fi
+    
+    if $install ; then
+        echo ""
+        echo "#########################################################"
+        echo "installing $package"
+        echo ""
+        pip uninstall -y limes-$package
+        pip install ./dist/limes-$package-$ver.tar.gz
     fi
 done

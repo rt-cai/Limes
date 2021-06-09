@@ -1,4 +1,3 @@
-from types import Tuple
 
 from ..config import ActiveGeneric as Config
 # from json.decoder import JSONDecoder

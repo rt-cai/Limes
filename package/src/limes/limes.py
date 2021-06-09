@@ -1,9 +1,8 @@
 from typing import Tuple, List
 import os
 
-from .config import ActiveClient as Config
-from .coms.requester import Requester
-from .models.network import HttpMethod
+from limes_common.connections import ELabConnection, ServerConnection
+from limes_common.models.network import server
 
 # from  import Sample
 # from models.network import HttpMethod
@@ -27,20 +26,28 @@ from .models.network import HttpMethod
 #         else:
 #             return False, None
 
+_server = ServerConnection()
+_eLab = ELabConnection()
 
-_VERIFY = Config.VERIFY_CERTIFICATE
-
-_apiToken = None
-_Core_Address = Config.CORE_ADDRESS
-_requester = Requester()
-# _py_requester = py_Requester()
-
+def _auth():
+    res = _server.Authenticate()
+    if res.Success:
+        print('This terminal is logged in as %s' % res.FirstName)
+        _eLab.SetToken(res.ELabKey)
+    else:
+        print('Not logged in')
 
 def Login(username, password) -> bool:
-    global _apiToken
-    ENDPOINT = 'auth/user'
+    res = _eLab.Login(username, password)
+    if res.Code not in [200, 401]:
+        raise Exception('Failed to connect to eLab')
 
-    # # dev-token
+    if res.Success:
+        _server.Login(res.Token, res.FirstName, res.LastName)
+        print('logged in terminal as %s' % res.FirstName)
+    return res.Success
+
+    # # dev-token 
     # print('# using temporary dev token, remember to change!')
     # cred = open('credentials')
     # cred.readline()
@@ -53,45 +60,30 @@ def Login(username, password) -> bool:
     # def parseLine(): return credentials.readline().replace('\n', '')
     # username = parseLine()
     # password = parseLine()
+    # if not username or not password:
+    #     print('credential file error * note, make this more secure')
+    #     return False
 
-    if not username or not password:
-        print('credential file error * note, make this more secure')
-        return False
-
-    body = {
-        'username': username,
-        'password': password
-    } 
-
-    succeed, data = _requester.SendRequest(
-        Config.ELAB_URL, ENDPOINT, HttpMethod.POST, body=body)
-    if succeed:
-        # print(data)
-        _apiToken = data['token']
-        # print(_apiToken)
-        meta = data['user']
-        fname = meta['firstName']
-        lname = meta['lastName']
-        print('logged in as %s %s' %(fname, lname))
-        return True
-    else:
-        print('incorrect credentials')
-        return False
+    # return _server.Login(username, password)
+    return False
 
 def Test() -> None:
 #     f = open('delme', 'w')
 #     f.close()
-    from .coms import test
+    # from limes_common.connections import ServerConnection
+    # s = ServerConnection()
+    # print(s.Authenticate())
+    Login('phyberos@student.ubc.ca', 'sd43South27')
 
-def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
-    if _apiToken is not None:
-        headers = {
-            'Authorization': _apiToken
-        }
-        return _requester.SendRequest(url, endpoint, method, headers, str(body))
-    else:
-        print('You must login first with `Limes.Login()`')
-        return False, {}
+# def _sendAuthenticatedRequest(url: str, endpoint: str, method: HttpMethod, body: dict = None) -> Tuple[bool, dict]:
+#     if _apiToken is not None:
+#         headers = {
+#             'Authorization': _apiToken
+#         }
+#         return SendRequest(url, endpoint, method, headers, str(body))
+#     else:
+#         print('You must login first with `Limes.Login()`')
+#         return False, {}
 
 
 # print(Login())

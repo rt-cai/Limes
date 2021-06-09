@@ -1,2 +1,16 @@
+
+dir=`pwd`
 cd package/src/
-python -m limes $@
+
+sw=$1
+case $sw in
+    server | -s)
+    set -- "${@:2}" #removed the 1st parameter
+    gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
+    ;;
+    *)
+    python -m limes $1 $2 $3
+    ;;
+esac
+
+cd $dir
