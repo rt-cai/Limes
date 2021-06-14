@@ -1,4 +1,5 @@
 CSRF_KEY = 'csrfmiddlewaretoken'
+# ELAB_URL = 'https://elab.msl.ubc.ca/api/v1/'
 ELAB_URL = 'https://us.elabjournal.com/api/v1/'
 
 SERVER_API_VER = 'd1'

@@ -51,6 +51,7 @@ def Authenticate(request: HttpRequest):
     token = client.Token if success else ''
     fName = client.FirstName if success else ''
     lName = client.LastName if success else ''
+    print(_activeClients)
     return JsonResponse(SA.MakeResponse(success, token, fName, lName))
 
 @require_http_methods(['GET'])

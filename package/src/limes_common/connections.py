@@ -2,6 +2,7 @@ import requests as Requests
 import uuid
 from getpass import getuser
 import os
+from functools import reduce
 
 import limes_common.models.network.server as Server
 import limes_common.models.network.elab as ELab
@@ -53,6 +54,14 @@ class ELabConnection(Connection):
 
     def Login(self, username: str, password: str) -> ELab.Login.Response:
         return ELab.Login.Response(self.session.post(
-            self._makeUrl(ELabEndpoint.Login),
+            self._makeUrl(ELabEndpoint.LOGIN),
             data=ELab.Login.MakeRequest(username, password)
+        ))
+
+    def GetSamples(self, strIds: list[str]) -> ELab.Sample.ListResponse:
+        ids = list(int(id[-9:] if len(id) > 9 else id) for id in strIds)
+        query = '' if len(strIds)==0 else '?sampleID=' + reduce(lambda s, id: '%s,%s' % (s, id), ids, '')[1:]
+        return ELab.Sample.ListResponse(self.session.get(
+            '%s/%s%s' % (self._makeUrl(ELabEndpoint.SAMPLES), 'get', query),
+            headers={'authorization': self._token}
         ))

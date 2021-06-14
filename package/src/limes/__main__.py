@@ -5,7 +5,7 @@ from typing import List
 from getpass import getpass
 
 from .tools.qol import Switch, T
-from .res import help, ver
+from .res import strings as Constants
 
 def main(args:List[str] = sys.argv[1:]):
     # for later abstraction of help
@@ -37,6 +37,32 @@ def main(args:List[str] = sys.argv[1:]):
                 return
         return '%s failed attempts, check your connection and credentials' % tries
 
+    def Add():
+        return ''
+
+    def Search():
+        if len(args) < 2:
+            return 'Search requires at least 1 criteria'
+
+        params: dict[str, list[str]] = {}
+        criteria = None
+        for arg in args[1:]:
+            if arg.startswith('-'):
+                criteria = arg[1:]
+                if criteria in params:
+                    return 'duplicate criteria [%s]' % criteria
+                params[criteria] = []
+            elif criteria is None:
+                return 'paramater given with no criteria, expected "-[criteria]"'
+            else:
+                params[criteria].append(arg)
+
+        try:
+            limes._auth()
+            x = limes.Search(params)
+            return x
+        except limes.UnrecognizedCriteriaException as err:
+            return err
 
     def Test():
         return limes.Test()
@@ -58,16 +84,18 @@ def main(args:List[str] = sys.argv[1:]):
     arg = args[0] if len(args) > 0 else ''
 
     def base():
-        print(ver.msg)
+        print(Constants.version)
         limes._auth()
 
     # the switch doesn't need to be fast, make it easier to make
     # also need to add hints here
     return Switch(arg, {
         '': base,
-        '-h': lambda: help.msg,
-        '--help': lambda: help.msg,
+        '-h': lambda: Constants.help,
+        '--help': lambda: Constants.help,
         'login': Login,
+        'search': Search,
+        'add': Add,
         'test': Test,
     }, lambda: _printHelp(arg))
 

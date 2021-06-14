@@ -9,7 +9,7 @@ case $sw in
     gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
     ;;
     *)
-    python -m limes $1 $2 $3
+    python -m limes $@
     ;;
 esac
 

@@ -58,7 +58,11 @@ print(os.getppid())
 # data = limes.Get(SAMPLE_ID)
 # data.Add(PATH_TO_FILE)
 
+# import numpy as np
+# x = np.load('hits.npy', allow_pickle=True)
+# print(x)
 
+print('hgfvbndlirjldivj987654321'[-9:])
 # class a:
 
 #     def test(self, x):

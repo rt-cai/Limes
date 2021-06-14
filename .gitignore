@@ -11,3 +11,6 @@ package/README.md
 package/setup.cfg
 package/LICENSE
 package/pyproject.toml
+*.fasta
+*.fastq
+db/

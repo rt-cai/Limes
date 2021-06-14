@@ -1,5 +1,6 @@
-msg = '\n\n\
-limes version 0.1.dev5\n\
+version = 'limes version 0.1.dev6'
+help = '\n\n\
+%s\n\
 \n\
 To run limes, one of the following is required:\n\
 \n\
@@ -15,4 +16,4 @@ get\n\
 \n\
 add\n\
     *todo\n\
-'
+' % version

@@ -1,5 +1,7 @@
-from typing import Tuple, List
+from typing import Any
 import os
+from functools import reduce
+from limes.tools.qol import Switch
 
 from limes_common.connections import ELabConnection, ServerConnection
 from limes_common.models.network import server
@@ -47,24 +49,40 @@ def Login(username, password) -> bool:
         print('logged in terminal as %s' % res.FirstName)
     return res.Success
 
-    # # dev-token 
-    # print('# using temporary dev token, remember to change!')
-    # cred = open('credentials')
-    # cred.readline()
-    # cred.readline()
-    # _apiToken = cred.readline()
-    # return True
+class UnrecognizedCriteriaException(Exception):
+    pass
+SEARCH_CRITERIA_LIST = list(c.lower() for c in ['sampleID'])
+def Search(params: dict[str, list[str]]):
+    params = dict((k.lower(), v) for k, v in params.items())
+    invalids = list(filter(lambda p: p not in SEARCH_CRITERIA_LIST, params.keys()))
+    if len(invalids) > 0:
+        raise UnrecognizedCriteriaException('unrecognized criteria: %s' % \
+            reduce(lambda s, c: '%s, [%s]' % (s, c), invalids[1:], '[%s]' %invalids[0]))
 
-    # # dev-credentials-file
-    # credentials = open(Config.CREDENTIALS_PATH, 'r')
-    # def parseLine(): return credentials.readline().replace('\n', '')
-    # username = parseLine()
-    # password = parseLine()
-    # if not username or not password:
-    #     print('credential file error * note, make this more secure')
-    #     return False
+    switcher = {
+        'sampleid': _eLab.GetSamples
+    }
 
-    # return _server.Login(username, password)
+    # todo value check
+    try:
+        res = list(switcher[k](v) for k, v in params.items())
+    except ValueError as err:
+        return err
+    # todo: AND and OR logic
+    # todo: save result as csv
+    res = res[0] # temp since only one criteria so far
+    count = len(res.samples)
+    msg = '%s result%s found' % (count, 's' if count != 1 else '')
+    max = 5
+    i = 1
+    for sample in res.samples:
+        msg += '\n\n%s of %s' % (i, count)
+        msg += '\nID: %s\nName: %s' % (sample.Id, sample.Name)
+        i += 1
+        if i > max: break
+    return msg
+
+def Add(sampleId: str) -> bool:
     return False
 
 def Test() -> None:

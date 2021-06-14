@@ -17,4 +17,5 @@ class ServerEndpoint(Endpoint):
     INIT = 3, [Http.GET], 'init'
 
 class ELabEndpoint(Endpoint):
-    Login = 1, [Http.POST], 'auth/user'
+    LOGIN = 1, [Http.POST], 'auth/user'
+    SAMPLES = 2, [Http.POST, Http.GET], 'samples'
