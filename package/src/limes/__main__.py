@@ -38,6 +38,10 @@ def main(args:List[str] = sys.argv[1:]):
         return '%s failed attempts, check your connection and credentials' % tries
 
     def Add():
+        if len(args) != 5:
+            return 'Syntax: limes add [sampleId] [file path] -as [name]'
+
+        limes.Add(args[1], args[2], args[4])
         return ''
 
     def Search():
@@ -59,13 +63,14 @@ def main(args:List[str] = sys.argv[1:]):
 
         try:
             limes._auth()
+        except:
+            return
+
+        try:
             x = limes.Search(params)
             return x
         except limes.UnrecognizedCriteriaException as err:
             return err
-
-    def Test():
-        return limes.Test()
 
     def _printHelp(unkownArg=False):
         msg = 'use [-h] or [--help] to view options\nor view available documentation at https://github.com/Tony-xy-Liu/Limes/'
@@ -94,10 +99,15 @@ def main(args:List[str] = sys.argv[1:]):
         '-h': lambda: Constants.help,
         '--help': lambda: Constants.help,
         'login': Login,
+        'dlogin': lambda: limes.dLogin(),
         'search': Search,
         'add': Add,
-        'test': Test,
+        'test': lambda: limes.Test(),
     }, lambda: _printHelp(arg))
 
 if __name__ == "__main__":
-    sys.exit(main())
+    end = main()
+    if not end is None and end != '':
+        sys.exit(end)
+    else:
+        sys.exit()

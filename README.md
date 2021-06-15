@@ -1,11 +1,16 @@
 # Limes
 #### inventory and data manager, powered by eLab
 
-# install
+# install & setup
+### Client
+pip install limes-inventory
+#### Elab
+Valid elab credentials are required.
+#### Shamwow
+If you can ssh into Shamwow using an *rsa-key* then the connection is already setup
+
 ### Server
 pip install limes-server
-### CLient
-pip install limes
 
 # usage
 - todo

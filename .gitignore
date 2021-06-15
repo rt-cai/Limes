@@ -14,3 +14,4 @@ package/pyproject.toml
 *.fasta
 *.fastq
 db/
+dbScratch/

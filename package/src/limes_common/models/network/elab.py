@@ -3,7 +3,6 @@ from requests import Response
 
 from . import _tryParse, ResponseModel
 
-
 class Login:
     @classmethod
     def MakeRequest(cls, username: str, password: str):
@@ -21,7 +20,7 @@ class Login:
             self.FirstName = _tryParse(str, userData, 'firstName', '')
             self.LastName = _tryParse(str, userData, 'lastName', '')
 
-class Sample:
+class SampleModel:
     def __init__(self, data: dict = {}) -> None:
         self.Name = _tryParse(str, data, 'name', 'None')
         self.Owner =_tryParse(str, data, 'owner', '')
@@ -31,7 +30,13 @@ class Sample:
         self.Description =_tryParse(str, data, 'description', '')
         self.ParentId =_tryParse(int, data, 'parent', 0)
 
+class Sample:
     class ListResponse(ResponseModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
-            self.samples = list(map(lambda raw: Sample(raw), self.data))
+            self.Samples = list(map(lambda raw: SampleModel(raw), self.data))
+
+    class Response(ResponseModel):
+        def __init__(self, res: Response) -> None:
+            super().__init__(res)
+            self.Sample = SampleModel(self.data)

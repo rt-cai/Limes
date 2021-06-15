@@ -1,28 +1,25 @@
 from enum import Enum
+from io import BufferedReader, FileIO
 import os
 # from limes_common.models.basic import AdvancedEnum
 
-# def dec(x):
-#     print('x %s' % x)
-#     def dec2(b):
-#         print('2 %s' % b)
-#         return b
-#     return dec2
-
-# @dec('s')
 # class A:
-#     pass
+#     @classmethod
+#     def _dec(cls, x):
+#         print(self)
+#         print(x)
 
-# print(type(A))
-# print(type(A()))
-
-class E(Enum):
-    A = 1
-    B = 2
+#     @_dec
+#     def fn(self):
+#         print('fn')
 
 
-print(os.getpid())
-print(os.getppid())
+
+# x: BufferedReader = open('setup.sh', 'rb')
+# print(type(x))
+
+# print(os.getpid())
+# print(os.getppid())
 # print(list(map(str, E)))
 # for e in E:
 #     print(type(e))
@@ -62,7 +59,7 @@ print(os.getppid())
 # x = np.load('hits.npy', allow_pickle=True)
 # print(x)
 
-print('hgfvbndlirjldivj987654321'[-9:])
+# print('hgfvbndlirjldivj987654321'[-9:]s
 # class a:
 
 #     def test(self, x):
