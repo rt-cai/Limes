@@ -1,8 +1,7 @@
 
 dir=`pwd`
-src=../package/src
+src=package/src
 cd $src
-
 sw=$1
 case $sw in
     server | -s)
@@ -10,16 +9,17 @@ case $sw in
     gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
     ;;
     *)
-    if [ $1 = 'add' ] && [ ! -z $2 ]; then
+    if [[ $1 = 'add' || $1 = 'blast' ]] && [[ ! -z $2 ]]; then
         case $2 in
             /*)
             # abspath, do nothing 
             ;;
             *)
             args=''
-            i=0
+            i=1
             for arg in $@; do
                 if [ $i -eq 2 ]; then
+                    echo "> run.sh converted relative path to $dir/$arg"
                     args="$args $dir/$arg"
                 else
                     args="$args $arg"
@@ -31,6 +31,8 @@ case $sw in
     else
         args=$@
     fi
+    echo "> limes"
+    echo ""
     python -m limes $args
     ;;
 esac

@@ -85,6 +85,12 @@ class Login:
             self.Success = _tryParse(bool, data, 'success', False)
 
 
+class FileMeta:
+    def __init__(self, raw:dict = {}) -> None:
+        self.FilePath = str(raw.get('path'))
+        self.SampleId = str(raw.get('sampleId'))
+        self.FileName = str(raw.get('name'))
+
 class Add:
     FILE_KEY = 'file'
 
@@ -97,18 +103,17 @@ class Add:
             }
 
     @classmethod
-    def MakeResponse(cls, success: bool, msg: str=''):
+    def MakeResponse(cls, success: bool, sampleName: str='', message: str=''):
         return {
             'success': success,
-            'msg': msg
+            'msg': message,
+            'sampleName': sampleName,
             }
 
     class Request:
         def __init__(self, raw: dict) -> None:
             self.ClientId = str(raw.get(CLIENT_ID_KEY))
-            self.FilePath = str(raw.get('path'))
-            self.SampleId = str(raw.get('sampleId'))
-            self.FileName = str(raw.get('name'))
+            self.Meta = FileMeta(raw)
 
     class Response(ResponseModel):
         def __init__(self, res: py_Response) -> None:
@@ -116,3 +121,22 @@ class Add:
             data = json.loads(res.text) if self.Code==200 else {}
             self.Success = _tryParse(bool, data, 'success', False)
             self.Message = _tryParse(str, data, 'msg', '')
+            self.SampleName = _tryParse(str, data, 'sampleName', '')
+
+class Blast:
+    FILE_KEY = 'query'
+    @classmethod
+    def MakeRequest(cls):
+        return {}
+
+    @classmethod
+    def MakeResponse(cls, success: bool, report: str):
+        return {
+            'success': success,
+            'report': report,
+            }
+    class Response(ResponseModel):
+        def __init__(self, res: py_Response) -> None:
+            super().__init__(res)
+            self.Success = _tryParse(bool, self.data, 'success', False)
+            self.Result = _tryParse(str, self.data, 'report', '')

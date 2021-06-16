@@ -12,8 +12,8 @@ import os
 #     @_dec
 #     def fn(self):
 #         print('fn')
-
-
+x = bool
+print(type(bool))
 
 # x: BufferedReader = open('setup.sh', 'rb')
 # print(type(x))

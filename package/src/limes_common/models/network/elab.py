@@ -1,4 +1,5 @@
 import json
+from typing import TypeVar, Callable, Any
 from requests import Response
 
 from . import _tryParse, ResponseModel
@@ -34,9 +35,51 @@ class Sample:
     class ListResponse(ResponseModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
-            self.Samples = list(map(lambda raw: SampleModel(raw), self.data))
+            # self.Samples = list(map(lambda raw: SampleModel(raw), self.data))
+            self.Samples = list(map(lambda raw: SampleModel(raw), self.data.get('data', [])))
 
     class Response(ResponseModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             self.Sample = SampleModel(self.data)
+
+
+class MetaField:
+    def __init__(self, data: dict = {}) -> None:
+        T = TypeVar('T')
+        def parse (constr, key):
+            defaults = {
+                bool: False,
+                str: '',
+                int: 0,
+            }
+            return _tryParse(constr, data, key, defaults[constr])
+        self.raw = data
+        self.archived: bool = parse(bool, 'archived')
+        self.sampleMetaID: int = parse(int, 'sampleMetaID')
+        self.sampleDataType: str = parse(str, 'sampleDataType') # todo, make enum
+        self.key: str = parse(str, 'key')
+        self.value: str = parse(str, 'value')
+        self.sampleTypeMetaID: int = parse(int, 'sampleTypeMetaID')
+        self.truncated: bool = parse(bool, 'truncated')
+
+    def ToDict(self) -> dict:
+        out = self.__dict__.copy()
+        keys = list(out.keys())
+        for k in keys:
+            if k.startswith('_') or k in ['raw']:
+                del out[k]
+        return out
+
+class SampleMeta:
+    class Response(ResponseModel):
+        def __init__(self, res: Response) -> None:
+            super().__init__(res)
+            self.Fields: dict[str, MetaField] = {}
+            for raw in self.data['data']:
+                self.Fields[raw['key']] = MetaField(raw)
+
+    class UpdateResponse(ResponseModel):
+        def __init__(self, res: Response) -> None:
+            super().__init__(res)
+            self.Success = self.Code == 204

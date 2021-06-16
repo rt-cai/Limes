@@ -17,7 +17,7 @@ pip install limes-server
 
 # contributing
 - may want to add extra python path to common package, to run without building
-- todo
+- helpful: alias debug="source ./run.sh"
 # todo:
 - use flask
 - responses to common

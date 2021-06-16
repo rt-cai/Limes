@@ -1,4 +1,5 @@
-version = 'limes version 0.1.dev6'
+version = \
+'limes version 0.2.dev1'
 help = '\n\n\
 %s\n\
 \n\
