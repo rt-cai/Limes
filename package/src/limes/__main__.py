@@ -59,7 +59,7 @@ def main(args:List[str] = sys.argv[1:]):
 
         query = ""
         for arg in args[1:]:
-            query += arg
+            query += arg + " "
         samples = limes.Search(query)
         count = len(samples)
         msg = '%s result%s found' % (count, 's' if count != 1 else '')
