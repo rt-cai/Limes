@@ -33,7 +33,7 @@ class ServerConnection(Connection):
             self.Ready = False
     
     def _compile(self, data: dict[str, Any]) -> dict[str, Any]:
-        data[config.CSRF_KEY] = self._csrf
+        data[config.CSRF_NAME] = self._csrf
         data[server.CLIENT_ID_KEY] = self._id
         return data
 

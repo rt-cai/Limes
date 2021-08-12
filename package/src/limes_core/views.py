@@ -40,7 +40,7 @@ _clientsByToken: dict[str, str] = {} # token: clientId
 
 @require_http_methods(['GET'])
 def Init(request: HttpRequest):
-    return JsonResponse({config.CSRF_KEY: get_token(request)})
+    return JsonResponse({config.CSRF_NAME: get_token(request)})
 
 @require_http_methods(['POST'])
 def Login(request: HttpRequest):

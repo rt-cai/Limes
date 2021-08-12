@@ -16,14 +16,14 @@ CLIENT_ID_KEY = 'id'
 class Init:
     @classmethod
     def MakeResponse(cls, csrfToken: str):
-        return {config.CSRF_KEY: csrfToken}
+        return {config.CSRF_NAME: csrfToken}
 
     class Response(ResponseModel):
         def __init__(self, res: py_Response) -> None:
             super().__init__(res)
             if self.Code == 200:
                 try:
-                    self.Csrf = json.loads(res.text)[config.CSRF_KEY]
+                    self.Csrf = json.loads(res.text)[config.CSRF_NAME]
                 except:
                     self.Csrf = ''
 

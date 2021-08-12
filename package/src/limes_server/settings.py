@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-CSRF_SESSION_KEY = config.CSRF_KEY
+CSRF_SESSION_KEY = config.CSRF_NAME
 
 # Application definition
 
