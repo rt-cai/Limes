@@ -65,9 +65,13 @@ def Authenticate(request: HttpRequest):
     res = SA.Request(_toDict(request.POST))
     client = _activeClients.get(res.Id)
     success = client is not None
-    token = client.Token if success else ''
-    fName = client.FirstName if success else ''
-    lName = client.LastName if success else ''
+    token = ''
+    fName = ''
+    lName = ''
+    if client is not None:
+        token = client.Token
+        fName = client.FirstName
+        lName = client.LastName
     print('auth: %s' % (fName if success else 'unknown'))
     return JsonResponse(SA.MakeResponse(success, token, fName, lName))
 
