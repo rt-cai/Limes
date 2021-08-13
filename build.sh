@@ -4,7 +4,7 @@
 # PYPI=testpypi
 PYPI=pypi
 
-ver="0.1.dev5"
+ver="0.2.dev1"
 TOKEN=`cat credentials/${PYPI}`
 configs=(LICENSE pyproject.toml README.md setup.cfg)
 
@@ -79,10 +79,8 @@ for package in "${packages[@]}"; do
         versionLine=`grep 'version' ../config.$package/setup.cfg`
         sed -i "s/$versionLine/version = $ver/" ../config.$package/setup.cfg
         if ! $doneOnce ; then
-            versionLine=$(grep 'limes version' ./src/limes/res/help.py | sed 's/\\n\\//')
-            sed -i "s/$versionLine/limes version $ver/" ./src/limes/res/help.py
-            versionLine=$(grep 'limes version' ./src/limes/res/ver.py)
-            sed -i "s/$versionLine/msg = 'limes version $ver'/" ./src/limes/res/ver.py
+            versionLine=$(grep 'limes version' ./src/limes/res/strings.py)
+            sed -i "s/$versionLine/'limes version $ver'/" ./src/limes/res/strings.py
             doneOnce=true
         fi
 

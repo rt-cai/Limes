@@ -29,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-CSRF_SESSION_KEY = config.CSRF_KEY
+CSRF_SESSION_KEY = config.CSRF_NAME
 
 # Application definition
 
@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'limes_server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'limes_server' / 'db' / 'sqlite3.db',
     }
 }
 

@@ -16,6 +16,5 @@ Including another URLconf
 from django.urls import path, include
 
 urlpatterns = [
-    path('fosdb/', include('fosdb.urls')),
     path('api/', include('limes_core.urls')),
 ]

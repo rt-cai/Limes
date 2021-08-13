@@ -15,6 +15,9 @@ class ServerEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'login'
     AUTHENTICATE = 2, [Http.POST], 'authenticate'
     INIT = 3, [Http.GET], 'init'
+    ADD = 4, [Http.POST], 'add'
+    BLAST = 5, [Http.POST], 'blast' # post becuase need to send file
 
 class ELabEndpoint(Endpoint):
-    Login = 1, [Http.POST], 'auth/user'
+    LOGIN = 1, [Http.POST], 'auth/user'
+    SAMPLES = 2, [Http.POST, Http.GET], 'samples'
