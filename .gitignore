@@ -1,4 +1,4 @@
-*/certificate/private
+certFiles
 __pycache__
 .vscode
 .vs
@@ -7,3 +7,10 @@ credentials
 */dist
 */build
 *.egg-info
+package/README.md
+package/setup.cfg
+package/LICENSE
+package/pyproject.toml
+*.fasta
+*.fastq
+db/
