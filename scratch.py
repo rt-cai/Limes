@@ -1,7 +1,7 @@
 from enum import Enum
 from io import BufferedReader, FileIO
 import os
-# from limes_common.models.basic import AdvancedEnum
+from limes_common.models.basic import AdvancedEnum
 
 # class A:
 #     @classmethod
@@ -12,8 +12,10 @@ import os
 #     @_dec
 #     def fn(self):
 #         print('fn')
-x = bool
-print(type(bool))
+x = [1, 2 , 3]
+x.reverse()
+# print(x.reverse())
+print(x)
 
 # x: BufferedReader = open('setup.sh', 'rb')
 # print(type(x))

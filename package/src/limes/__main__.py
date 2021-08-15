@@ -1,4 +1,4 @@
-from . import limes
+from .limes import Limes
 
 import sys
 from typing import List
@@ -101,6 +101,7 @@ def main(args:List[str] = sys.argv[1:]):
             next +=1
         return False, ""
 
+    limes = Limes()
     arg = args[0] if len(args) > 0 else ''
 
     def base():
@@ -118,16 +119,26 @@ def main(args:List[str] = sys.argv[1:]):
         'search': Search,
         'blast': Blast,
         'add': Add,
-        'test': lambda: limes.Test(),
     }, lambda: _printHelp(arg))
 
+def test():
+    args = sys.argv[1:]
+    from limes_provider.passive import PassiveConnection
+    p = PassiveConnection('pc')
+        
+
 if __name__ == "__main__":
-    try:
-        end = main()
-    except KeyboardInterrupt:
-        print('KeyboardInterrupt')
-        end = None
-    if not end is None and end != '':
-        sys.exit(end)
+    args = sys.argv[1:]
+    a = args[0] if len(args) > 0 else ''
+    if a == 'test':
+        test()
     else:
-        sys.exit()
+        try:
+            end = main()
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt')
+            end = None
+        if not end is None and end != '':
+            sys.exit(end)
+        else:
+            sys.exit()

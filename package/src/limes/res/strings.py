@@ -1,3 +1,4 @@
+# todo: don't hard code this
 version = \
 'limes version 0.2.dev1'
 help = '\n\n\
