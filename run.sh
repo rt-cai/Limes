@@ -8,6 +8,11 @@ case $sw in
     set -- "${@:2}" #removed the 1st parameter
     gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
     ;;
+    fosdb | -f)
+    echo "> fosDB"
+    echo ""
+    python -m fosDB
+    ;;
     *)
     if [[ $1 = 'add' || $1 = 'blast' ]] && [[ ! -z $2 ]]; then
         case $2 in

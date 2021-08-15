@@ -8,7 +8,6 @@ from limes_common.models.network import server
 from limes_common import config
 from . import fileHandler
 
-
 def _toDict(qd: QueryDict):
     d = {}
     for k, v in qd.items():
@@ -97,3 +96,5 @@ def Blast(request: HttpRequest):
     SB = server.Blast
     result = fileHandler.Blast(request.FILES[SB.FILE_KEY])
     return JsonResponse(SB.MakeResponse(True, result))
+
+# get data by sampleID?

@@ -7,7 +7,7 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import UploadedFile
 
 from limes_common import config
-from limes_common.connections import ELabConnection
+from limes_common.connections import eLab as ELC
 from limes_common.models.network.elab import MetaField, SampleModel
 from limes_common.models.network.server import FileMeta
 
@@ -17,8 +17,10 @@ DB_NAMES_FILE = config.SERVER_DB_PATH + '/dbNames'
 def _fsPath(folder, file):
     return '%s/%s/%s' % (config.SERVER_DB_PATH, folder, file)
 
+# todo: breakup and organize this file
+
 def TryAddFile(token: str, meta: FileMeta, file: UploadedFile) -> tuple[bool, str]:
-    ec = ELabConnection()
+    ec = ELC.ELabConnection()
     ec.SetToken(token)
     sampleRes = ec.GetSample(meta.SampleId)
 
