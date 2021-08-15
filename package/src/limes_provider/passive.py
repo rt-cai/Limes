@@ -24,7 +24,7 @@ class PassiveConnection(ProviderConnection):
                 once = False
 
         loop = asyncio.get_event_loop()
-        task = websockets.serve(echo, "localhost", 8765)
+        task = (lambda ws: ws.serve(echo, "localhost", 8765))(websockets) # circumvent pylance type checking error
         try:
             loop.run_until_complete(task)
             loop.run_forever()
@@ -59,7 +59,7 @@ class Handler:
 # backwards, this needs to be on all the time
 def ListenAsProvider(uri: str, handler: Handler, timeout: int = 10):
     async def work():
-        async with websockets.connect(uri) as websocket:
+        async with (lambda ws: ws.connect(uri))(websockets) as websocket: # circumvent pylance type checking error
             await websocket.send("Begin")
             while True:
                 x = await websocket.recv()
