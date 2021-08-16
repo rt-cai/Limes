@@ -121,24 +121,15 @@ def main(args:List[str] = sys.argv[1:]):
         'add': Add,
     }, lambda: _printHelp(arg))
 
-def test():
-    args = sys.argv[1:]
-    from limes_provider.passive import PassiveConnection
-    p = PassiveConnection('pc')
-        
-
 if __name__ == "__main__":
     args = sys.argv[1:]
     a = args[0] if len(args) > 0 else ''
-    if a == 'test':
-        test()
+    try:
+        end = main()
+    except KeyboardInterrupt:
+        print('KeyboardInterrupt')
+        end = None
+    if not end is None and end != '':
+        sys.exit(end)
     else:
-        try:
-            end = main()
-        except KeyboardInterrupt:
-            print('KeyboardInterrupt')
-            end = None
-        if not end is None and end != '':
-            sys.exit(end)
-        else:
-            sys.exit()
+        sys.exit()

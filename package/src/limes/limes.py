@@ -45,7 +45,7 @@ class Limes:
         if res.Success:
             print('Authenticated terminal as %s' % res.FirstName)
             # return True, res.FirstName
-            self._eLab.SetToken(res.ELabKey)
+            self._eLab.SetToken(res.Token)
         else:
             # return False, ''
             print('Not logged in')
@@ -119,12 +119,12 @@ class Limes:
         return res.Success
 
     def Blast(self, queryPath: str) -> str:
-        try:
-            query = open(queryPath, 'rb')
-            res = self._server.Blast(query)
-            return res.Result
-        except:
-            print('[%s] not found' % (queryPath))
+        # try:
+        #     query = open(queryPath, 'rb')
+        #     res = self._server.Blast(query)
+        #     return res.Result
+        # except:
+        #     print('[%s] not found' % (queryPath))
         return ''
 
     def dLogin(self) -> None:

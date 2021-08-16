@@ -4,15 +4,12 @@ from django.http.request import QueryDict
 from django.middleware.csrf import get_token
 from django.views.decorators.http import require_http_methods
 
-from limes_common.models.network import server
+from limes_common.models.network import Model, server
 from limes_common import config
-from . import fileHandler
+# from . import fileHandler
 
-def _toDict(qd: QueryDict):
-    d = {}
-    for k, v in qd.items():
-        d[k] = v
-    return d
+def _toRes(model: Model):
+    return JsonResponse(model.ToDict())
 
 # doesn't work
 def _getClientIp(request: HttpRequest) -> str:
@@ -28,7 +25,7 @@ def _getClientIp(request: HttpRequest) -> str:
 class Client:
     # todo: add timeout
     def __init__(self, res: server.Login.Request) -> None:
-        self.Token = res.Token
+        self.Token = res.ELabKey
         self.FirstName = res.FirstName
         self.LastName = res.LastName
 
@@ -39,30 +36,35 @@ _clientsByToken: dict[str, str] = {} # token: clientId
 
 @require_http_methods(['GET'])
 def Init(request: HttpRequest):
-    return JsonResponse({config.CSRF_NAME: get_token(request)})
+    return _toRes(server.Init.Response(get_token(request)))
 
 @require_http_methods(['POST'])
 def Login(request: HttpRequest):
     SL = server.Login
-    res = SL.Request(_toDict(request.POST))
+    res = SL.Request.Load(request.body)
+    # print(_toDict(request.POST))
+    print(res.__dict__)
 
     # remove old if exists
-    old = _clientsByToken.get(res.Token)
+    old = _clientsByToken.get(res.ELabKey)
     if old is not None: 
         _activeClients.pop(old)
-        _clientsByToken.pop(res.Token)
+        _clientsByToken.pop(res.ELabKey)
 
-    _activeClients[res.Id] = Client(res)
-    _clientsByToken[res.Token] = res.Id
+    if res.FirstName == '' or res.LastName == '':
+        return _toRes(SL.Response(False))
+
+    _activeClients[res.ClientId] = Client(res)
+    _clientsByToken[res.ELabKey] = res.ClientId
 
     print('login: %s' % (res.FirstName))
-    return JsonResponse(SL.MakeResponse(True))
+    return _toRes(SL.Response(True))
 
 @require_http_methods(['POST'])
 def Authenticate(request: HttpRequest):
     SA = server.Authenticate
-    res = SA.Request(_toDict(request.POST))
-    client = _activeClients.get(res.Id)
+    res = SA.Request.Load(request.body)
+    client = _activeClients.get(res.ClientId)
     success = client is not None
     token = ''
     fName = ''
@@ -72,29 +74,34 @@ def Authenticate(request: HttpRequest):
         fName = client.FirstName
         lName = client.LastName
     print('auth: %s' % (fName if success else 'unknown'))
-    return JsonResponse(SA.MakeResponse(success, token, fName, lName))
+    return _toRes(SA.Response(success, token, fName, lName))
 
 @require_http_methods(['POST'])
 def Add(request: HttpRequest):
     SA = server.Add
-    fail = lambda m='': JsonResponse(SA.MakeResponse(False, message=m))
+    fail = lambda m='': _toRes(SA.Response(False, message=m))
 
-    print('adding...')
+    print('adding not implimented')
 
-    req = SA.Request(_toDict(request.POST))
+    req = SA.Request.Load(request.body)
     client = _activeClients.get(req.ClientId)
     if not client: return fail('Not logged in')
 
-    success, msg = fileHandler.TryAddFile(client.Token, req.Meta, request.FILES[SA.FILE_KEY])
+    # success, msg = fileHandler.TryAddFile(client.Token, req.Meta, request.FILES[SA.FILE_KEY])
+    success, msg = (False, 'not implemented with providers')
     if success:
-        return JsonResponse(SA.MakeResponse(True, sampleName=msg))
+        return _toRes(SA.Response(True, sampleName=msg))
     else:
         return fail(msg)
 
-@require_http_methods(['POST'])
-def Blast(request: HttpRequest):
-    SB = server.Blast
-    result = fileHandler.Blast(request.FILES[SB.FILE_KEY])
-    return JsonResponse(SB.MakeResponse(True, result))
+# @require_http_methods(['POST'])
+# def Blast(request: HttpRequest):
+#     SB = server.Blast
+#     result = fileHandler.Blast(request.FILES[SB.FILE_KEY])
+#     return JsonResponse(SB.MakeResponse(True, result))
 
+
+@require_http_methods(['POST'])
+def Search(request: HttpRequest):
+    pass
 # get data by sampleID?

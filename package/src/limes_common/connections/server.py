@@ -1,8 +1,9 @@
+from django.middleware import csrf
 import requests as Requests
 import uuid
 from getpass import getuser
 import os
-from typing import Any
+from typing import Any, Text
 from io import BufferedReader
 
 from . import Connection
@@ -14,49 +15,59 @@ class ServerConnection(Connection):
     def __init__(self) -> None:
         super().__init__(config.SERVER_URL)
         self._id = ('%012x:%s:%s' % (uuid.getnode(), getuser(), os.getppid()))
+        self._csrf = ''
         try:
-            res = server.Init.Response(self.session.get(self._makeUrl(ServerEndpoint.INIT)))
+            raw = self.session.get(self._makeUrl(ServerEndpoint.INIT))
+            res = server.Init.Response.FromResponse(raw)
             if res.Code == 200:
-                self._csrf = res.Csrf
+                self._csrf = res.CsrfToken
             self.Ready = True
         except Requests.exceptions.ConnectionError:
             print('*** limes server is not reachable ***')
             self.Ready = False
 
-    def _compile(self, data: dict[str, Any]) -> dict[str, Any]:
-        data[config.CSRF_NAME] = self._csrf
-        data[server.CLIENT_ID_KEY] = self._id
-        return data
+    def _csrfAuth(self):
+        return {config.CSRF_NAME: self._csrf}
 
+    def _compile(self, data: server.ServerRequestModel) -> dict[str, Any]:
+        data.ClientId = self._id
+        d = data.ToDict()
+        # d[config.CSRF_NAME] = self._csrf
+        return d
+
+    # todo this doesn't actually do anythin if just throws an error
     def _notConnectedGuard(self):
         if not self.Ready: raise Requests.exceptions.ConnectionError('limes server not connected')
 
     def Authenticate(self) -> server.Authenticate.Response:
         self._notConnectedGuard()
-        return server.Authenticate.Response(self.session.post(
+        return server.Authenticate.Response.FromResponse(self.session.post(
             self._makeUrl(ServerEndpoint.AUTHENTICATE),
-        data=self._compile(server.Authenticate.MakeRequest(self._id))
+            json=self._compile(server.Authenticate.Request(self._id)),
+            headers=self._csrfAuth()
     ))
 
     def Login(self, eLabKey: str, firstName: str, lastName: str) -> server.Login.Response:
         self._notConnectedGuard()
-        return server.Login.Response(self.session.post(
+        return server.Login.Response.FromResponse(self.session.post(
             self._makeUrl(ServerEndpoint.LOGIN),
-            data=self._compile(server.Login.MakeRequest(eLabKey, firstName, lastName))
+            json=self._compile(server.Login.Request(eLabKey, firstName, lastName)),
+            headers=self._csrfAuth()
         ))
 
     def Add(self, sampleId: str, absPath: str, fileName: str, file: BufferedReader) -> server.Add.Response:
         self._notConnectedGuard()
-        return server.Add.Response(self.session.post(
+        return server.Add.Response.FromResponse(self.session.post(
             self._makeUrl(ServerEndpoint.ADD),
-            data=self._compile(server.Add.MakeRequest(sampleId, absPath, fileName)),
-            files={server.Add.FILE_KEY: file},
+            json=self._compile(server.Add.Request(sampleId, absPath, fileName)),
+            headers=self._csrfAuth()
+            # files={server.Add.FILE_KEY: file},
         ))
 
-    def Blast(self, query: BufferedReader) -> server.Blast.Response:
-        self._notConnectedGuard()
-        return server.Blast.Response(self.session.post(
-            self._makeUrl(ServerEndpoint.BLAST),
-            data=self._compile(server.Blast.MakeRequest()),
-            files={server.Blast.FILE_KEY: query},
-        ))
+    # def Blast(self, query: BufferedReader) -> server.Blast.Response:
+    #     self._notConnectedGuard()
+    #     return server.Blast.Response(self.session.post(
+    #         self._makeUrl(ServerEndpoint.BLAST),
+    #         data=self._compile(server.Blast.MakeRequest()),
+    #         files={server.Blast.FILE_KEY: query},
+    #     ))

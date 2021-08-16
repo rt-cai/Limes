@@ -13,6 +13,11 @@ case $sw in
     echo ""
     python -m fosDB
     ;;
+    test | -t)
+    echo "> tests"
+    echo ""
+    python -m tests
+    ;;
     *)
     if [[ $1 = 'add' || $1 = 'blast' ]] && [[ ! -z $2 ]]; then
         case $2 in
