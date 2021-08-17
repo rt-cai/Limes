@@ -70,6 +70,7 @@ class Model:
     __TYPE = 'type'
     __VALUE = 'value'
 
+    # INHERITING CLASSES MUST SET DEFAULTS TO ALL CONSTRUCTOR PARAMATERS
     def __init__(self) -> None:
         self._jsonLoadSuccess = False
         self._parsed = False

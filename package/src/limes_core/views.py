@@ -1,6 +1,5 @@
 from django.http import HttpResponse, JsonResponse
 from django.core.handlers.wsgi import HttpRequest
-from django.http.request import QueryDict
 from django.middleware.csrf import get_token
 from django.views.decorators.http import require_http_methods
 
@@ -43,7 +42,6 @@ def Login(request: HttpRequest):
     SL = server.Login
     res = SL.Request.Load(request.body)
     # print(_toDict(request.POST))
-    print(res.__dict__)
 
     # remove old if exists
     old = _clientsByToken.get(res.ELabKey)
@@ -65,16 +63,12 @@ def Authenticate(request: HttpRequest):
     SA = server.Authenticate
     res = SA.Request.Load(request.body)
     client = _activeClients.get(res.ClientId)
-    success = client is not None
-    token = ''
-    fName = ''
-    lName = ''
+
+    print('auth: %s' % (client.FirstName if client is not None else 'unknown'))
     if client is not None:
-        token = client.Token
-        fName = client.FirstName
-        lName = client.LastName
-    print('auth: %s' % (fName if success else 'unknown'))
-    return _toRes(SA.Response(success, token, fName, lName))
+        return _toRes(SA.Response(True, client.Token, client.FirstName, client.LastName))
+    else:
+        return _toRes(SA.Response(False))
 
 @require_http_methods(['POST'])
 def Add(request: HttpRequest):

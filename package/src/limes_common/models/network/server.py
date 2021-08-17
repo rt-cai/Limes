@@ -1,20 +1,14 @@
 from __future__ import annotations
-from io import BufferedReader
-import json
-from typing import Any, overload
-from requests import Response as py_Response
+# from io import BufferedReader
+# import json
+# from typing import Any, overload
+# from requests import Response as py_Response
 
-from limes_common import config
+# from limes_common import config
 # from limes_common.connections import eLab
-from limes_common.models.basic import AbbreviatedEnum
+# from limes_common.models.basic import AbbreviatedEnum
 # from . import _tryParse, ResponseModel
-from . import SerializableTypes, Model
-
-class Locations(AbbreviatedEnum):
-    ELAB = 1
-    SHAMWOW = 2
-
-CLIENT_ID_KEY = 'id'
+from . import Model
 
 class Init:
     class Response(Model):
