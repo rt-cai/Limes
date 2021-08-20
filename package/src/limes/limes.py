@@ -4,7 +4,6 @@ import os
 from functools import reduce
 from requests.exceptions import ConnectionError
 
-from paramiko import file
 from limes.tools.qol import Switch
 
 from limes_common.connections.eLab import ELabConnection
