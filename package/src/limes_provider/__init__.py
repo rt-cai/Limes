@@ -4,8 +4,8 @@ from limes_common.exceptions import AbstractClassException
 _notImplimentedMsg = 'Call on abstract provider. Funciton not implimented.'
 
 class ProviderConnection:
-    def __init__(self, name:str) -> None:
-        self.Name = name
+    def __init__(self) -> None:
+        pass
 
     def CheckStatus(self, msg: str='') -> Models.Status.Response:
         raise AbstractClassException(_notImplimentedMsg)

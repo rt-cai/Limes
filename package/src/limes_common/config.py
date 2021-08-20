@@ -14,3 +14,4 @@ SHAMWOW_URL = 'shamwow.microbiology.ubc.ca'
 
 ENCODING = 'utf-8'
             
+SSH_TIMEOUT = 10

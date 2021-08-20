@@ -8,4 +8,4 @@ class Connection:
         self._URL: str = url
 
     def _makeUrl(self, ep: Endpoint):
-        return (self._URL if self._URL.endswith('/') else self._URL[:-1]) + ep.path
+        return (self._URL if self._URL.endswith('/') else self._URL[:-1]) + ep.Path

@@ -7,7 +7,7 @@ from . import views
 
 def genPath(ep: Endpoint) -> URLPattern:
     epName = str(ep)
-    return path('%s/%s' % (config.SERVER_API_VER, ep.path), views.__dict__[epName.title()], name=epName)
+    return path('%s/%s' % (config.SERVER_API_VER, ep.Path), views.__dict__[epName.title()], name=epName)
 
 # urlpatterns = [
 #     path('%s/login' % VER, views.Login, name='login'),

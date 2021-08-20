@@ -1,5 +1,12 @@
 from . import Model
 
+
+class Message(Model):
+    def __init__(self, mid: str='', body: str='', isError:bool=False) -> None:
+        self.MessageID = mid
+        self.Body = body
+        self.IsError = isError
+
 class Status:
     class Request(Model):
         def __init__(self, msg: str = '') -> None:

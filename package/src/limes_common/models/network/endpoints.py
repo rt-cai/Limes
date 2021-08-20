@@ -9,7 +9,7 @@ class Http(AbbreviatedEnum):
 class Endpoint(AdvancedEnum, AbbreviatedEnum):
     def __init__(self, _:int, methods: list[Http], path: str) -> None:
         self.ValidMethods: list[Http] = methods
-        self.path = path
+        self.Path = path
 
 class ServerEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'login'
@@ -21,3 +21,6 @@ class ServerEndpoint(Endpoint):
 class ELabEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'auth/user'
     SAMPLES = 2, [Http.POST, Http.GET], 'samples'
+
+class ProviderEndpoint(Endpoint):
+    CHECK_STATUS = 1, [Http.GET], 'status'

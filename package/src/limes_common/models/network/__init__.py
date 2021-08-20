@@ -86,7 +86,10 @@ class Model:
 
     @classmethod
     def Load(cls, serialized: bytes | str):
-        model = cls()
+        try:
+            model = cls()
+        except TypeError:
+            raise TypeError('%s inheriting <Model> must have no requred paramaters in constructor' % str(cls))
         try:
             d = json.loads(serialized)
             model._jsonLoadSuccess = True

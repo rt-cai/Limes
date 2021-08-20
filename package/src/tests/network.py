@@ -49,9 +49,20 @@ def setup(env: dict):
 
 @Test
 def providerPing(env: dict):
-    pc = PassiveConnection('test_pc', '', 0)
-    pc.CheckStatus()
-    # print(x, y)
-    # Assert.Equal(x, True)
+    #pinging local fosDB 
+    url = 'local'
+    setup = [
+        'cd ~/workspace/Python/Limes/package/src',
+        'conda activate limes'
+    ]
+    cmd = 'python -m fosDB'
+    timeout = 3
+    keepAlive = 10
+    pc = PassiveConnection(url, setup, cmd, timeout, keepAlive)
+    echo = 'test echo'
+    stat = pc.CheckStatus(echo)
+    Assert.Equal(stat.Online, True)
+    Assert.Equal(stat.Echo, echo)
+    pc.Dispose()
 
 PrintStats()
