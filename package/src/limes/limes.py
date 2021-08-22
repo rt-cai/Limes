@@ -4,7 +4,6 @@ import os
 from functools import reduce
 from requests.exceptions import ConnectionError
 
-from paramiko import file
 from limes.tools.qol import Switch
 
 from limes_common.connections.eLab import ELabConnection
@@ -45,7 +44,7 @@ class Limes:
         if res.Success:
             print('Authenticated terminal as %s' % res.FirstName)
             # return True, res.FirstName
-            self._eLab.SetToken(res.ELabKey)
+            self._eLab.SetToken(res.Token)
         else:
             # return False, ''
             print('Not logged in')
@@ -119,16 +118,16 @@ class Limes:
         return res.Success
 
     def Blast(self, queryPath: str) -> str:
-        try:
-            query = open(queryPath, 'rb')
-            res = self._server.Blast(query)
-            return res.Result
-        except:
-            print('[%s] not found' % (queryPath))
+        # try:
+        #     query = open(queryPath, 'rb')
+        #     res = self._server.Blast(query)
+        #     return res.Result
+        # except:
+        #     print('[%s] not found' % (queryPath))
         return ''
 
     def dLogin(self) -> None:
-        with open('../../credentials/elab') as cred:
+        with open('../../credentials/elab.msl') as cred:
             lines = cred.readlines()
             lines = list(map(lambda l: l.replace('\n', ''), lines))
             if not self.Login(lines[0], lines[1]):

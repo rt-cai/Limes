@@ -1,4 +1,6 @@
 
+py=python3
+# py=python
 dir=`pwd`
 src=package/src
 cd $src
@@ -11,7 +13,12 @@ case $sw in
     fosdb | -f)
     echo "> fosDB"
     echo ""
-    python -m fosDB
+    $py -m fosDB
+    ;;
+    test | -t)
+    echo "> tests"
+    echo ""
+    $py -m tests
     ;;
     *)
     if [[ $1 = 'add' || $1 = 'blast' ]] && [[ ! -z $2 ]]; then
@@ -38,7 +45,7 @@ case $sw in
     fi
     echo "> limes"
     echo ""
-    python -m limes $args
+    $py -m limes $args
     ;;
 esac
 

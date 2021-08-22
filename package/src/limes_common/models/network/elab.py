@@ -2,7 +2,7 @@ import json
 from typing import TypeVar, Callable, Any
 from requests import Response
 
-from . import _tryParse, ResponseModel
+from . import PublicModel, _tryParse
 
 
 
@@ -14,7 +14,7 @@ class Login:
             'password': password,
         }
 
-    class Response(ResponseModel):
+    class Response(PublicModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             self.Success = self.Code==200
@@ -34,13 +34,13 @@ class SampleModel:
         self.ParentId =_tryParse(int, data, 'parent', 0)
 
 class Sample:
-    class ListResponse(ResponseModel):
+    class ListResponse(PublicModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             # self.Samples = list(map(lambda raw: SampleModel(raw), self.data))
             self.Samples = list(map(lambda raw: SampleModel(raw), self.data.get('data', [])))
 
-    class Response(ResponseModel):
+    class Response(PublicModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             self.Sample = SampleModel(self.data)
@@ -74,14 +74,14 @@ class MetaField:
         return out
 
 class SampleMeta:
-    class Response(ResponseModel):
+    class Response(PublicModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             self.Fields: dict[str, MetaField] = {}
             for raw in self.data['data']:
                 self.Fields[raw['key']] = MetaField(raw)
 
-    class UpdateResponse(ResponseModel):
+    class UpdateResponse(PublicModel):
         def __init__(self, res: Response) -> None:
             super().__init__(res)
             self.Success = self.Code == 204

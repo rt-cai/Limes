@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-sok6=@m3twi*67n@%t^^^j*%5e7wcw4e2li#)-*_()ms4^u*qj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['sh-lims.microbiology.ubc.ca', '137.82.19.166', '127.0.0.1']
 
 CSRF_SESSION_KEY = config.CSRF_NAME
 
@@ -77,10 +77,10 @@ WSGI_APPLICATION = 'limes_server.wsgi.application'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 # https://docs.djangoproject.com/en/3.2/intro/tutorial02/
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'limes_server' / 'db' / 'sqlite3.db',
-    }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     'NAME': BASE_DIR / 'limes_server' / 'db' / 'sqlite3.db',
+    # }
 }
 
 

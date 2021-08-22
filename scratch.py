@@ -1,7 +1,9 @@
 from enum import Enum
 from io import BufferedReader, FileIO
 import os
-from limes_common.models.basic import AdvancedEnum
+# from limes_common.models.basic import AdvancedEnum
+from requests import Response
+import json
 
 # class A:
 #     @classmethod
@@ -12,10 +14,36 @@ from limes_common.models.basic import AdvancedEnum
 #     @_dec
 #     def fn(self):
 #         print('fn')
-x = [1, 2 , 3]
-x.reverse()
-# print(x.reverse())
-print(x)
+# x = [1, 2 , 3]
+# x.reverse()
+# # print(x.reverse())
+# print(x)
+
+# class Model:
+#     def __init__(self, res: Response) -> None:
+#         self.Code = res.status_code
+#         self.data: dict = json.loads(res.text) if self.Code==200 else {}
+
+# class Model:
+#     def __init__(self, d: dict) -> None:
+#         print(self.__dict__)
+
+# class DM(Model):
+#     def __init__(self, d: dict) -> None:
+#         self.a:str = ''
+#         super().__init__(d)
+
+# DM({})
+
+def BE(x):
+    x()
+    return x
+
+@BE
+def fn():
+    print('b')
+
+
 
 # x: BufferedReader = open('setup.sh', 'rb')
 # print(type(x))

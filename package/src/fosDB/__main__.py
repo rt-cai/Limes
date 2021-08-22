@@ -1,6 +1,9 @@
-from limes_provider.passive import ListenAsProvider, Handler
+from limes_provider.ssh import Handler
+from limes_common.models.network import provider as Models
 
 class FosDBHandler(Handler):
-    pass
-uri = "ws://localhost:8765"
-ListenAsProvider(uri, FosDBHandler(), 3)
+    def OnStatusRequest(self, raw: str) -> Models.Status.Response:
+        req = Models.Status.Request.Load(raw)
+        return Models.Status.Response(True, req.Msg, 'Hello from FosDB!\n%s'%self._lastRawRequest)
+
+FosDBHandler().HandleCommandLineRequest()
