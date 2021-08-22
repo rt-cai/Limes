@@ -25,26 +25,32 @@ class PublicModel:
         self.Code = res.status_code
         self.data: dict = json.loads(res.text) if self.Code==200 else {}
 
-
 class SerializableTypes:
     # all need to be strict uppercase for Parse to work
     STR = str, ''
     INT = int, 0
     BOOL = bool, False
     FLOAT = float, 0.0
-    # FILE_META = 5, FileMeta, FileMeta()
 
     __typesMap = {}
 
     @classmethod
     def _members(cls) -> list[dict[str, Callable[[str], Any]]]:
+        def makeSafeConstr(fn, default: T) -> Callable[[str], T]:
+            def safeConstr(x: str) -> T:
+                try:
+                    return fn(x)
+                except ValueError:
+                    return default
+            return safeConstr
+
         def get(c: type):
             allMap = SerializableTypes.__typesMap
             m = allMap.get(c, None)
             if m == None:
                 d = {}
                 for constr, default in [i[1] for i in filter(lambda i: i[0].isupper(), c.__dict__.items())]:
-                    d[str(type(default))] = constr
+                    d[str(type(default))] = makeSafeConstr(constr, default)
                 allMap[c] = d
                 m = d
             return m
@@ -66,9 +72,6 @@ class SerializableTypes:
         string = type(obj)
         return cls.ConstrFromStr(string)
 
-    @classmethod
-    def Types(cls) -> list[SerializableTypes]:
-        return list(cls.__dict__[key] for key in filter(lambda k: k.isupper(), cls.__dict__.keys()))
 
 class Model:
     __TYPE = 'type'
@@ -89,6 +92,36 @@ class Model:
         return model
 
     @classmethod
+    def _load(cls, v, typesDict: type[SerializableTypes]):
+        if not isinstance(v, dict):
+            return None
+        TYPE = Model.__TYPE
+        VALUE = Model.__VALUE
+        if TYPE not in v or VALUE not in v:
+            return None
+
+        t = v[TYPE]
+        val = v[VALUE]
+        loaded = None
+        if t == str(list):
+            loaded = []
+            for i in val:
+                loaded.append(cls._load(i, typesDict))
+        elif t == str(dict):
+            loaded = {}
+            for k, innerv in val.items():
+                loaded[k] = cls._load(innerv, typesDict)
+        else:
+            constr = typesDict.ConstrFromStr(t)
+            if constr is None: return None
+            if constr.__code__.co_argcount == 2:
+                loaded = constr(val, typesDict)
+            else:
+                loaded = constr(val)
+        return loaded
+
+    # note: recursively loading nested models not passing types dict to inner Load
+    @classmethod
     def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=SerializableTypes):
         try:
             model = cls()
@@ -103,31 +136,38 @@ class Model:
         except JSONDecodeError:
             return model
 
-        TYPE = Model.__TYPE
-        VALUE = Model.__VALUE
-        found = False
+        # found = False
         for k, v in d.items():
             if k.startswith('_'): continue
-            if not isinstance(v, dict) or TYPE not in v: continue
-
-            constr = typesDict.ConstrFromStr(v[TYPE])
-            if constr is None: continue
-            model.__setattr__(k, constr(v.get(VALUE, '')))
-            found = True
-        model._parsed = found
+            model.__setattr__(k, cls._load(v, typesDict))
+            # found = True
+        # model._parsed = found
         return model
+
+    def _toDict(self, v):
+        TYPE = Model.__TYPE
+        VALUE = Model.__VALUE
+        d = {}
+        d[TYPE] = str(type(v))
+        if isinstance(v, Model):
+            d[VALUE] = v.ToDict()
+        elif isinstance(v, list):
+            l = []
+            for i in v:
+                l.append(self._toDict(i))
+            d[VALUE] = l
+        elif isinstance(v, dict):
+            inner = {}
+            for k, v in v.items():
+                inner[k] = self._toDict(v)
+            d[VALUE] = inner
+        else:
+            d[VALUE] = v
+        return d
 
     def ToDict(self) -> dict:
         d = {}
-        TYPE = Model.__TYPE
-        VALUE = Model.__VALUE
         for k, v in self.__dict__.items():
             if k.startswith('_'): continue
-            item = {}
-            item[TYPE] = str(type(v))
-            if isinstance(v, Model):
-                item[VALUE] = v.ToDict()
-            else:
-                item[VALUE] = v
-            d[k] = item
+            d[k] = self._toDict(v)
         return d

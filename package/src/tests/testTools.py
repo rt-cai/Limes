@@ -52,6 +52,7 @@ class Assert:
 _env = {}
 _beforeEach: Callable[[dict], dict] = lambda x: x
 _beforeAll: Callable[[dict], dict] = lambda x: x
+_afterAll: Callable[[dict], None] = lambda x: None
 _beforeAllCalled = False
 
 _passed = 0
@@ -88,7 +89,14 @@ def Test(fn: Callable[[dict], None]) -> None:
     _all += 1
     print()
 
+def AfterAll(fn: Callable[[dict], None]) -> None:
+    global _afterAll
+    _afterAll = fn
+
 def PrintStats():
+    print('running AfterAll')
+    _afterAll(_env)
+
     col = _bcolors.WARNING
     if _passed == _all:
         col = _bcolors.OKGREEN

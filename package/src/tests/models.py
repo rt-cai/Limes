@@ -17,37 +17,6 @@ def all(env: dict):
 def setup(env: dict):
     return env
 
-# @Test
-# def modelToDict(env: dict):
-#     string = 'asdf'
-#     boolean = False
-#     integer = 12565
-#     expected = '''{"string": {"type": "<class \'str\'>", "value": "%s"},
-#         "boolean": {"type": "<class \'bool\'>", "value": %s},
-#         "integer": {"type": "<class \'int\'>", "value": %s}}''' \
-#         % (string, str(boolean).lower(), integer)
-
-#     model = TestModel(string, boolean, integer)
-#     actual = json.dumps(model.ToDict())
-
-#     Assert.Equal(json.loads(actual), json.loads(expected))
-
-# @Test
-# def modelLoad(env: dict):
-#     string = 'le string'
-#     boolean = True
-#     integer = 9000
-#     serialized = '''{"string": {"type": "<class \'str\'>", "value": "%s"},
-#         "boolean": {"type": "<class \'bool\'>", "value": %s},
-#         "integer": {"type": "<class \'int\'>", "value": %s}}''' \
-#         % (string, str(boolean).lower(), integer)
-
-#     actual = TestModel.Load(json.loads(serialized))
-
-#     Assert.Equal(actual.string, string)
-#     Assert.Equal(actual.boolean, boolean)
-#     Assert.Equal(actual.integer, integer)
-
 class Inner(Model):
     def __init__(self, a: int = 0, b: str = '') -> None:
         self.a = a
@@ -62,21 +31,72 @@ class TestTypesDict(SerializableTypes):
     INNER = Inner.Load, Inner()
     OUTER = Outer.Load, Outer()
 
-# @Test
-# def nestedSerialize(env: dict):
-#     a = 25
-#     b = 'inside!'
-#     inner = Inner(a, b)
-#     x = 'le x string'
-#     outer = Outer(x, inner)
-#     actual = json.dumps(outer.ToDict())
+@Test
+def modelToDict(env: dict):
+    string = 'asdf'
+    boolean = False
+    integer = 12565
+    expected = """{"string": {"type": "<class 'str'>", "value": "%s"},
+        "boolean": {"type": "<class 'bool'>", "value": %s},
+        "integer": {"type": "<class 'int'>", "value": %s}}""" \
+        % (string, str(boolean).lower(), integer)
 
-#     expected = '''{"x": {"type": "<class 'str'>", "value": "le x string"}, 
-#     "inner": {"type": "<class 'tests.common.network.Inner'>", "value": {
-#         "a": {"type": "<class 'int'>", "value": 25},
-#         "b": {"type": "<class 'str'>", "value": "inside!"}}}}'''
+    model = TestModel(string, boolean, integer)
+    actual = json.dumps(model.ToDict())
 
-#     Assert.Equal(json.loads(actual), json.loads(expected))
+    Assert.Equal(json.loads(actual), json.loads(expected))
+
+@Test
+def modelLoad(env: dict):
+    string = 'le string'
+    boolean = True
+    integer = 9000
+    serialized = '''{"string": {"type": "<class \'str\'>", "value": "%s"},
+        "boolean": {"type": "<class \'bool\'>", "value": %s},
+        "integer": {"type": "<class \'int\'>", "value": %s}}''' \
+        % (string, str(boolean).lower(), integer)
+
+    actual = TestModel.Load(json.loads(serialized))
+
+    Assert.Equal(actual.string, string)
+    Assert.Equal(actual.boolean, boolean)
+    Assert.Equal(actual.integer, integer)
+
+@Test
+def nestedSerialize(env: dict):
+    a = 25
+    b = 'inside!'
+    inner = Inner(a, b)
+    x = 'le x string'
+    outer = Outer(x, inner)
+    actual = json.dumps(outer.ToDict())
+
+    expected = '''{"x": {"type": "<class 'str'>", "value": "le x string"}, 
+    "inner": {"type": "%s", "value": {
+        "a": {"type": "<class 'int'>", "value": 25},
+        "b": {"type": "<class 'str'>", "value": "inside!"}}}}''' % (Inner)
+
+    Assert.Equal(json.loads(actual), json.loads(expected))
+
+@Test
+def nestedComplex(env: dict):
+    class Complex(Model):
+        def __init__(self, lst = [], dict = {}) -> None:
+            self.List = lst
+            self.Dict = dict
+
+    com = Complex([
+        1, 'lst', False,
+        Inner(23, 'inner-lst')
+    ], {
+        'TF': True,
+        'inner': Inner(2, 'inner-dict')
+    })
+    serialized = json.dumps(com.ToDict())
+
+    back = Complex.Load(serialized, TestTypesDict)
+    serialized2 = json.dumps(back.ToDict())
+    Assert.Equal(serialized, serialized2)
 
 @Test
 def nestedLoad(env: dict):
@@ -93,20 +113,5 @@ def nestedLoad(env: dict):
     
     actual_o = Outer.Load(serialized, TestTypesDict)
     Assert.Equal(actual_o.ToDict(), expected.ToDict())
-
-@Test
-def providerServices(env: dict):
-    a = 25
-    b = 'inside!'
-    inner = Inner(a, b)
-    x = 'le x string'
-    req = Outer(x, inner)
-
-    class testResponseType(Model):
-        def __init__(self, ok: str='') -> None:
-            self.OK = ok
-
-    res = testResponseType('ok str')
-    Provider.Service(req, res)
 
 PrintStats()

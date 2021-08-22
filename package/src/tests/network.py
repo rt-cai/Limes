@@ -45,24 +45,5 @@ def setup(env: dict):
 #     res = serv.Login(tok, 'test_FN', 'test_LN')
 
 #     Assert.Equal(res.Success, True)
-    
-
-# @Test
-# def providerPing(env: dict):
-#     #pinging local fosDB 
-#     url = 'local'
-#     setup = [
-#         'cd ~/workspace/Python/Limes/package/src',
-#         'conda activate limes'
-#     ]
-#     cmd = 'python -m fosDB'
-#     timeout = 3
-#     keepAlive = 10
-#     pc = SshConnection(url, setup, cmd, timeout, keepAlive)
-#     echo = 'test echo'
-#     stat = pc.CheckStatus(echo)
-#     Assert.Equal(stat.Online, True)
-#     Assert.Equal(stat.Echo, echo)
-#     pc.Dispose()
 
 PrintStats()

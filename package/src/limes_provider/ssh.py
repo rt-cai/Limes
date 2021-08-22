@@ -1,21 +1,18 @@
 from __future__ import annotations
-import sys, subprocess, time, inspect
-from typing import Callable, Tuple, TypeVar
-import asyncio
-import websockets
-import json
-from threading import Condition, Thread, Lock
+import sys, subprocess
+from typing import Callable, Any, Union
+from threading import Condition, Thread
 from queue import Queue, Empty
+import json
 import uuid
 import traceback
 
 from . import ProviderConnection
-from limes_common import config, utils
-from limes_common.models.basic import AbbreviatedEnum
-from limes_common.models.network import provider as Models
+from limes_common import config
+from limes_common.models.network import Model, provider as Models
 from limes_common.models.network.endpoints import ProviderEndpoint
 _QUOTE = '\\q'
-def Serialize(model: Models.Model) -> str:
+def Serialize(model: Model) -> str:
     return Console_Encode(json.dumps(model.ToDict()))
 def Console_Encode(serial: str) -> str:
     return '"%s"' % (serial.replace('"', _QUOTE))
@@ -32,7 +29,7 @@ class MessageID:
     def AsHex(self):
         return self.__uuid
 
-class Pipe:
+class _pipe:
     def __init__(self, io:subprocess.IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
         self.IO = io
         self.Lock = lock
@@ -40,7 +37,8 @@ class Pipe:
 
 class ConnectionFailedException(Exception):
     pass
-class Connection:
+
+class _sshConsole:
     def __init__(self, console: subprocess.Popen[bytes], onOut: Callable[[str], None], onErr: Callable[[str], None],
             timeout: float) -> None:
         ios = {}
@@ -49,14 +47,14 @@ class Connection:
                 raise ValueError('an io is missing')
             else:
                 ios[name] = io
-        self._in = Pipe(ios['in'])
-        self._out = Pipe(ios['out'])
-        self._err = Pipe(ios['err'])
+        self._in = _pipe(ios['in'])
+        self._out = _pipe(ios['out'])
+        self._err = _pipe(ios['err'])
         self._onCloseLock = Condition()
         self._closed = False
 
         workers: list[Thread] = []
-        def reader(pipe: Pipe, callback: Callable[[str], None]):
+        def reader(pipe: _pipe, callback: Callable[[str], None]):
             io = iter(pipe.IO.readline, b'')
             while True:
                 try:
@@ -86,7 +84,7 @@ class Connection:
         self._onCloseLock.release()
         return closed
 
-    def __write(self, pipe: Pipe, statement: str):
+    def __write(self, pipe: _pipe, statement: str):
         # msg = ' '.join([cmd] + [Console_Encode(arg) for arg in args])
         pipe.IO.write(bytes('%s\n' % (statement), encoding=config.ENCODING))
 
@@ -148,7 +146,10 @@ class SshConnection(ProviderConnection):
         self._cmd = cmd
         self.__connection = self._getCon()
 
-    def _getCon(self) -> Connection:
+        self._onResponseSubscribers = []
+        self._onErrorSubScribers = []
+
+    def _getCon(self) -> _sshConsole:
         cmd = ['ssh', '-tt', self._url]
         # print(cmd)
         p = subprocess.Popen(cmd,
@@ -159,7 +160,9 @@ class SshConnection(ProviderConnection):
         setup = self._setup
         
         def onOut(msg):
-            # self._messages.get()
+            for cb in self._onResponseSubscribers:
+                cb(msg)
+
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
                 parsed = Models.Message.Load(msg)
@@ -174,20 +177,23 @@ class SshConnection(ProviderConnection):
                     print('unregistered message: %s'%msg)
 
         def onErr(msg):
+            for cb in self._onErrorSubScribers:
+                cb(msg)
+
             if not msg.startswith('Connection to') and not msg.endswith('closed.'):
                 print('Fatal error> ' + msg)
 
-        con = Connection(p, onOut, onErr, self._keepAliveTime)
+        con = _sshConsole(p, onOut, onErr, self._keepAliveTime)
         con.BatchSend(setup)
         return con
 
-    def _send(self, ep:ProviderEndpoint, model: Models.Model) -> MessageID:
+    def _send(self, ep:ProviderEndpoint, model: Model|None = None) -> MessageID:
         if self.__connection.IsClosed():
             self.__connection = self._getCon()
 
         cmd = self._cmd
         mid = MessageID()
-        ser = Console_Encode(json.dumps(model.ToDict()))
+        ser = Console_Encode(json.dumps(model.ToDict())) if model is not None else ''
         statement = '%s %s %s %s' % (cmd, mid.AsHex(), ep.Path, ser)
         self.__connection.Send(statement)
         return mid
@@ -203,15 +209,45 @@ class SshConnection(ProviderConnection):
         except Empty:
             return False, ''
 
-    def CheckStatus(self, echo: str) -> Models.Status.Response:
-        # status, res = self._getCon().Send(CheckStatus.Request('asdf'), CheckStatus.Request.Load)
+    def _makeTransaction(self, ep: ProviderEndpoint, body: Model|None = None) -> tuple[bool, str]:
+        mid = self._send(ep, body)
+        return self._listenFor(mid)
 
-        mid = self._send(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
-        success, res = self._listenFor(mid)
+    def AddOnResponseCallback(self, fn: Callable[[str], None]) -> None:
+        self._onResponseSubscribers.append(fn)
+
+    def AddOnErrorCallback(self, fn: Callable[[str], None]) -> None:
+        self._onErrorSubScribers.append(fn)
+
+    def RemoveOnResponseCallback(self, fn: Callable[[str], None]) -> None:
+        self._onResponseSubscribers.remove(fn)
+
+    def RemoveOnErrorCallback(self, fn: Callable[[str], None]) -> None:
+        self._onResponseSubscribers.remove(fn)
+
+    def CheckStatus(self, echo: str) -> Models.Status.Response:
+        success, res = self._makeTransaction(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
         if success:
             return Models.Status.Response.Load(res)
         else:
             return Models.Status.Response(False, res)
+
+    def GetSchema(self) -> Models.Schema:
+        success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA)
+        if success:
+            return Models.Schema.Load(res)
+        else:
+            return Models.Schema()
+
+    def MakeRequest(self, request: dict[str, Any], typesDict: type[Models.ProviderSerializableTypes]=None) -> dict[str, Any]:
+        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(request))
+        if success:
+            if typesDict is None:
+                typesDict = Models.ProviderSerializableTypes
+            resModel = Models.Generic.Load(res, typesDict)
+            return resModel.Dict
+        else:
+            return {'fatal error': 'request failed'}
 
     def Dispose(self):
         self.__connection.Dispose()
@@ -223,18 +259,34 @@ class Handler:
 
     def HandleCommandLineRequest(self) -> None:
         self._lastRawRequest = sys.argv
-        mid, endpoint, body = sys.argv[1:]
+        if len(sys.argv) == 4:
+            mid, endpoint, body = sys.argv[1:]
+        else:
+            mid, endpoint = sys.argv[1:]
+            body = '{}'
         mid = MessageID(mid)
         body = Console_Decode(body)
+
+        def toKey(k: ProviderEndpoint):
+            return k.Path.title()
+        knowns = {
+            toKey(ProviderEndpoint.CHECK_STATUS): lambda f: lambda r: f(Models.Status.Request.Load(r)),
+            toKey(ProviderEndpoint.GET_SCHEMA): lambda f: lambda r: f(),
+            toKey(ProviderEndpoint.MAKE_REQUEST): lambda f: lambda r: f(Models.Generic.Load(r).Dict)
+        }
+
         def getHandlerMethod():
             for ep in ProviderEndpoint:
+                if ep.Path != endpoint: continue
                 path = ep.Path.title()
                 method = 'On%sRequest' % path
                 myMethods = [m for m in dir(self) if m.startswith('On')]
                 for m in myMethods:
                     if method == m:
-                        return getattr(self, m)
+                        f = getattr(self, m)
+                        return knowns.get(path, lambda f: lambda r: f(r))(f)
                 return None
+            return None
         handler = getHandlerMethod()
 
         if handler is None:
@@ -251,6 +303,17 @@ class Handler:
         serialized = json.dumps(Models.Message(mid.AsHex(), msg, isError).ToDict())
         print(Handler.SEND_FLAG + serialized)
 
-    def OnStatusRequest(self, raw: str) -> Models.Status.Response:
-        req = Models.Status.Request.Load(raw)
-        return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implimented')
+    def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
+        return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
+
+    def OnSchemaRequest(self) -> Models.Schema:
+        return Models.Schema([
+            Models.Service('Abstract service example (provider did not implement schema request)', {'a': str, 'b': bool}, {'x': int})
+        ])
+
+    def OnGenericRequest(self, req: dict) -> Models.Generic:
+        return Models.Generic({
+            'error': 'provider not implemented!',
+            'echo': req
+        })
+    

@@ -24,3 +24,5 @@ class ELabEndpoint(Endpoint):
 
 class ProviderEndpoint(Endpoint):
     CHECK_STATUS = 1, [Http.GET], 'status'
+    GET_SCHEMA = 2, [Http.GET], 'schema'
+    MAKE_REQUEST = 3, [Http.POST], 'generic' # this is tied to the method name in Handler

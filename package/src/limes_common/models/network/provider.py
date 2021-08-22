@@ -1,6 +1,7 @@
-import inspect
+from __future__ import annotations
+from typing import Union
 
-from . import Model
+from . import Model, SerializableTypes
 
 class Message(Model):
     def __init__(self, mid: str='', body: str='', isError:bool=False) -> None:
@@ -21,12 +22,42 @@ class Status:
             self.Echo = echo
             self.Msg = msg
 
+class Fields:
+    def __init__(self, fields: list[tuple[str, type]] = []) -> None:
+        self._fields = {}
+        for n, t in fields:
+            self._fields[n] = t
+
+    def AsDict(self) -> dict[str, type]:
+        return self._fields
+
 class Service(Model):
-    def __init__(self, requestModelExample: Model, responseModelExample: Model) -> None:
-        print(requestModelExample.ToDict())
+    def __init__(self, name: str='', input: dict[str, type]={}, output: dict[str, type]={}) -> None:
+        self.Name = name
+        self.Input = input
+        self.Output = output
 
+class Schema(Model):
+    def __init__(self, services: list[Service]=[]) -> None:
+        self.Services = services
+    
+    @classmethod
+    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
+        if typesDict is None:
+            typesDict = ProviderSerializableTypes
+        return super().Load(serialized, typesDict)
 
-class Schema:
-    class Response(Model):
-        def __init__(self, services: list[Service]=[]) -> None:
-            self.Services = services
+class Generic(Model):
+    def __init__(self, dictionary: dict[str, Union[str, int, float, bool, dict, Model]]={}) -> None:
+        super().__init__()
+        self.Dict = dictionary
+
+    @classmethod
+    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
+        if typesDict is None:
+            typesDict = ProviderSerializableTypes
+        return super().Load(serialized, typesDict)
+
+class ProviderSerializableTypes(SerializableTypes):
+    SCHEMA = Schema.Load, Schema()
+    SERVICE = Service.Load, Service()
