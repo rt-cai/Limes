@@ -1,7 +1,7 @@
 from limes_provider.ssh import Handler
 from limes_common.models.network import Model, provider as Models
 
-class FosDBHandler(Handler):
+class TestProvider(Handler):
     def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
         return Models.Status.Response(True, req.Msg, 'Hello from the test Provider!')
 
@@ -16,4 +16,4 @@ class FosDBHandler(Handler):
             'echo': req
         })
 
-FosDBHandler().HandleCommandLineRequest()
+TestProvider().HandleCommandLineRequest()
