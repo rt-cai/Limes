@@ -170,6 +170,7 @@ class SshConnection(ProviderConnection):
                     tr = self._transactions[parsed.MessageID]
                     if parsed.IsError:
                         print('provider error: %s' % parsed.Body)
+                        tr.Notify()
                     else:
                         tr.Packets.put(parsed.Body)
                         tr.Notify()
@@ -267,30 +268,21 @@ class Handler:
         mid = MessageID(mid)
         body = Console_Decode(body)
 
-        def toKey(k: ProviderEndpoint):
-            return k.Path.title()
-        knowns = {
-            toKey(ProviderEndpoint.CHECK_STATUS): lambda f: lambda r: f(Models.Status.Request.Load(r)),
-            toKey(ProviderEndpoint.GET_SCHEMA): lambda f: lambda r: f(),
-            toKey(ProviderEndpoint.MAKE_REQUEST): lambda f: lambda r: f(Models.Generic.Load(r).Dict)
-        }
-
         def getHandlerMethod():
             for ep in ProviderEndpoint:
                 if ep.Path != endpoint: continue
                 path = ep.Path.title()
-                method = 'On%sRequest' % path
-                myMethods = [m for m in dir(self) if m.startswith('On')]
+                method = '_parse%sRequest' % path
+                myMethods = [m for m in dir(self) if m.startswith('_parse') and m.endswith('Request')]
                 for m in myMethods:
                     if method == m:
-                        f = getattr(self, m)
-                        return knowns.get(path, lambda f: lambda r: f(r))(f)
+                        return getattr(self, m)
                 return None
             return None
         handler = getHandlerMethod()
 
         if handler is None:
-            self._send(mid, 'Unrecognized endpoint [%s]' % (endpoint))
+            self._send(mid, 'Unrecognized endpoint [%s]' % (endpoint), True)
         else:
             try:
                 res = handler(body)
@@ -303,14 +295,20 @@ class Handler:
         serialized = json.dumps(Models.Message(mid.AsHex(), msg, isError).ToDict())
         print(Handler.SEND_FLAG + serialized)
 
+    def _parseStatusRequest(self, raw: str):
+        return self.OnStatusRequest(Models.Status.Request.Load(raw))
     def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
         return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
 
+    def _parseSchemaRequest(self, raw: str):
+        return self.OnSchemaRequest()
     def OnSchemaRequest(self) -> Models.Schema:
         return Models.Schema([
             Models.Service('Abstract service example (provider did not implement schema request)', {'a': str, 'b': bool}, {'x': int})
         ])
 
+    def _parseGenericRequest(self, raw: str):
+        return self.OnGenericRequest(Models.Generic.Load(raw).Dict)
     def OnGenericRequest(self, req: dict) -> Models.Generic:
         return Models.Generic({
             'error': 'provider not implemented!',

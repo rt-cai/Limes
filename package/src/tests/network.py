@@ -22,28 +22,28 @@ def all(env: dict):
 def setup(env: dict):
     return env
 
-# @Test
-# def elablogin(env: dict):
-#     ec = getec(env)
-#     ext = 'msl' if 'msl' in config.ELAB_URL else 'test' 
-#     path = '../../credentials/elab.%s' % ext
-#     u, p = list(line[:-1] for line in open(path, 'r').readlines()[:2])
+@Test
+def elablogin(env: dict):
+    ec = getec(env)
+    ext = 'msl' if 'msl' in config.ELAB_URL else 'test' 
+    path = '../../credentials/elab.%s' % ext
+    u, p = list(line[:-1] for line in open(path, 'r').readlines()[:2])
     
-#     res = ec.Login(u, p)
-#     env['f'] = res.FirstName
-#     env['l'] = res.LastName
-#     Assert.Equal(res.Code, 200)
-#     if res.Token is None or res.Token == '':
-#         Assert.Fail()
+    res = ec.Login(u, p)
+    env['f'] = res.FirstName
+    env['l'] = res.LastName
+    Assert.Equal(res.Code, 200)
+    if res.Token is None or res.Token == '':
+        Assert.Fail()
 
-# @Test
-# def serverLogin(env: dict):
-#     ext = 'msl' if 'msl' in config.ELAB_URL else 'test' 
-#     path = '../../credentials/elab.%s' % ext
-#     tok = list(line[:-1] for line in open(path, 'r').readlines())[2]
-#     serv = getserv(env)
-#     res = serv.Login(tok, 'test_FN', 'test_LN')
+@Test
+def serverLogin(env: dict):
+    ext = 'msl' if 'msl' in config.ELAB_URL else 'test' 
+    path = '../../credentials/elab.%s' % ext
+    tok = list(line[:-1] for line in open(path, 'r').readlines())[2]
+    serv = getserv(env)
+    res = serv.Login(tok, 'test_FN', 'test_LN')
 
-#     Assert.Equal(res.Success, True)
+    Assert.Equal(res.Success, True)
 
 PrintStats()

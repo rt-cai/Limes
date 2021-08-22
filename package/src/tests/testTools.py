@@ -59,8 +59,9 @@ _passed = 0
 _all = 0
 
 def BeforeAll(fn: Callable[[dict], dict]) -> None:
-    global _beforeAll
+    global _beforeAll, _beforeAllCalled
     _beforeAll = fn
+    _beforeAllCalled = False
 
 def BeforeEach(fn: Callable[[dict], dict]) -> None:
     global _beforeEach
@@ -94,7 +95,7 @@ def AfterAll(fn: Callable[[dict], None]) -> None:
     _afterAll = fn
 
 def PrintStats():
-    print('running AfterAll')
+    print('running AfterAll...')
     _afterAll(_env)
 
     col = _bcolors.WARNING
@@ -103,3 +104,4 @@ def PrintStats():
     elif _passed == 0 and _all > 0:
         col = _bcolors.FAIL
     _cprint(col, '%s of %s passed' % (_passed, _all))
+    print('=================================')

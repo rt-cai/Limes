@@ -42,7 +42,8 @@ def getSchema(env: dict):
     for ser in s.Services:
         print(ser.Name)
 
-
+    Assert.Equal(len(s.Services), 1)
+    Assert.Equal(s.Services[0].Name, 's1')
 
 @Test
 def doJob(env: dict):
@@ -55,6 +56,7 @@ def doJob(env: dict):
         'c': 'request'
     }
     s = con.MakeRequest(sent)
+    print(s)
     Assert.Equal(s['echo'], sent)
 
 @AfterAll
