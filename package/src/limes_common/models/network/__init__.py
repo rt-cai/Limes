@@ -1,4 +1,5 @@
 from __future__ import annotations
+import inspect
 from json.decoder import JSONDecodeError
 
 from typing import Callable, Type, TypeVar, Tuple, Any
@@ -25,42 +26,45 @@ class PublicModel:
         self.data: dict = json.loads(res.text) if self.Code==200 else {}
 
 
-class SerializableTypes(AdvancedEnum, AbbreviatedEnum):
+class SerializableTypes:
     # all need to be strict uppercase for Parse to work
-    STR = 1, str, ''
-    INT = 2, int, 0
-    BOOL = 3, bool, False
-    FLOAT = 4, float, 0.0
+    STR = str, ''
+    INT = int, 0
+    BOOL = bool, False
+    FLOAT = float, 0.0
     # FILE_META = 5, FileMeta, FileMeta()
 
-    def __init__(self, _:int, constr: Callable[[str], T], default: T) -> None:
-        def safeConstr(str: str) -> T:
-            try:
-                return constr(str)
-            except ValueError:
-                return default
-
-        self.constr = safeConstr
-        self.default = default
-        self.type = constr
+    __typesMap = {}
 
     @classmethod
-    def _members(cls) -> list[SerializableTypes]:
-        return list(i[1] for i in filter(lambda i: i[0].isupper(), cls.__dict__.items()))
+    def _members(cls) -> list[dict[str, Callable[[str], Any]]]:
+        def get(c: type):
+            allMap = SerializableTypes.__typesMap
+            m = allMap.get(c, None)
+            if m == None:
+                d = {}
+                for constr, default in [i[1] for i in filter(lambda i: i[0].isupper(), c.__dict__.items())]:
+                    d[str(type(default))] = constr
+                allMap[c] = d
+                m = d
+            return m
+        all = []
+        for c in inspect.getmro(cls):
+            all.append(get(c))
+            if c == SerializableTypes: break
+        return all
 
     @classmethod
-    def FromStr(cls, string: str) -> SerializableTypes | None:
-        for m in cls._members():
-            if string == str(m.type):
-                return m
+    def ConstrFromStr(cls, string: str) -> Callable | None:
+        for d in cls._members():
+            if string in d:
+                return d[string]
         return None
 
     @classmethod
-    def FromType(cls, obj) -> SerializableTypes | None:
-        members: list[SerializableTypes] = cls._members()
-        for m in members:
-            if type(obj) == m.type: return m
-        return None
+    def ConstrFromType(cls, obj) -> Callable | None:
+        string = type(obj)
+        return cls.ConstrFromStr(string)
 
     @classmethod
     def Types(cls) -> list[SerializableTypes]:
@@ -78,21 +82,24 @@ class Model:
         self.Raw = ''
 
     @classmethod
-    def FromResponse(cls, response: py_Response):
-        model = cls.Load(response.text)
+    def FromResponse(cls, response: py_Response, typesDict: type[SerializableTypes]=SerializableTypes):
+        model = cls.Load(response.text, typesDict)
         model.Code = response.status_code
         model.Raw = response.text
         return model
 
     @classmethod
-    def Load(cls, serialized: bytes | str):
+    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=SerializableTypes):
         try:
             model = cls()
         except TypeError:
             raise TypeError('%s inheriting <Model> must have no requred paramaters in constructor' % str(cls))
         try:
-            d = json.loads(serialized)
-            model._jsonLoadSuccess = True
+            if isinstance(serialized, dict):
+                d = serialized
+            else:
+                d = json.loads(serialized)
+                model._jsonLoadSuccess = True
         except JSONDecodeError:
             return model
 
@@ -102,9 +109,10 @@ class Model:
         for k, v in d.items():
             if k.startswith('_'): continue
             if not isinstance(v, dict) or TYPE not in v: continue
-            valueType = SerializableTypes.FromStr(v[TYPE])
-            if valueType is None: continue
-            model.__setattr__(k, valueType.constr(v.get(VALUE, '')))
+
+            constr = typesDict.ConstrFromStr(v[TYPE])
+            if constr is None: continue
+            model.__setattr__(k, constr(v.get(VALUE, '')))
             found = True
         model._parsed = found
         return model

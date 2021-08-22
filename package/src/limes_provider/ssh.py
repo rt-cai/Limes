@@ -119,7 +119,7 @@ class Connection:
             p.IO.close()
             p.Lock.release()
 
-class PassiveConnection(ProviderConnection):
+class SshConnection(ProviderConnection):
 
     class Transaction:
         def __init__(self) -> None:
@@ -140,7 +140,7 @@ class PassiveConnection(ProviderConnection):
 
     def __init__(self, url:str, setup: list[str], cmd: str, transactionTimeout:float, keepAliveTime:float) -> None:
         super().__init__()
-        self._transactions: dict[str, PassiveConnection.Transaction] = {}
+        self._transactions: dict[str, SshConnection.Transaction] = {}
         self._transactionTimeout = transactionTimeout
         self._keepAliveTime = keepAliveTime
         self._url = url
@@ -195,7 +195,7 @@ class PassiveConnection(ProviderConnection):
     def _listenFor(self, mid: MessageID, timeout:float=0) -> tuple[bool, str]:
         if timeout==0:
             timeout = self._transactionTimeout
-        tr = PassiveConnection.Transaction()
+        tr = SshConnection.Transaction()
         self._transactions[mid.AsHex()] = tr
         tr.Wait(timeout)
         try:

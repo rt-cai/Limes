@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-sok6=@m3twi*67n@%t^^^j*%5e7wcw4e2li#)-*_()ms4^u*qj
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['sh-lims.microbiology.ubc.ca', '137.82.19.166']
+ALLOWED_HOSTS = ['sh-lims.microbiology.ubc.ca', '137.82.19.166', '127.0.0.1']
 
 CSRF_SESSION_KEY = config.CSRF_NAME
 

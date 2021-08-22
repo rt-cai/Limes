@@ -5,7 +5,7 @@ from limes_common.connections.server import ServerConnection
 from limes_common.connections.eLab import ELabConnection
 from limes_common import config
 
-from limes_provider.passive import PassiveConnection
+from limes_provider.ssh import SshConnection
 
 def getec(env) -> ELabConnection:
     return env['ec']
@@ -47,22 +47,22 @@ def setup(env: dict):
 #     Assert.Equal(res.Success, True)
     
 
-@Test
-def providerPing(env: dict):
-    #pinging local fosDB 
-    url = 'local'
-    setup = [
-        'cd ~/workspace/Python/Limes/package/src',
-        'conda activate limes'
-    ]
-    cmd = 'python -m fosDB'
-    timeout = 3
-    keepAlive = 10
-    pc = PassiveConnection(url, setup, cmd, timeout, keepAlive)
-    echo = 'test echo'
-    stat = pc.CheckStatus(echo)
-    Assert.Equal(stat.Online, True)
-    Assert.Equal(stat.Echo, echo)
-    pc.Dispose()
+# @Test
+# def providerPing(env: dict):
+#     #pinging local fosDB 
+#     url = 'local'
+#     setup = [
+#         'cd ~/workspace/Python/Limes/package/src',
+#         'conda activate limes'
+#     ]
+#     cmd = 'python -m fosDB'
+#     timeout = 3
+#     keepAlive = 10
+#     pc = SshConnection(url, setup, cmd, timeout, keepAlive)
+#     echo = 'test echo'
+#     stat = pc.CheckStatus(echo)
+#     Assert.Equal(stat.Online, True)
+#     Assert.Equal(stat.Echo, echo)
+#     pc.Dispose()
 
 PrintStats()
