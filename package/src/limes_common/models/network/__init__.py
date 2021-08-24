@@ -2,8 +2,7 @@ from __future__ import annotations
 import inspect
 from json.decoder import JSONDecodeError
 
-from typing import Callable, Type, TypeVar, Tuple, Any
-import typing
+from typing import Callable, TypeVar, Union, Any
 from requests import Response as py_Response
 import json
 
@@ -12,6 +11,7 @@ from limes_common.models.basic import AbbreviatedEnum, AdvancedEnum
 
 T = TypeVar('T')
 U = TypeVar('U')
+Primitive = Union[str, int, float, bool, list['Primitive'], dict[str, 'Primitive']]
 
 def _tryParse(constr: Callable[[T], U], data: dict[str, T], key: str, default: U) -> U:
     val = data.get(key)
@@ -74,21 +74,21 @@ class SerializableTypes:
 
 
 class Model:
-    __TYPE = 'type'
-    __VALUE = 'value'
+    __TYPE = 'L_type'
+    __VALUE = 'L_value'
 
     # INHERITING CLASSES MUST SET DEFAULTS TO ALL CONSTRUCTOR PARAMATERS
     def __init__(self) -> None:
         self._jsonLoadSuccess = False
         self._parsed = False
-        self.Code = 0
-        self.Raw = ''
+        self._responseCode = 0
+        self._raw = ''
 
     @classmethod
-    def FromResponse(cls, response: py_Response, typesDict: type[SerializableTypes]=SerializableTypes):
-        model = cls.Load(response.text, typesDict)
-        model.Code = response.status_code
-        model.Raw = response.text
+    def FromResponse(cls, response: py_Response):
+        model = cls.Load(response.text)
+        model._responseCode = response.status_code
+        model._raw = response.text
         return model
 
     @classmethod
@@ -98,7 +98,7 @@ class Model:
         TYPE = Model.__TYPE
         VALUE = Model.__VALUE
         if TYPE not in v or VALUE not in v:
-            return None
+            return v
 
         t = v[TYPE]
         val = v[VALUE]

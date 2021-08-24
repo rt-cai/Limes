@@ -11,12 +11,14 @@ class Endpoint(AdvancedEnum, AbbreviatedEnum):
         self.ValidMethods: list[Http] = methods
         self.Path = path
 
+# todo, endpoints to dict, not enum
 class ServerEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'login'
     AUTHENTICATE = 2, [Http.POST], 'authenticate'
     INIT = 3, [Http.GET], 'init'
     ADD = 4, [Http.POST], 'add'
     # BLAST = 5, [Http.POST], 'blast' # post becuase need to send file
+    PROVIDERS = 6, [Http.POST], 'providers'
 
 class ELabEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'auth/user'

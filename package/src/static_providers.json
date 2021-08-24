@@ -1,0 +1,14 @@
+[
+    {
+        "name": "dummy_local",
+        "type": "ssh",
+        "url": "local",
+        "setup": [
+            "cd ~/workspace/Python/Limes/package/src/",
+            "conda activate limes"
+        ],
+        "command": "python -m testProvider",
+        "timeout": 3,
+        "keepAlive": 10
+    }
+]

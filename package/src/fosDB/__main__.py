@@ -8,12 +8,10 @@ class FosDB(Handler):
     def OnSchemaRequest(self) -> Models.Schema:
         S = Models.Service
         return Models.Schema([
-            S('s1')
+            S('search')
         ])
 
-    def OnGenericRequest(self, req: dict) -> Models.Generic:
-        return Models.Generic({
-            'echo': req
-        })
+    def OnGenericRequest(self, purpose: str, req: dict[str, Models.Primitive]) -> Models.Generic:
+        return Models.Generic('echo', req)
 
 FosDB().HandleCommandLineRequest()

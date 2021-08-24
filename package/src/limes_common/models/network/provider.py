@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Union
 
-from . import Model, SerializableTypes
+from . import Model, SerializableTypes, Primitive
 
 class Message(Model):
     def __init__(self, mid: str='', body: str='', isError:bool=False) -> None:
@@ -22,20 +22,32 @@ class Status:
             self.Echo = echo
             self.Msg = msg
 
-class Fields:
-    def __init__(self, fields: list[tuple[str, type]] = []) -> None:
-        self._fields = {}
-        for n, t in fields:
-            self._fields[n] = t
+# class Fields:
+#     def __init__(self, fields: list[tuple[str, type]] = []) -> None:
+#         self._fields = {}
+#         for n, t in fields:
+#             self._fields[n] = t
 
-    def AsDict(self) -> dict[str, type]:
-        return self._fields
+#     def AsDict(self) -> dict[str, type]:
+#         return self._fields
 
+DataSchema = dict[str, Union[type, 'DataSchema']]
 class Service(Model):
-    def __init__(self, name: str='', input: dict[str, type]={}, output: dict[str, type]={}) -> None:
+    def __init__(self, name: str='', input: DataSchema={}, output: DataSchema={}) -> None:
         self.Name = name
-        self.Input = input
-        self.Output = output
+        def cleanTypes(d: DataSchema) -> Primitive:
+            out = {}
+            for k in d.keys():
+                v = d[k]
+                if isinstance(v, dict):
+                    v = cleanTypes(v)
+                else:
+                    v = str(v)[8:-2] # "<class 'type'>" to just "type"
+                out[k] = v
+            return out
+
+        self.Input = cleanTypes(input)
+        self.Output = cleanTypes(output)
 
 class Schema(Model):
     def __init__(self, services: list[Service]=[]) -> None:
@@ -47,16 +59,16 @@ class Schema(Model):
             typesDict = ProviderSerializableTypes
         return super().Load(serialized, typesDict)
 
-class Generic(Model):
-    def __init__(self, dictionary: dict[str, Union[str, int, float, bool, dict, Model]]={}) -> None:
+class Search(Model):
+    def __init__(self, string: str) -> None:
         super().__init__()
-        self.Dict = dictionary
-
-    @classmethod
-    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
-        if typesDict is None:
-            typesDict = ProviderSerializableTypes
-        return super().Load(serialized, typesDict)
+        self.String = string
+        
+class Generic(Model):
+    def __init__(self, purpose: str='None', dictionary: dict[str, Primitive]={}) -> None:
+        super().__init__()
+        self.Purpose = purpose
+        self.Data = dictionary
 
 class ProviderSerializableTypes(SerializableTypes):
     SCHEMA = Schema.Load, Schema()

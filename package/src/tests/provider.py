@@ -1,5 +1,5 @@
 import json
-from .testTools import AfterAll, Assert, BeforeAll, BeforeEach, PrintStats, Test
+from .testTools import AfterAll, Assert, BeforeAll, PrintStats, Test
 
 from limes_provider.ssh import SshConnection, Handler
 from limes_common.models.network import Model, SerializableTypes, provider as Provider
@@ -20,10 +20,6 @@ def all(env: dict):
     env['c'] = con
     return env
 
-@BeforeEach
-def setup(env: dict):
-    return env
-
 @Test
 def checkStatus(env: dict):
     con: SshConnection = env['c']
@@ -40,24 +36,42 @@ def getSchema(env: dict):
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
     s = con.GetSchema()
     for ser in s.Services:
-        print(ser.Name)
+        print(ser.Name, ser.Input, ser.Output)
 
-    Assert.Equal(len(s.Services), 1)
-    Assert.Equal(s.Services[0].Name, 's1')
+    expectedServices = ['sum', 'echo', 'say hi'] 
+    for i in range(len(expectedServices)):
+        actual = s.Services[i].Name
+        expcted = expectedServices[i]
+        Assert.Equal(actual, expcted)
 
 @Test
-def doJob(env: dict):
+def testEcho(env: dict):
     con: SshConnection = env['c']
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
     sent = {
-        'a': 1,
-        'b': True,
-        'c': 'request'
+        'message': {
+            'a': 1,
+            'b': True,
+            'c': 'request'
+        }
     }
-    s = con.MakeRequest(sent)
-    print(s)
-    Assert.Equal(s['echo'], sent)
+    res, data = con.MakeRequest('echo', sent)
+    print(res)
+    Assert.Equal(data['echo'], sent['message'])
+
+@Test
+def testOp(env: dict):
+    con: SshConnection = env['c']
+    # con.AddOnResponseCallback(lambda m: print(m))
+    # con.AddOnErrorCallback(lambda m: print('e>' + m))
+    sent = {
+        'values': [1, 2, 3.3]
+    }
+    res, data = con.MakeRequest('sum', sent)
+    print(res)
+    Assert.Equal(data['result'], sum(sent['values']))
+
 
 @AfterAll
 def cleanup(env: dict):

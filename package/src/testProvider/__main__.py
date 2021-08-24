@@ -8,12 +8,31 @@ class TestProvider(Handler):
     def OnSchemaRequest(self) -> Models.Schema:
         S = Models.Service
         return Models.Schema([
-            S('s1')
+            S('sum', {'values': list[float]}, {'result': float}),
+            S('echo', {'message': dict}, {'echo': dict}),
+            S('say hi', {}, {'greeting': str})
         ])
 
-    def OnGenericRequest(self, req: dict) -> Models.Generic:
-        return Models.Generic({
-            'echo': req
-        })
+    def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
+        res = 'error'
+        out: dict[str, Models.Primitive] = {'code': '400'}
+        if purpose == 'sum':
+            vals = data.get('values', [])
+            if isinstance(vals, list):
+                sum = 0
+                for v in vals:
+                    if isinstance(v, int) or isinstance(v, float):
+                        sum += float(v)
+                out = {'result': sum}
+            res = purpose
+        elif purpose == 'echo':
+            out = {'echo': data.get('message', {})}
+            res = purpose
+        elif purpose == 'say hi':
+            out = {'greeting': 'hello'}
+            res = purpose
+
+
+        return Models.Generic(res, out)
 
 TestProvider().HandleCommandLineRequest()
