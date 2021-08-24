@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Union
 from limes_common.models.basic import AbbreviatedEnum
 
 class _bcolors:
@@ -50,9 +50,8 @@ class Assert:
             raise AssertionError()
 
 _env = {}
-_beforeEach: Callable[[dict], dict] = lambda x: x
 _beforeAll: Callable[[dict], dict] = lambda x: x
-_afterAll: Callable[[dict], None] = lambda x: None
+_afterAll: Union[Callable[[dict], None], None] = None
 _beforeAllCalled = False
 
 _passed = 0
@@ -62,10 +61,7 @@ def BeforeAll(fn: Callable[[dict], dict]) -> None:
     global _beforeAll, _beforeAllCalled
     _beforeAll = fn
     _beforeAllCalled = False
-
-def BeforeEach(fn: Callable[[dict], dict]) -> None:
-    global _beforeEach
-    _beforeEach = fn
+    _afterAll = None
 
 def Test(fn: Callable[[dict], None]) -> None:
     global _env
@@ -73,7 +69,7 @@ def Test(fn: Callable[[dict], None]) -> None:
     if not _beforeAllCalled:
         _env = _beforeAll(_env)
         _beforeAllCalled = True
-    _env = _beforeEach(_env)
+    # _env = _beforeEach(_env)
 
     global _passed
     global _all
@@ -95,8 +91,9 @@ def AfterAll(fn: Callable[[dict], None]) -> None:
     _afterAll = fn
 
 def PrintStats():
-    print('running AfterAll...')
-    _afterAll(_env)
+    if _afterAll is not None:
+        print('running AfterAll...')
+        _afterAll(_env)
 
     col = _bcolors.WARNING
     if _passed == _all:

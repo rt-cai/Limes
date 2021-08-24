@@ -1,5 +1,5 @@
 import os
-from .testTools import Assert, BeforeAll, BeforeEach, PrintStats, Test
+from .testTools import Assert, BeforeAll, PrintStats, Test
 
 from limes_common.connections.server import ServerConnection
 from limes_common.connections.eLab import ELabConnection
@@ -16,10 +16,6 @@ def getserv(env) -> ServerConnection:
 def all(env: dict):
     env['ec'] = ELabConnection()
     env['serv'] = ServerConnection()
-    return env
-
-@BeforeEach
-def setup(env: dict):
     return env
 
 @Test

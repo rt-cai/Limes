@@ -1,3 +1,8 @@
+from pytz import timezone
+
+TIME_ZONE = timezone('Canada/Pacific')
+ENCODING = 'utf-8'
+
 # CSRF_NAME = 'csrfmiddlewaretoken'
 CSRF_NAME = 'X-CSRFToken'
 
@@ -11,8 +16,7 @@ SERVER_BIND = '127.0.0.1:8001'
 SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
 SERVER_DB_PATH = 'limes_server/db'
 
-SHAMWOW_URL = 'shamwow.microbiology.ubc.ca'
 
-ENCODING = 'utf-8'
-            
-SSH_TIMEOUT = 10
+PROVIDER_STATICS_PATH = 'static_providers.json'
+PROVIDER_DEFAULT_TRANSACTION_TIMEOUT = 5
+PROVIDER_DEFAULT_CONNECTION_TIMEOUT = 60

@@ -1,5 +1,5 @@
 import json
-from .testTools import Assert, BeforeAll, BeforeEach, PrintStats, Test
+from .testTools import Assert, BeforeAll, PrintStats, Test
 
 from limes_common.models.network import Model, SerializableTypes, provider as Provider
 
@@ -11,10 +11,6 @@ class TestModel(Model):
 
 @BeforeAll
 def all(env: dict):
-    return env
-
-@BeforeEach
-def setup(env: dict):
     return env
 
 class Inner(Model):
@@ -36,9 +32,9 @@ def modelToDict(env: dict):
     string = 'asdf'
     boolean = False
     integer = 12565
-    expected = """{"string": {"type": "<class 'str'>", "value": "%s"},
-        "boolean": {"type": "<class 'bool'>", "value": %s},
-        "integer": {"type": "<class 'int'>", "value": %s}}""" \
+    expected = """{"string": {"L_type": "<class 'str'>", "L_value": "%s"},
+        "boolean": {"L_type": "<class 'bool'>", "L_value": %s},
+        "integer": {"L_type": "<class 'int'>", "L_value": %s}}""" \
         % (string, str(boolean).lower(), integer)
 
     model = TestModel(string, boolean, integer)
@@ -51,9 +47,9 @@ def modelLoad(env: dict):
     string = 'le string'
     boolean = True
     integer = 9000
-    serialized = '''{"string": {"type": "<class \'str\'>", "value": "%s"},
-        "boolean": {"type": "<class \'bool\'>", "value": %s},
-        "integer": {"type": "<class \'int\'>", "value": %s}}''' \
+    serialized = '''{"string": {"L_type": "<class \'str\'>", "L_value": "%s"},
+        "boolean": {"L_type": "<class \'bool\'>", "L_value": %s},
+        "integer": {"L_type": "<class \'int\'>", "L_value": %s}}''' \
         % (string, str(boolean).lower(), integer)
 
     actual = TestModel.Load(json.loads(serialized))
@@ -71,10 +67,10 @@ def nestedSerialize(env: dict):
     outer = Outer(x, inner)
     actual = json.dumps(outer.ToDict())
 
-    expected = '''{"x": {"type": "<class 'str'>", "value": "le x string"}, 
-    "inner": {"type": "%s", "value": {
-        "a": {"type": "<class 'int'>", "value": 25},
-        "b": {"type": "<class 'str'>", "value": "inside!"}}}}''' % (Inner)
+    expected = '''{"x": {"L_type": "<class 'str'>", "L_value": "le x string"}, 
+    "inner": {"L_type": "%s", "L_value": {
+        "a": {"L_type": "<class 'int'>", "L_value": 25},
+        "b": {"L_type": "<class 'str'>", "L_value": "inside!"}}}}''' % (Inner)
 
     Assert.Equal(json.loads(actual), json.loads(expected))
 
@@ -106,12 +102,41 @@ def nestedLoad(env: dict):
     x = 'le x string'
     expected = Outer(x, inner)
 
-    serialized = '''{"x": {"type": "<class 'str'>", "value": "le x string"}, 
-    "inner": {"type": "%s", "value": {
-        "a": {"type": "<class 'int'>", "value": 25},
-        "b": {"type": "<class 'str'>", "value": "inside!"}}}}''' % (Inner)
+    serialized = '''{"x": {"L_type": "<class 'str'>", "L_value": "le x string"}, 
+    "inner": {"L_type": "%s", "L_value": {
+        "a": {"L_type": "<class 'int'>", "L_value": 25},
+        "b": {"L_type": "<class 'str'>", "L_value": "inside!"}}}}''' % (Inner)
     
     actual_o = Outer.Load(serialized, TestTypesDict)
     Assert.Equal(actual_o.ToDict(), expected.ToDict())
+
+@Test
+def serviceSchema(env: dict):
+    x = Provider.Service('asdf', {
+        'o1': {
+            'i1': bool,
+            'i2': int
+        },
+        'o2': str
+    })
+    y = Provider.Service.Load(x.ToDict())
+
+    Assert.Equal(x.Input, y.Input)
+
+@Test
+def rawDict(env: dict):
+    x = Provider.Generic('test', {
+        'd': {
+            'a': 1,
+            'b': True
+        },
+        'l': [
+            0.3, 'a string'
+        ],
+        'p': 'pval'
+    })
+    y = Provider.Generic.Load(json.dumps(x.ToDict()))
+    Assert.Equal(x.Data, y.Data)
+    
 
 PrintStats()

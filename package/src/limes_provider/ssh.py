@@ -7,6 +7,8 @@ import json
 import uuid
 import traceback
 
+from limes_common.utils import current_time
+
 from . import ProviderConnection
 from limes_common import config
 from limes_common.models.network import Model, provider as Models
@@ -211,6 +213,7 @@ class SshConnection(ProviderConnection):
             return False, ''
 
     def _makeTransaction(self, ep: ProviderEndpoint, body: Model|None = None) -> tuple[bool, str]:
+        self.LastUse = current_time()
         mid = self._send(ep, body)
         return self._listenFor(mid)
 
@@ -240,15 +243,15 @@ class SshConnection(ProviderConnection):
         else:
             return Models.Schema()
 
-    def MakeRequest(self, request: dict[str, Any], typesDict: type[Models.ProviderSerializableTypes]=None) -> dict[str, Any]:
-        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(request))
+    def MakeRequest(self, purpose: str, request: dict[str, Any], typesDict: type[Models.ProviderSerializableTypes]=None) -> tuple[str, dict[str, Models.Primitive]]:
+        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
         if success:
             if typesDict is None:
                 typesDict = Models.ProviderSerializableTypes
             resModel = Models.Generic.Load(res, typesDict)
-            return resModel.Dict
+            return resModel.Purpose, resModel.Data
         else:
-            return {'fatal error': 'request failed'}
+            return 'fatal error', {'msg': 'request failed'}
 
     def Dispose(self):
         self.__connection.Dispose()
@@ -307,11 +310,22 @@ class Handler:
             Models.Service('Abstract service example (provider did not implement schema request)', {'a': str, 'b': bool}, {'x': int})
         ])
 
+    def _parseSearchRequest(self, raw: str):
+        pass
+    def OnSearchRequest(self):
+        pass
+
     def _parseGenericRequest(self, raw: str):
-        return self.OnGenericRequest(Models.Generic.Load(raw).Dict)
-    def OnGenericRequest(self, req: dict) -> Models.Generic:
-        return Models.Generic({
-            'error': 'provider not implemented!',
-            'echo': req
+        req = Models.Generic.Load(raw)
+        return self.OnGenericRequest(req.Purpose, req.Data)
+    def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
+        """
+        @purpose: name of service being invoked
+        @data: data dict expected to follow the schema described by Service.Input
+        @return: performs service listed by OnSchemaRequest() and return in form of Service.Output
+        """
+        return Models.Generic('error', {
+            'message': 'provider not implemented!',
+            'echo': data
         })
     

@@ -40,13 +40,13 @@ def main(args:List[str] = sys.argv[1:]):
         return '%s failed attempts, check your connection and credentials' % tries
 
     def Add():
-        if len(args) == 5:
-            limes.Add(args[2], args[1], args[4])
-        elif len(args) == 3:
-            limes.Add(args[2], args[1])
-        else:
-            return 'usage: limes add [file path] [sampleId] (-as [name])'
-        return ''
+        # if len(args) == 5:
+        #     limes.Add(args[2], args[1], args[4])
+        # elif len(args) == 3:
+        #     limes.Add(args[2], args[1])
+        # else:
+        #     return 'usage: limes add [file path] [sampleId] (-as [name])'
+        return 'temporarily disabled'
 
     def Search():
         try:

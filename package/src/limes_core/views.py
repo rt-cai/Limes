@@ -2,13 +2,19 @@ from django.http import HttpResponse, JsonResponse
 from django.core.handlers.wsgi import HttpRequest
 from django.middleware.csrf import get_token
 from django.views.decorators.http import require_http_methods
+from typing import TypeVar, Callable
 
 from limes_common.models.network import Model, server
 from limes_common import config
 # from . import fileHandler
+from . import providers
 
 def _toRes(model: Model):
     return JsonResponse(model.ToDict())
+
+# T = TypeVar('T')
+# def _getReq(constr: Callable[..., T], req: HttpRequest) -> T:
+#     return constr(req.body)
 
 # doesn't work
 def _getClientIp(request: HttpRequest) -> str:
@@ -30,7 +36,7 @@ class Client:
 
 _activeClients: dict[str, Client] = {}
 _clientsByToken: dict[str, str] = {} # token: clientId
-
+_providers = providers.Handler()
 # these must match those in limes_common.models.network.endpoints
 
 @require_http_methods(['GET'])
@@ -72,7 +78,7 @@ def Authenticate(request: HttpRequest):
 
 @require_http_methods(['POST'])
 def Add(request: HttpRequest):
-    SA = server.Add
+    SA = server.AddSample
     fail = lambda m='': _toRes(SA.Response(False, message=m))
 
     print('adding not implimented')
@@ -94,8 +100,10 @@ def Add(request: HttpRequest):
 #     result = fileHandler.Blast(request.FILES[SB.FILE_KEY])
 #     return JsonResponse(SB.MakeResponse(True, result))
 
-
 @require_http_methods(['POST'])
-def Search(request: HttpRequest):
-    pass
+def Providers(request: HttpRequest):
+    MODEL = server.ListProviders
+    req = MODEL.Request.Load(request.body)
+    return _toRes(_providers.Handle(req.Endpoint, req.Body))
+
 # get data by sampleID?
