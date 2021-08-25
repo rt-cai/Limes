@@ -32,6 +32,7 @@ def _loadStatics() -> dict[str, Connection]:
                 command = p.get('command', '')
                 timeout = p.get('timeout', config.PROVIDER_DEFAULT_TRANSACTION_TIMEOUT)
                 keepAlive = p.get('keepAlive', config.PROVIDER_DEFAULT_CONNECTION_TIMEOUT)
+                idFile = p.get('identity', None)
                 criteria_strs = p.get('criterias', [])
                 criterias = []
                 for c in criteria_strs:
@@ -39,7 +40,7 @@ def _loadStatics() -> dict[str, Connection]:
                     if parsed is not None: criterias.append(parsed)
                 if len(criterias) == 0:
                     criterias = [availibleCriteria[config.PROVIDER_DEFAULT_CRTIERIA]]
-                loaded[name] = SshConnection(url, setup, command, timeout, keepAlive, criterias)
+                loaded[name] = SshConnection(url, setup, command, timeout, keepAlive, criterias, identityFile=idFile)
         if len(loaded) > 0:
             return loaded
     # return {}

@@ -139,14 +139,14 @@ class SshConnection(Connection):
             self._sync(lambda: self.Lock.wait(timeout))
 
     def __init__(self, url:str, setup: list[str], cmd: str,
-            transactionTimeout:float, keepAliveTime:float,searchableCritera: list[Criteria]
+            transactionTimeout:float, keepAliveTime:float,searchableCritera: list[Criteria],
             identityFile: str = None) -> None:
         super().__init__(searchableCritera)
         self._transactions: dict[str, SshConnection.Transaction] = {}
         self._transactionTimeout = transactionTimeout
         self._keepAliveTime = keepAliveTime
         self._url = url
-        self._identityFile
+        self._identityFile = identityFile
         self._setup = setup
         self._cmd = cmd
         self.__connection = self._getCon()
@@ -156,7 +156,7 @@ class SshConnection(Connection):
 
     def _getCon(self) -> _sshConsole:
         cmd = ['ssh', '-tt', self._url]
-        if identityFile is not None:
+        if self._identityFile is not None:
             cmd += ['-i', self._identityFile]
         # print(cmd)
         p = subprocess.Popen(cmd,
