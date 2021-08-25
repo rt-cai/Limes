@@ -3,18 +3,13 @@ import uuid
 from getpass import getuser
 import os
 from typing import Any, Callable, TypeVar, Union
+
 from limes_common.connections import Criteria
-
 from limes_common.models.basic import AbbreviatedEnum
-
-from ..http import HttpConnection
+from ..http import HttpConnection, SessionMethod
 from ... import config
-from ...models.network import Model, ErrorModel, Primitive, server as Models
+from ...models.network import Model, ErrorModel, Primitive, server as Models, provider
 from ...models.network.endpoints import ServerEndpoint
-
-class SessionRequest(AbbreviatedEnum):
-    GET = 1
-    POST = 2
 
 T = TypeVar('T')
 class ServerConnection(HttpConnection):
@@ -27,7 +22,7 @@ class ServerConnection(HttpConnection):
         self._csrf = ''
         try:
             raw = self.session.get(self._makeUrl(ServerEndpoint.INIT))
-            res = Models.Init.Response.FromResponse(raw)
+            res = Models.Init.Response.Parse(raw)
             if res._responseCode == 200:
                 self._csrf = res.CsrfToken
             self.Ready = True
@@ -35,77 +30,33 @@ class ServerConnection(HttpConnection):
             print('*** limes server is not reachable ***')
             self.Ready = False
 
-    def _csrfAuth(self):
+    def _makeHeader(self):
         return {config.CSRF_NAME: self._csrf}
 
-    def _compile(self, data: Models.ServerRequestModel) -> dict[str, Any]:
+    def _makeJson(self, data: Models.ServerRequest) -> dict[str, Any]:
         data.ClientId = self._id
         d = data.ToDict()
         # d[config.CSRF_NAME] = self._csrf
         return d
 
-    def _send(self, url:ServerEndpoint, reqModel: Models.ServerRequestModel, constr: Callable[..., T], req: SessionRequest=SessionRequest.POST) -> Union[T, ErrorModel]:
-        if not self.Ready:
-            return ErrorModel(500, 'unable to reach server')
-
-        switcher = {
-            SessionRequest.GET: self.session.get,
-            SessionRequest.POST: self.session.post
-        }
-        return constr(switcher[req](
-            self._makeUrl(url),
-            json=self._compile(reqModel),
-            headers = self._csrfAuth()
-        ))
+    def Send(self, reqModel: Models.ServerRequest, parser: Callable[..., T],
+            req: SessionMethod=SessionMethod.POST) -> Union[T, ErrorModel]:
+        return super().Send(reqModel, parser, req=req)
 
     def Authenticate(self):
-        return self._send(
-            ServerEndpoint.AUTHENTICATE,
+        return self.Send(
             Models.Authenticate.Request(self._id),
-            Models.Authenticate.Response.FromResponse
+            Models.Authenticate.Response.Parse
         )
 
-    def Login(self, eLabKey: str, firstName: str, lastName: str):
-        return self._send(
-            ServerEndpoint.LOGIN,
-            Models.Login.Request(eLabKey, firstName, lastName),
-            Models.Login.Response.FromResponse
-        )
+    # def CheckStatus(self, msg: str='') -> provider.Status.Response:
+    #     res = self.Authenticate()
+    #     if not isinstance(res, ErrorModel):
+    #         return provider.Status.Response(res.Success, msg='%s %s' % (res.FirstName, res.LastName))
+    #     return provider.Status.Response(False)
 
-    def ListProviders(self):
-        return self._send(
-            ServerEndpoint.PROVIDERS,
-            Models.ListProviders.Request(),
-            Models.ListProviders.Response.FromResponse
-        )
+    # def GetSchema(self) -> provider.Schema:
+    #     raise AbstractClassException(_notImplimentedMsg)
 
-    def Search(self, query: Union[str, list[str]], criteria: list[Criteria]=[]):
-        return self._send(
-            ServerEndpoint.PROVIDERS,
-            Models.Search.Request(query, criteria),
-            Models.Search.Response.FromResponse
-        )
-
-    def Call(self, provider: str, request: Models.Providers.Generic):
-        return self._send(
-            ServerEndpoint.PROVIDERS,
-            Models.CallProvider.Request(provider, request),
-            Models.Providers.Generic.FromResponse
-        )
-
-    # def Add(self, sampleId: str, absPath: str, fileName: str, file: BufferedReader) -> Models.Add.Response:
-    #     self._notConnectedGuard()
-    #     return Models.Add.Response.FromResponse(self.session.post(
-    #         self._makeUrl(ServerEndpoint.ADD),
-    #         json=self._compile(Models.Add.Request(sampleId, absPath, fileName)),
-    #         headers=self._csrfAuth()
-    #         # files={Models.Add.FILE_KEY: file},
-    #     ))
-
-    # def Blast(self, query: BufferedReader) -> Models.Blast.Response:
-    #     self._notConnectedGuard()
-    #     return Models.Blast.Response(self.session.post(
-    #         self._makeUrl(ServerEndpoint.BLAST),
-    #         data=self._compile(Models.Blast.MakeRequest()),
-    #         files={Models.Blast.FILE_KEY: query},
-    #     ))
+    # def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
+    #     raise AbstractClassException(_notImplimentedMsg)

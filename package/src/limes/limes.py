@@ -33,17 +33,26 @@ class Limes:
         res = self._eLab.Login(username, password)
 
         if res.Success:
-            self._server.Login(res.Token, res.FirstName, res.LastName)
+            self._server.Send(
+                server.Login.Request(res.Token, res.FirstName, res.LastName),
+                server.Login.Parse
+            )
             print('logged in terminal as %s' % res.FirstName)
         return res.Success
 
     def ListProviders(self):
         if not self._server.Ready: return None
-        return self._server.ListProviders()
+        return self._server.Send(
+            server.List.Request(),
+            server.List.Response.Parse
+        )
 
     def Search(self, token: str, criteria: list[Criteria]=[]):
         # res = self._eLab.SearchSamples(token)
-        res = self._server.Search(token, criteria)
+        res = self._server.Send(
+            server.Search.Request(token, criteria),
+            server.Search.Response.Parse
+        )
         # search locations
         # search providers
         return res

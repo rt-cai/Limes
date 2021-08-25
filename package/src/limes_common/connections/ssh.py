@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys, subprocess
-from typing import Callable, Any, Union
+from typing import Callable, Any, TypeVar, Union
 from threading import Condition, Thread
 from queue import Queue, Empty
 import json
@@ -11,7 +11,7 @@ from limes_common.utils import current_time
 
 from . import Connection, Criteria
 from limes_common import config
-from limes_common.models.network import Model, Primitive, provider as Models
+from limes_common.models.network import ErrorModel, Model, Primitive, provider as Models
 from limes_common.models.network.endpoints import ProviderEndpoint
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:
@@ -168,7 +168,7 @@ class SshConnection(Connection):
 
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
-                parsed = Models.Message.Load(msg)
+                parsed = Models.Message.Parse(msg)
                 if parsed.MessageID in self._transactions:
                     tr = self._transactions[parsed.MessageID]
                     if parsed.IsError:
@@ -233,7 +233,7 @@ class SshConnection(Connection):
     def CheckStatus(self, echo: str) -> Models.Status.Response:
         success, res = self._makeTransaction(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
         if success:
-            return Models.Status.Response.Load(res)
+            return Models.Status.Response.Parse(res)
         else:
             return Models.Status.Response(False, res)
 
@@ -244,18 +244,21 @@ class SshConnection(Connection):
         else:
             return Models.Schema()
 
+    T = TypeVar('T')
+    def Send(self, reqModel: Models.Generic, constr: Callable[..., T]) -> Union[T, ErrorModel]:
+        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, body=reqModel)
+        if success:
+            return constr(res)
+        else:
+            return constr()
+
     def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
         success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
         if success:
-            if typesDict is None:
-                typesDict = Models.ProviderSerializableTypes
-            resModel = Models.Generic.Load(res, typesDict)
-            return resModel.Purpose, resModel.Data
+            resModel = Models.Generic.Load(res)
+            return resModel.Data
         else:
-            return 'fatal error', {'msg': 'request failed'}
-    
-    def Search(self, token: Union[str, list[str]], criteria: list[Criteria]):
-        pass
+            return {'fatal error': 'request failed'}
 
     def Dispose(self):
         self.__connection.Dispose()
@@ -303,7 +306,7 @@ class Handler:
         print(Handler.SEND_FLAG + serialized)
 
     def _parseStatusRequest(self, raw: str):
-        return self.OnStatusRequest(Models.Status.Request.Load(raw))
+        return self.OnStatusRequest(Models.Status.Request.Parse(raw))
     def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
         return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
 
@@ -322,7 +325,7 @@ class Handler:
     def _parseGenericRequest(self, raw: str):
         req = Models.Generic.Load(raw)
         return self.OnGenericRequest(req.Purpose, req.Data)
-    def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
+    def OnGenericRequest(self, purpose: str, data: Models.Primitive) -> Models.Generic:
         """
         @purpose: name of service being invoked
         @data: data dict expected to follow the schema described by Service.Input
@@ -332,4 +335,3 @@ class Handler:
             'message': 'provider not implemented!',
             'echo': data
         })
-    

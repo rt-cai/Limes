@@ -85,13 +85,6 @@ class Model:
         self._raw = ''
 
     @classmethod
-    def FromResponse(cls, response: py_Response):
-        model = cls.Load(response.text)
-        model._responseCode = response.status_code
-        model._raw = response.text
-        return model
-
-    @classmethod
     def _load(cls, v, typesDict: type[SerializableTypes]):
         if not isinstance(v, dict):
             return None
@@ -120,9 +113,14 @@ class Model:
                 loaded = constr(val)
         return loaded
 
-    # note: recursively loading nested models not passing types dict to inner Load
+
+    # todo merge with Parse
     @classmethod
     def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=SerializableTypes):
+        return cls.Parse(serialized, typesDict)
+
+    @classmethod
+    def Parse(cls, serialized: bytes | str | dict | py_Response, typesDict: type[SerializableTypes]=SerializableTypes):
         try:
             model = cls()
         except TypeError:
@@ -131,6 +129,10 @@ class Model:
             if isinstance(serialized, dict):
                 d = serialized
             else:
+                if isinstance(serialized, py_Response):
+                    model._responseCode = serialized.status_code
+                    model._raw = serialized.text
+                    serialized = serialized.text
                 d = json.loads(serialized)
                 model._jsonLoadSuccess = True
         except JSONDecodeError:

@@ -4,7 +4,7 @@ from limes_common.connections import Criteria
 from .testTools import AfterAll, Assert, BeforeAll, PrintStats, Test
 
 from limes_common.connections.ssh import SshConnection, Handler
-from limes_common.models.network import Model, SerializableTypes, provider as Provider
+from limes_common.models.network import Model, Primitive, SerializableTypes, provider as Provider
 
 @BeforeAll
 def all(env: dict):
@@ -54,29 +54,34 @@ def testEcho(env: dict):
     con: SshConnection = env['c']
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
-    sent = {
+    sent: Primitive = {
         'message': {
             'a': 1,
             'b': True,
             'c': 'request'
         }
     }
-    res, data = con.MakeRequest('echo', sent)
-    print(res)
-    Assert.Equal(data['echo'], sent['message'])
+    data = con.MakeRequest('echo', sent)
+    if isinstance(data, dict):
+        print(data['echo'])
+        Assert.Equal(data['echo'], sent['message'])
+    else:
+        Assert.Fail()
 
 @Test
 def testOp(env: dict):
     con: SshConnection = env['c']
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
-    sent = {
+    sent: Primitive = {
         'values': [1, 2, 3.3]
     }
-    res, data = con.MakeRequest('sum', sent)
-    print(res)
-    Assert.Equal(data['result'], sum(sent['values']))
-
+    data = con.MakeRequest('sum', sent)
+    if isinstance(data, dict):
+        print(data['echo'])
+        Assert.Equal(data['result'], sent['values'])
+    else:
+        Assert.Fail()
 
 @AfterAll
 def cleanup(env: dict):

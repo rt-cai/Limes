@@ -36,14 +36,13 @@ class Service(Model):
     def __init__(self, name: str='', input: DataSchema={}, output: DataSchema={}) -> None:
         self.Name = name
         def cleanTypes(d: DataSchema) -> Primitive:
-            out = {}
-            for k in d.keys():
-                v = d[k]
-                if isinstance(v, dict):
+            if isinstance(d, dict):
+                out = {}
+                for k in d.keys():
+                    v = d[k]
                     v = cleanTypes(v)
-                else:
-                    v = str(v)[8:-2] # "<class 'type'>" to just "type"
-                out[k] = v
+            else:
+                out = str(d)[8:-2] # "<class 'type'>" to just "type"
             return out
 
         self.Input = cleanTypes(input)
@@ -54,22 +53,23 @@ class Schema(Model):
         self.Services = services
     
     @classmethod
-    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
+    def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
         if typesDict is None:
             typesDict = ProviderSerializableTypes
-        return super().Load(serialized, typesDict)
-
-class Search(Model):
-    def __init__(self, string: str) -> None:
-        super().__init__()
-        self.String = string
+        return super().Parse(serialized, typesDict)
         
 class Generic(Model):
-    def __init__(self, purpose: str='None', dictionary: Primitive={}) -> None:
+    def __init__(self, purpose: str='None', data: Primitive={}) -> None:
         super().__init__()
         self.Purpose = purpose
-        self.Data = dictionary
+        self.Data = data
+    
+    @classmethod
+    def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
+        if typesDict is None:
+            typesDict = ProviderSerializableTypes
+        return super().Parse(serialized, typesDict=typesDict)
 
 class ProviderSerializableTypes(SerializableTypes):
     SCHEMA = Schema.Load, Schema()
-    SERVICE = Service.Load, Service()
+    SERVICE = Service.Parse, Service()

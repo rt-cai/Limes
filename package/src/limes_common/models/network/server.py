@@ -1,48 +1,27 @@
 from __future__ import annotations
+
 from limes_common.connections import Criteria
 from limes_common.models.basic import AbbreviatedEnum
-
 from limes_common.models.network import provider as Providers
-# from io import BufferedReader
-# import json
-# from typing import Any, overload
-# from requests import Response as py_Response
-
-# from limes_common import config
-# from limes_common.connections import eLab
-# from limes_common.models.basic import AbbreviatedEnum
-# from . import _tryParse, ResponseModel
+from limes_common.models.network.endpoints import ServerEndpoint
+from limes_common.models.network.http import HttpRequest, HttpTransaction
 from . import Model, SerializableTypes, Primitive
 
-class Init:
+class Init(HttpTransaction):
     class Response(Model):
         def __init__(self, token: str = '') -> None:
             super().__init__()
             self.CsrfToken = token
 
-# class Init:
-#     @classmethod
-#     def MakeResponse(cls, csrfToken: str):
-#         return {config.CSRF_NAME: csrfToken}
-
-#     class Response(ResponseModel):
-#         def __init__(self, res: py_Response) -> None:
-#             super().__init__(res)
-#             if self.Code == 200:
-#                 try:
-#                     self.Csrf = json.loads(res.text)[config.CSRF_NAME]
-#                 except:
-#                     self.Csrf = ''
-
-class ServerRequestModel(Model):
-    def __init__(self) -> None:
-        super().__init__()
+class ServerRequest(HttpRequest):
+    def __init__(self, endpoint: ServerEndpoint) -> None:
+        super().__init__(endpoint)
         self.ClientId = ''
 
-class Authenticate:
-    class Request(ServerRequestModel):
+class Authenticate(HttpTransaction):
+    class Request(ServerRequest):
         def __init__(self, clientId: str = '') -> None:
-            super().__init__()
+            super().__init__(ServerEndpoint.AUTHENTICATE)
             self.ClientId = clientId
 
     class Response(Model):
@@ -53,10 +32,10 @@ class Authenticate:
             self.FirstName = firstName
             self.LastName = lastName
 
-class Login:
-    class Request(ServerRequestModel):
+class Login(HttpTransaction):
+    class Request(ServerRequest):
         def __init__(self, eLabKey: str='', firstName: str='', lastName: str='') -> None:
-            super().__init__()
+            super().__init__(ServerEndpoint.LOGIN)
             self.ELabKey = eLabKey
             self.FirstName = firstName
             self.LastName = lastName
@@ -66,10 +45,12 @@ class Login:
             super().__init__()
             self.Success = success
 
-class AddSample:
-    class Request(ServerRequestModel):
+    Parse = Response.Parse
+
+class AddSample(HttpTransaction):
+    class Request(ServerRequest):
         def __init__(self, file: str='', sampleId: str='', name: str='') -> None:
-            super().__init__()
+            super().__init__(ServerEndpoint.ADD)
             self.File = file
             self.SampleId = sampleId
             self.Name = name
@@ -81,27 +62,16 @@ class AddSample:
             self.SampleName = sampleName
             self.Message = message
 
-class ProviderFunction(AbbreviatedEnum):
-    PING = 0
-    LIST = 1
-    SEARCH = 2
-    CALL = 3
-
-class ProviderRequest(ServerRequestModel):
-    def __init__(self, endpont: ProviderFunction=ProviderFunction.PING) -> None:
-        super().__init__()
-        self.Endpoint = str(endpont)
-
 class ProviderInfo(Model):
     def __init__(self, name: str='', lastUse: float=0, schema: Providers.Schema=Providers.Schema()) -> None:
         self.Name = name
         self.LastUse = lastUse
         self.Schema = schema
 
-class ListProviders():
-    class Request(ProviderRequest):
+class List(HttpTransaction):
+    class Request(ServerRequest):
         def __init__(self) -> None:
-            super().__init__(ProviderFunction.LIST)
+            super().__init__(ServerEndpoint.LIST)
 
     class Response(Model):
         def __init__(self, providers: list[ProviderInfo]=[]) -> None:
@@ -109,14 +79,14 @@ class ListProviders():
             self.Providers = providers
             
         @classmethod
-        def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
+        def Parse(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
             if typesDict is None: typesDict = ServerSerializableTypes 
-            return super().Load(serialized, typesDict=typesDict)
+            return super().Parse(serialized, typesDict=typesDict)
 
-class Search():
-    class Request(ProviderRequest):
+class Search(HttpTransaction):
+    class Request(ServerRequest):
         def __init__(self, query: str | list[str] = '', criteria: list[Criteria]=[]) -> None:
-            super().__init__(ProviderFunction.SEARCH)
+            super().__init__(ServerEndpoint.SEARCH)
             self.Query = query
             self.Criteria = criteria
 
@@ -130,15 +100,20 @@ class Search():
             super().__init__()
             self.Hits = hits
 
-class CallProvider:
-    class Request(ProviderRequest):
-        def __init__(self, providerName: str, body: Providers.Generic) -> None:
-            super().__init__(ProviderFunction.CALL)
+        @classmethod
+        def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
+            if typesDict is None: typesDict = ServerSerializableTypes
+            return super().Parse(serialized, typesDict=typesDict)
+
+class CallProvider(HttpTransaction):
+    class Request(ServerRequest):
+        def __init__(self, providerName: str='', body: Providers.Generic=Providers.Generic()) -> None:
+            super().__init__(ServerEndpoint.CALL)
             self.Body = body
             self.Provider = providerName
 
     # response is just a Providers.Generic
 
 class ServerSerializableTypes(Providers.ProviderSerializableTypes):
-    PROVIDER_INFO = ProviderInfo.Load, ProviderInfo()
-    SEARCH_HIT = Search.Hit.Load, Search.Hit()
+    PROVIDER_INFO = ProviderInfo.Parse, ProviderInfo()
+    SEARCH_HIT = Search.Hit.Parse, Search.Hit()

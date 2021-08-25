@@ -1,11 +1,12 @@
 import json
 import os
-from typing import Union
+from typing import Generic, Union
 
 from django.http import request
+from requests.models import Response
 
 from limes_common import config
-from limes_common.models.network import Model, ErrorModel, Primitive, server as Models
+from limes_common.models.network import Model, ErrorModel, Primitive, server, provider
 from limes_common.connections import Connection, Criteria
 from limes_common.connections.ssh import SshConnection
 # from limes_common.models.provider import Result as Result
@@ -41,8 +42,8 @@ def _loadStatics() -> dict[str, Connection]:
                 loaded[name] = SshConnection(url, setup, command, timeout, keepAlive, criterias)
         if len(loaded) > 0:
             return loaded
-    return {}
-    # raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
+    # return {}
+    raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
 
 class Handler:
     def __init__(self) -> None:
@@ -57,29 +58,45 @@ class Handler:
         return ErrorModel(404, 'providers endpoint [%s] does not exist' % endpoint)
 
     def HandleList(self, raw: bytes):
-        return Models.ListProviders.Response([
-            Models.ProviderInfo(k, p.LastUse)
+        return server.List.Response([
+            server.ProviderInfo(k, p.LastUse)
             for k, p in self._providers.items()
         ])
 
     def HandleSearch(self, raw: bytes):
-        request = Models.Search.Request.Load(raw)
+        request = server.Search.Request.Parse(raw)
+
+        response = []
 
         def doSearch(name, p:Connection):
-            p.Search(request.Query, request.Criteria)
+            if isinstance(request.Query, str):
+                q = request.Query
+            else: # todo support multiple tokens provider-side
+                q = ' '.join(request.Query)
+            r = p.Send(
+                provider.Generic('search', q),
+                provider.Generic.Parse
+            )
+            if isinstance(r, ErrorModel):
+                response.append({'error': r.Message})
+            else:
+                response.append((name, r.Data))
+            # p.Search(request.Query, request.Criteria)
 
-        for name, provider in self._providers.items():
+        for name, p in self._providers.items():
             if request.Criteria == []:
-                doSearch(name, provider)
+                doSearch(name, p)
             else:
                 for c in request.Criteria:
-                    if c in provider.SearchableCriteria:
-                        doSearch(name, provider)
+                    if c in p.SearchableCriteria:
+                        doSearch(name, p)
             
-        return Model()
+        return server.Search.Response([
+            server.Search.Hit(name, data) for name, data in response
+        ])
 
     def HandleCall(self, raw: bytes):
-        pass
+        return Model()
     
 # def _registerStatics():
 #     recieveAddr, port = config.SERVER_BIND.split(':')

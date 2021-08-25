@@ -36,6 +36,11 @@ def listProviders(env: dict):
 @Test
 def testSearch(env: dict):
     limes = getLimes(env)
-    limes.Search('guag')
+    x = limes.Search('guag')
+    if isinstance(x, ErrorModel):
+        Assert.Fail()
+    else:
+        for h in x.Hits:
+            print(h.Type, h.Data)
 
 PrintStats()
