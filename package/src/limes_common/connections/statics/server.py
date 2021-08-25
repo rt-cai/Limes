@@ -3,22 +3,25 @@ import uuid
 from getpass import getuser
 import os
 from typing import Any, Callable, TypeVar, Union
+from limes_common.connections import Criteria
 
 from limes_common.models.basic import AbbreviatedEnum
 
-from . import Connection
-from .. import config
-from limes_common.models.network import Model, Primitive, server as Models
-from limes_common.models.network.endpoints import ServerEndpoint
+from ..http import HttpConnection
+from ... import config
+from ...models.network import Model, ErrorModel, Primitive, server as Models
+from ...models.network.endpoints import ServerEndpoint
 
 class SessionRequest(AbbreviatedEnum):
     GET = 1
     POST = 2
 
 T = TypeVar('T')
-class ServerConnection(Connection):
+class ServerConnection(HttpConnection):
     def __init__(self) -> None:
-        super().__init__(config.SERVER_URL)
+        super().__init__(config.SERVER_URL, [
+            Criteria.ALL
+        ])
 
         self._id = ('%012x:%s:%s' % (uuid.getnode(), getuser(), os.getppid()))
         self._csrf = ''
@@ -41,12 +44,10 @@ class ServerConnection(Connection):
         # d[config.CSRF_NAME] = self._csrf
         return d
 
-    # todo this doesn't actually do anythin if just throws an error
-    def _notConnectedGuard(self):
-        if not self.Ready: raise Requests.exceptions.ConnectionError('limes server not connected')
+    def _send(self, url:ServerEndpoint, reqModel: Models.ServerRequestModel, constr: Callable[..., T], req: SessionRequest=SessionRequest.POST) -> Union[T, ErrorModel]:
+        if not self.Ready:
+            return ErrorModel(500, 'unable to reach server')
 
-    def _send(self, url:ServerEndpoint, reqModel: Models.ServerRequestModel, constr: Callable[..., T], req: SessionRequest=SessionRequest.POST) -> T:
-        self._notConnectedGuard()
         switcher = {
             SessionRequest.GET: self.session.get,
             SessionRequest.POST: self.session.post
@@ -57,35 +58,35 @@ class ServerConnection(Connection):
             headers = self._csrfAuth()
         ))
 
-    def Authenticate(self) -> Models.Authenticate.Response:
+    def Authenticate(self):
         return self._send(
             ServerEndpoint.AUTHENTICATE,
             Models.Authenticate.Request(self._id),
             Models.Authenticate.Response.FromResponse
         )
 
-    def Login(self, eLabKey: str, firstName: str, lastName: str) -> Models.Login.Response:
+    def Login(self, eLabKey: str, firstName: str, lastName: str):
         return self._send(
             ServerEndpoint.LOGIN,
             Models.Login.Request(eLabKey, firstName, lastName),
             Models.Login.Response.FromResponse
         )
 
-    def ListProviders(self) -> Models.ListProviders.Response:
+    def ListProviders(self):
         return self._send(
             ServerEndpoint.PROVIDERS,
             Models.ListProviders.Request(),
             Models.ListProviders.Response.FromResponse
         )
 
-    def Search(self, query: Union[str, list[str]], provider_whitelist: list[str]=[]) -> Models.Search.Response:
+    def Search(self, query: Union[str, list[str]], criteria: list[Criteria]=[]):
         return self._send(
             ServerEndpoint.PROVIDERS,
-            Models.Search.Request(query, provider_whitelist),
+            Models.Search.Request(query, criteria),
             Models.Search.Response.FromResponse
         )
 
-    def Call(self, provider: str, request: Models.Providers.Generic) -> Models.Providers.Generic:
+    def Call(self, provider: str, request: Models.Providers.Generic):
         return self._send(
             ServerEndpoint.PROVIDERS,
             Models.CallProvider.Request(provider, request),

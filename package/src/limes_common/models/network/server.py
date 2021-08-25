@@ -1,4 +1,5 @@
 from __future__ import annotations
+from limes_common.connections import Criteria
 from limes_common.models.basic import AbbreviatedEnum
 
 from limes_common.models.network import provider as Providers
@@ -13,14 +14,7 @@ from limes_common.models.network import provider as Providers
 # from . import _tryParse, ResponseModel
 from . import Model, SerializableTypes, Primitive
 
-class TransctionSet:
-    class Request(Model):
-        pass
-
-    class Response(Model):
-        pass
-
-class Init(TransctionSet):
+class Init:
     class Response(Model):
         def __init__(self, token: str = '') -> None:
             super().__init__()
@@ -87,24 +81,24 @@ class AddSample:
             self.SampleName = sampleName
             self.Message = message
 
-class ProviderInfo(Model):
-    def __init__(self, name: str='', lastUse: float=0) -> None:
-        self.Name = name
-        self.LastUse = lastUse
-        # self.Description = desc
-
 class ProviderFunction(AbbreviatedEnum):
+    PING = 0
     LIST = 1
     SEARCH = 2
     CALL = 3
 
 class ProviderRequest(ServerRequestModel):
-    def __init__(self, endpont: ProviderFunction, body: dict[str, Primitive]={}) -> None:
+    def __init__(self, endpont: ProviderFunction=ProviderFunction.PING) -> None:
         super().__init__()
         self.Endpoint = str(endpont)
-        self.Body = body
 
-class ListProviders(TransctionSet):
+class ProviderInfo(Model):
+    def __init__(self, name: str='', lastUse: float=0, schema: Providers.Schema=Providers.Schema()) -> None:
+        self.Name = name
+        self.LastUse = lastUse
+        self.Schema = schema
+
+class ListProviders():
     class Request(ProviderRequest):
         def __init__(self) -> None:
             super().__init__(ProviderFunction.LIST)
@@ -119,24 +113,12 @@ class ListProviders(TransctionSet):
             if typesDict is None: typesDict = ServerSerializableTypes 
             return super().Load(serialized, typesDict=typesDict)
 
-# class Search:
-#     class Request(ServerRequestModel):
-#         def __init__(self, sampleId:str='') -> None:
-#             super().__init__()
-#             self.SampleId = sampleId
-
-#     class Response(Model):
-#         def __init__(self, found: bool=False, report:str='') -> None:
-#             super().__init__()
-#             self.Found = found
-#             self.Report = report
-
-class Search(TransctionSet):
+class Search():
     class Request(ProviderRequest):
-        def __init__(self, query: str | list[str] = '', providerNames: list[str]=[]) -> None:
+        def __init__(self, query: str | list[str] = '', criteria: list[Criteria]=[]) -> None:
             super().__init__(ProviderFunction.SEARCH)
             self.Query = query
-            self.Providers = providerNames
+            self.Criteria = criteria
 
     class Hit(Model):
         def __init__(self, type: str='', data: dict[str, Primitive]={}) -> None:
@@ -156,12 +138,6 @@ class CallProvider:
             self.Provider = providerName
 
     # response is just a Providers.Generic
-
-class ErrorModel(Model):
-    def __init__(self, code: int, message: str) -> None:
-        super().__init__()
-        self.ErrorCode = code
-        self.Message = message
 
 class ServerSerializableTypes(Providers.ProviderSerializableTypes):
     PROVIDER_INFO = ProviderInfo.Load, ProviderInfo()

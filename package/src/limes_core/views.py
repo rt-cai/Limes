@@ -102,8 +102,9 @@ def Add(request: HttpRequest):
 
 @require_http_methods(['POST'])
 def Providers(request: HttpRequest):
-    MODEL = server.ListProviders
-    req = MODEL.Request.Load(request.body)
-    return _toRes(_providers.Handle(req.Endpoint, req.Body))
+    MODEL = server.ProviderRequest
+    req = MODEL.Load(request.body)
+    print('providers/%s' % req.Endpoint)
+    return _toRes(_providers.Handle(req.Endpoint, request.body))
 
 # get data by sampleID?

@@ -16,3 +16,4 @@ package/pyproject.toml
 db/
 dbScratch/
 scratch/
+static_providers.json

@@ -1,4 +1,4 @@
-from limes_provider.ssh import Handler
+from limes_common.connections.ssh import Handler
 from limes_common.models.network import Model, provider as Models
 
 class TestProvider(Handler):

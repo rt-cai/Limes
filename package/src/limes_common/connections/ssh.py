@@ -9,9 +9,9 @@ import traceback
 
 from limes_common.utils import current_time
 
-from . import ProviderConnection
+from . import Connection, Criteria
 from limes_common import config
-from limes_common.models.network import Model, provider as Models
+from limes_common.models.network import Model, Primitive, provider as Models
 from limes_common.models.network.endpoints import ProviderEndpoint
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:
@@ -119,7 +119,7 @@ class _sshConsole:
             p.IO.close()
             p.Lock.release()
 
-class SshConnection(ProviderConnection):
+class SshConnection(Connection):
 
     class Transaction:
         def __init__(self) -> None:
@@ -138,8 +138,9 @@ class SshConnection(ProviderConnection):
         def Wait(self, timeout: float):
             self._sync(lambda: self.Lock.wait(timeout))
 
-    def __init__(self, url:str, setup: list[str], cmd: str, transactionTimeout:float, keepAliveTime:float) -> None:
-        super().__init__()
+    def __init__(self, url:str, setup: list[str], cmd: str,
+            transactionTimeout:float, keepAliveTime:float,searchableCritera: list[Criteria]) -> None:
+        super().__init__(searchableCritera)
         self._transactions: dict[str, SshConnection.Transaction] = {}
         self._transactionTimeout = transactionTimeout
         self._keepAliveTime = keepAliveTime
@@ -243,7 +244,7 @@ class SshConnection(ProviderConnection):
         else:
             return Models.Schema()
 
-    def MakeRequest(self, purpose: str, request: dict[str, Any], typesDict: type[Models.ProviderSerializableTypes]=None) -> tuple[str, dict[str, Models.Primitive]]:
+    def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
         success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
         if success:
             if typesDict is None:
@@ -252,6 +253,9 @@ class SshConnection(ProviderConnection):
             return resModel.Purpose, resModel.Data
         else:
             return 'fatal error', {'msg': 'request failed'}
+    
+    def Search(self, token: Union[str, list[str]], criteria: list[Criteria]):
+        pass
 
     def Dispose(self):
         self.__connection.Dispose()

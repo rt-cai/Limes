@@ -31,7 +31,7 @@ class Status:
 #     def AsDict(self) -> dict[str, type]:
 #         return self._fields
 
-DataSchema = dict[str, Union[type, 'DataSchema']]
+DataSchema = Union[type, dict[str, 'DataSchema']]
 class Service(Model):
     def __init__(self, name: str='', input: DataSchema={}, output: DataSchema={}) -> None:
         self.Name = name
@@ -65,7 +65,7 @@ class Search(Model):
         self.String = string
         
 class Generic(Model):
-    def __init__(self, purpose: str='None', dictionary: dict[str, Primitive]={}) -> None:
+    def __init__(self, purpose: str='None', dictionary: Primitive={}) -> None:
         super().__init__()
         self.Purpose = purpose
         self.Data = dictionary

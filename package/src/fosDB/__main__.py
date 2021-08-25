@@ -1,4 +1,4 @@
-from limes_provider.ssh import Handler
+from limes_common.connections.ssh import Handler
 from limes_common.models.network import provider as Models
 
 class FosDB(Handler):

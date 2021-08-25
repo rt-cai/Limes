@@ -1,7 +1,9 @@
 import json
+
+from limes_common.connections import Criteria
 from .testTools import AfterAll, Assert, BeforeAll, PrintStats, Test
 
-from limes_provider.ssh import SshConnection, Handler
+from limes_common.connections.ssh import SshConnection, Handler
 from limes_common.models.network import Model, SerializableTypes, provider as Provider
 
 @BeforeAll
@@ -14,7 +16,10 @@ def all(env: dict):
     cmd = 'python -m testProvider'
     timeout = 3
     keepAlive = 10
-    con = SshConnection(url, setup, cmd, timeout, keepAlive)
+    criteria = [
+        Criteria.DATA
+    ]
+    con = SshConnection(url, setup, cmd, timeout, keepAlive, criteria)
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
     env['c'] = con

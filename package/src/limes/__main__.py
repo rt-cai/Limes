@@ -39,54 +39,6 @@ def main(args:List[str] = sys.argv[1:]):
                 return
         return '%s failed attempts, check your connection and credentials' % tries
 
-    def Add():
-        # if len(args) == 5:
-        #     limes.Add(args[2], args[1], args[4])
-        # elif len(args) == 3:
-        #     limes.Add(args[2], args[1])
-        # else:
-        #     return 'usage: limes add [file path] [sampleId] (-as [name])'
-        return 'temporarily disabled'
-
-    def Search():
-        try:
-            if not limes._auth(): return
-        except:
-            return
-
-        if len(args) < 2:
-            return 'usage: Search [tokens], where [tokens] is any string'
-
-        query = ""
-        for arg in args[1:]:
-            query += arg + " "
-        samples = limes.Search(query)
-        count = len(samples)
-        msg = '%s result%s found' % (count, 's' if count != 1 else '')
-        max = 3
-        if count > max: msg += ', truncating to first %s' % max
-        i = 1
-        for sample in samples:
-            msg += '\n'
-            # msg += '\n%s of %s' % (i, count)
-            msg += '\nID: %s\nName: %s' % (sample.Id, sample.Name)
-            msg += '\n%smembers/inventory/browser/?sampleID=%s#viewSample' % (config.ELAB_URL, sample.Id)
-            i += 1
-            if i > max: break
-        return msg
-
-    def Blast():
-        try:
-            if not limes._auth(): return
-        except:
-            return
-
-        if len(args) != 2:
-            return 'usage: Blast [query], where [query] is a valid .fasta for blast queries'
-
-        print(limes.Blast(args[1]))
-        return
-
     def _printHelp(unkownArg=False):
         msg = 'use [-h] or [--help] to view options\nor view available documentation at https://github.com/Tony-xy-Liu/Limes/'
         if unkownArg:
@@ -116,9 +68,9 @@ def main(args:List[str] = sys.argv[1:]):
         '--help': lambda: Constants.help,
         'login': Login,
         'dlogin': lambda: limes.dLogin(),
-        'search': Search,
-        'blast': Blast,
-        'add': Add,
+        # 'search': Search,
+        # 'blast': Blast,
+        # 'add': Add,
     }, lambda: _printHelp(arg))
 
 if __name__ == "__main__":

@@ -16,7 +16,8 @@ SERVER_BIND = '127.0.0.1:8001'
 SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
 SERVER_DB_PATH = 'limes_server/db'
 
-
-PROVIDER_STATICS_PATH = 'static_providers.json'
+# PROVIDER_STATICS_PATH = 'limes_core/example_static_providers.json'
+PROVIDER_STATICS_PATH = 'limes_core/static_providers.json'
 PROVIDER_DEFAULT_TRANSACTION_TIMEOUT = 5
 PROVIDER_DEFAULT_CONNECTION_TIMEOUT = 60
+PROVIDER_DEFAULT_CRTIERIA = 'ALL'

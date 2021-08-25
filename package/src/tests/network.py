@@ -1,11 +1,12 @@
 import os
+
 from .testTools import Assert, BeforeAll, PrintStats, Test
 
-from limes_common.connections.server import ServerConnection
-from limes_common.connections.eLab import ELabConnection
+from limes_common.connections import Connection
+from limes_common.connections.statics import ServerConnection, ELabConnection
+from limes_common.connections.ssh import SshConnection
+from limes_common.models.network import ErrorModel
 from limes_common import config
-
-from limes_provider.ssh import SshConnection
 
 def getec(env) -> ELabConnection:
     return env['ec']
@@ -39,6 +40,9 @@ def serverLogin(env: dict):
     tok = list(line[:-1] for line in open(path, 'r').readlines())[2]
     serv = getserv(env)
     res = serv.Login(tok, 'test_FN', 'test_LN')
+
+    if isinstance(res, ErrorModel):
+        Assert.Fail(res.Message)
 
     Assert.Equal(res.Success, True)
 

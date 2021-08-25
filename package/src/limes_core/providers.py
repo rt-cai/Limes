@@ -1,18 +1,26 @@
 import json
 import os
+from typing import Union
+
+from django.http import request
 
 from limes_common import config
-from limes_common.models.network import Model, Primitive, server as Models
-from limes_provider import ProviderConnection
-from limes_provider.ssh import SshConnection
+from limes_common.models.network import Model, ErrorModel, Primitive, server as Models
+from limes_common.connections import Connection, Criteria
+from limes_common.connections.ssh import SshConnection
 # from limes_common.models.provider import Result as Result
 
 # _registeredProviders: dict[str, ProviderConnection] = {}
 
-def _loadStatics() -> dict[str, ProviderConnection]:
+def _loadStatics() -> dict[str, Connection]:
     with open(config.PROVIDER_STATICS_PATH, 'r') as raw:
         statics: list[dict] = json.loads("".join(raw.readlines()))
-        loaded: dict[str, ProviderConnection] = {}
+        loaded: dict[str, Connection] = {}
+
+        availibleCriteria: dict[str, Criteria] = {}
+        for c, v in [(k, x) for k, x in Criteria.__dict__.items() if k.isupper()]:
+            availibleCriteria[c] = v
+
         for p in statics:
             # todo add these strings to some config
             name = p.get('name', '')
@@ -23,33 +31,54 @@ def _loadStatics() -> dict[str, ProviderConnection]:
                 command = p.get('command', '')
                 timeout = p.get('timeout', config.PROVIDER_DEFAULT_TRANSACTION_TIMEOUT)
                 keepAlive = p.get('keepAlive', config.PROVIDER_DEFAULT_CONNECTION_TIMEOUT)
-                loaded[name] = SshConnection(url, setup, command, timeout, keepAlive)
+                criteria_strs = p.get('criterias', [])
+                criterias = []
+                for c in criteria_strs:
+                    parsed = availibleCriteria.get(c, None)
+                    if parsed is not None: criterias.append(parsed)
+                if len(criterias) == 0:
+                    criterias = [availibleCriteria[config.PROVIDER_DEFAULT_CRTIERIA]]
+                loaded[name] = SshConnection(url, setup, command, timeout, keepAlive, criterias)
         if len(loaded) > 0:
             return loaded
-    raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
+    return {}
+    # raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
 
 class Handler:
     def __init__(self) -> None:
-        self._providers: dict[str, ProviderConnection] = _loadStatics()
+        self._providers: dict[str, Connection] = _loadStatics()
 
-    def Handle(self, endpoint: str, body: Primitive) -> Model:
+    def Handle(self, endpoint: str, raw: bytes) -> Model:
         method = 'Handle%s' % endpoint.title()
         myMethods = [m for m in dir(self) if m.startswith('Handle')]
         for m in myMethods:
             if m == method:
-                return getattr(self, m)(body)
-        return Models.ErrorModel(404, 'providers endpoint [%s] does not exist' % endpoint)
+                return getattr(self, m)(raw)
+        return ErrorModel(404, 'providers endpoint [%s] does not exist' % endpoint)
 
-    def HandleList(self, request):
+    def HandleList(self, raw: bytes):
         return Models.ListProviders.Response([
             Models.ProviderInfo(k, p.LastUse)
             for k, p in self._providers.items()
         ])
 
-    def HandleSearch(self, request):
-        pass
+    def HandleSearch(self, raw: bytes):
+        request = Models.Search.Request.Load(raw)
 
-    def HandleCall(self, request):
+        def doSearch(name, p:Connection):
+            p.Search(request.Query, request.Criteria)
+
+        for name, provider in self._providers.items():
+            if request.Criteria == []:
+                doSearch(name, provider)
+            else:
+                for c in request.Criteria:
+                    if c in provider.SearchableCriteria:
+                        doSearch(name, provider)
+            
+        return Model()
+
+    def HandleCall(self, raw: bytes):
         pass
     
 # def _registerStatics():

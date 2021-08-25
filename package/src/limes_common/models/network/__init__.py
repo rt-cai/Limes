@@ -171,3 +171,9 @@ class Model:
             if k.startswith('_'): continue
             d[k] = self._toDict(v)
         return d
+
+class ErrorModel(Model):
+    def __init__(self, code: int=0, message: str='') -> None:
+        super().__init__()
+        self.ErrorCode = code
+        self.Message = message
