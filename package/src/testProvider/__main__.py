@@ -1,4 +1,4 @@
-from limes_common.connections.ssh import Handler
+from limes_common.connections.ssh import Handler, MessageID
 from limes_common.models.network import Model, provider as Models
 
 class TestProvider(Handler):
@@ -14,6 +14,7 @@ class TestProvider(Handler):
         ])
 
     def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
+        self._send(MessageID(''), purpose, True)
         res = 'error'
         out: dict[str, Models.Primitive] = {'code': '400'}
         if purpose == 'sum':

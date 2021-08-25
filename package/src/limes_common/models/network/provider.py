@@ -76,5 +76,6 @@ class Generic(Model):
         return super().Parse(serialized, typesDict=typesDict)
 
 class ProviderSerializableTypes(SerializableTypes):
-    SCHEMA = Schema.Load, Schema()
+    SCHEMA = Schema.Parse, Schema()
     SERVICE = Service.Parse, Service()
+    GENERIC = Generic.Parse, Generic()

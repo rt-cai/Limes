@@ -5,7 +5,7 @@ from limes.tools.qol import Switch
 from limes_common.connections import Criteria
 
 from limes_common.connections.statics import ELabConnection, ServerConnection
-from limes_common.models.network import Primitive, server, ErrorModel, Model
+from limes_common.models.network import Primitive, server, provider, ErrorModel, Model
 from limes_common.models.network.elab import SampleModel
 
 class Limes:
@@ -40,14 +40,14 @@ class Limes:
             print('logged in terminal as %s' % res.FirstName)
         return res.Success
 
-    def ListProviders(self):
-        if not self._server.Ready: return None
+    def ListProviders(self) -> Union[server.List.Response, ErrorModel]:
+        if not self._server.Ready: return ErrorModel(500, 'server can not be reached')
         return self._server.Send(
             server.List.Request(),
             server.List.Response.Parse
         )
 
-    def Search(self, token: str, criteria: list[Criteria]=[]):
+    def Search(self, token: str, criteria: list[Criteria]=[]) -> Union[server.Search.Response, ErrorModel]:
         # res = self._eLab.SearchSamples(token)
         res = self._server.Send(
             server.Search.Request(token, criteria),
@@ -63,8 +63,12 @@ class Limes:
     def DeleteSample(self):
         pass
 
-    def CallProvider(self):
-        pass
+    def CallProvider(self, providerName: str, purpose: str, data: Primitive):
+        res = self._server.Send(
+            server.CallProvider.Request(providerName, provider.Generic(purpose, data)),
+            server.CallProvider.Response.Parse
+        )
+        return res
 
     # def Add(self, sampleId: str, path: str, fileName: str=None) -> bool:
     #     if not self._server.Ready: return False

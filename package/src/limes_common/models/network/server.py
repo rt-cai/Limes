@@ -111,8 +111,14 @@ class CallProvider(HttpTransaction):
             super().__init__(ServerEndpoint.CALL)
             self.Body = body
             self.Provider = providerName
+        
+        @classmethod
+        def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
+            if typesDict is None: typesDict = ServerSerializableTypes
+            return super().Parse(serialized, typesDict=typesDict)
 
-    # response is just a Providers.Generic
+    class Response(Providers.Generic):
+        pass
 
 class ServerSerializableTypes(Providers.ProviderSerializableTypes):
     PROVIDER_INFO = ProviderInfo.Parse, ProviderInfo()

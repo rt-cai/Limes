@@ -97,6 +97,14 @@ class Handler:
         ])
 
     def HandleCall(self, raw: bytes):
+        req = server.CallProvider.Request.Parse(raw)
+        name = req.Provider
+        con = self._providers.get(name, None)
+        if con is None:
+            return ErrorModel(404, '[%s] not a registered provider' % name)
+        res = con.Send(req.Body, provider.Generic.Parse)
+
+        print(res.ToDict(simple=True))
         return Model()
     
 # def _registerStatics():

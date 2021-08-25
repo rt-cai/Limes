@@ -37,6 +37,18 @@ def listProviders(env: dict):
         Assert.Fail()
 
 @Test
+def testCall(env: dict):
+    limes = getLimes(env)
+    res = limes.CallProvider('test_provider', 'sum', [1, 2, 3])
+    if isinstance(res, ErrorModel):
+        Assert.Fail(res.Message)
+    if isinstance(res.Data, dict):
+        Assert.Equal(res.Data['result'], 6)
+    else:
+        Assert.Fail()
+    print(res.ToDict(simple=True))
+
+@Test
 def testSearch(env: dict):
     limes = getLimes(env)
     x = limes.Search('guag')
@@ -45,5 +57,6 @@ def testSearch(env: dict):
     else:
         for h in x.Hits:
             print(h.Type, h.Data)
+            Assert.Equal(h.Data != {}, True)
 
 PrintStats()

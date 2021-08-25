@@ -112,6 +112,4 @@ def Call(request: HttpRequest):
 @require_http_methods(['POST'])
 def Search(request: HttpRequest):
     res = _providers.HandleSearch(request.body)
-    for h in res.Hits:
-        print(h.Data)
     return _toRes(res)

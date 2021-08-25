@@ -254,7 +254,7 @@ class SshConnection(Connection):
         if success:
             return constr(res)
         else:
-            return constr()
+            return constr({})
 
     def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
         success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))

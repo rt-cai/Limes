@@ -167,11 +167,31 @@ class Model:
             d[VALUE] = v
         return d
 
-    def ToDict(self) -> dict:
+    def _toDict_simple(self, v):
+        if isinstance(v, Model):
+            return v.ToDict(simple=True)
+        elif isinstance(v, list):
+            l = []
+            for i in v:
+                l.append(self._toDict_simple(i))
+            return l
+        elif isinstance(v, dict):
+            d = {}
+            for k, vv in d.items():
+                d[k] = self._toDict_simple(vv)
+            return d
+        else:
+            return v
+
+    def ToDict(self, simple=False) -> dict:
         d = {}
         for k, v in self.__dict__.items():
             if k.startswith('_'): continue
-            d[k] = self._toDict(v)
+            if simple:
+                d[k] = self._toDict_simple(v)
+            else:
+                d[k] = self._toDict(v)
+                
         return d
 
 class ErrorModel(Model):
