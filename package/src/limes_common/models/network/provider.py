@@ -41,8 +41,13 @@ class Service(Model):
                 for k in d.keys():
                     v = d[k]
                     v = cleanTypes(v)
+                    out[k] = v
             else:
-                out = str(d)[8:-2] # "<class 'type'>" to just "type"
+                raw = str(d)
+                if '<class' in raw:
+                    out = raw[8:-2] # "<class 'type'>" to just "type"
+                else:
+                    out = raw
             return out
 
         self.Input = cleanTypes(input)

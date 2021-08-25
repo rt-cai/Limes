@@ -244,7 +244,7 @@ class SshConnection(Connection):
     def GetSchema(self) -> Models.Schema:
         success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA)
         if success:
-            return Models.Schema.Load(res)
+            return Models.Schema.Parse(res)
         else:
             return Models.Schema()
 
@@ -259,7 +259,7 @@ class SshConnection(Connection):
     def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
         success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
         if success:
-            resModel = Models.Generic.Load(res)
+            resModel = Models.Generic.Parse(res)
             return resModel.Data
         else:
             return {'fatal error': 'request failed'}
@@ -327,7 +327,7 @@ class Handler:
         pass
 
     def _parseGenericRequest(self, raw: str):
-        req = Models.Generic.Load(raw)
+        req = Models.Generic.Parse(raw)
         return self.OnGenericRequest(req.Purpose, req.Data)
     def OnGenericRequest(self, purpose: str, data: Models.Primitive) -> Models.Generic:
         """

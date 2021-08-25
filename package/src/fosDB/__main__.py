@@ -19,4 +19,10 @@ class FosDB(Handler):
         else:
             return Models.Generic('unknown request', [purpose, req])
 
-FosDB().HandleCommandLineRequest()
+def SearchDemo():
+    pass
+
+    # details()
+
+# FosDB().HandleCommandLineRequest()
+SearchDemo()

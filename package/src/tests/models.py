@@ -1,5 +1,5 @@
 import json
-from .testTools import Assert, BeforeAll, PrintStats, Test
+from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes_common.models.network import Model, SerializableTypes, provider as Provider
 
@@ -8,6 +8,8 @@ class TestModel(Model):
         self.string = string
         self.boolean = boolean
         self.integer = integer
+
+PrintTitle(__file__)
 
 @BeforeAll
 def all(env: dict):

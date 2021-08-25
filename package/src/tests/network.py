@@ -4,7 +4,7 @@ from requests.models import Response
 
 from limes_common.models.network.elab import Login
 
-from .testTools import Assert, BeforeAll, PrintStats, Test
+from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes_common.connections import Connection
 from limes_common.connections.statics import ServerConnection, ELabConnection
@@ -16,6 +16,9 @@ def getec(env) -> ELabConnection:
     return env['ec']
 def getserv(env) -> ServerConnection:
     return env['serv']
+
+
+PrintTitle(__file__)
 
 @BeforeAll
 def all(env: dict):

@@ -1,10 +1,12 @@
 import json
 
 from limes_common.connections import Criteria
-from .testTools import AfterAll, Assert, BeforeAll, PrintStats, Test
+from .testTools import AfterAll, Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes_common.connections.ssh import SshConnection, Handler
 from limes_common.models.network import Model, Primitive, SerializableTypes, provider as Provider
+
+PrintTitle(__file__)
 
 @BeforeAll
 def all(env: dict):
@@ -78,8 +80,8 @@ def testOp(env: dict):
     }
     data = con.MakeRequest('sum', sent)
     if isinstance(data, dict):
-        print(data['echo'])
-        Assert.Equal(data['result'], sent['values'])
+        print(data)
+        Assert.Equal(data['result'], 6.3)
     else:
         Assert.Fail()
 
