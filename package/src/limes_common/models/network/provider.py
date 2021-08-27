@@ -22,15 +22,6 @@ class Status:
             self.Echo = echo
             self.Msg = msg
 
-# class Fields:
-#     def __init__(self, fields: list[tuple[str, type]] = []) -> None:
-#         self._fields = {}
-#         for n, t in fields:
-#             self._fields[n] = t
-
-#     def AsDict(self) -> dict[str, type]:
-#         return self._fields
-
 DataSchema = Union[type, dict[str, 'DataSchema']]
 class Service(Model):
     def __init__(self, name: str='', input: DataSchema={}, output: DataSchema={}) -> None:

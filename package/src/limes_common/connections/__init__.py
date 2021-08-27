@@ -24,11 +24,11 @@ class Connection:
     def Send(self, reqModel: Model, constr: Callable[..., T]) -> Union[T, ErrorModel]:
         raise AbstractClassException(_notImplimentedMsg)
 
-    # def CheckStatus(self, msg: str='') -> Models.Status.Response:
-    #     raise AbstractClassException(_notImplimentedMsg)
+    def CheckStatus(self, msg: str='') -> provider.Status.Response:
+        raise AbstractClassException(_notImplimentedMsg)
 
-    # def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
-    #     raise AbstractClassException(_notImplimentedMsg)
+    def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
+        raise AbstractClassException(_notImplimentedMsg)
 
-    # def Search(self, token: Union[str, list[str]], criteria: list[Criteria]):
-    #     raise AbstractClassException(_notImplimentedMsg)
+    def Search(self, token: Union[str, list[str]], criteria: list[Criteria]):
+        raise AbstractClassException(_notImplimentedMsg)

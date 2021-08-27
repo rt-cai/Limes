@@ -4,8 +4,6 @@ from requests import Response
 
 from . import PublicModel, _tryParse
 
-
-
 class Login:
     @classmethod
     def MakeRequest(cls, username: str, password: str):

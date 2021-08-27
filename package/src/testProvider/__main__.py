@@ -14,7 +14,7 @@ class TestProvider(Handler):
         ])
 
     def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
-        self._send(MessageID(''), purpose, True)
+        # self._send(MessageID(''), purpose, True)
         res = 'error'
         out: dict[str, Models.Primitive] = {'code': '400'}
         if purpose == 'sum':
