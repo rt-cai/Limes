@@ -56,6 +56,13 @@ _beforeAllCalled = False
 
 _passed = 0
 _all = 0
+_file = ''
+
+def PrintTitle(file):
+    file = file.split('/')[-1][:-3]
+    global _file
+    _file = file
+    _cprint(_bcolors.OKBLUE, '%s\n' % file)
 
 def BeforeAll(fn: Callable[[dict], dict]) -> None:
     global _beforeAll, _beforeAllCalled
@@ -82,7 +89,7 @@ def Test(fn: Callable[[dict], None]) -> None:
         _cprint(_bcolors.FAIL, 'failed:\n%s' % (e))
     except Exception as x:
         _cprint(_bcolors.FAIL, 'uncaught exception:\n%s' % (x))
-        raise x
+        # raise x
     _all += 1
     print()
 
@@ -92,7 +99,7 @@ def AfterAll(fn: Callable[[dict], None]) -> None:
 
 def PrintStats():
     if _afterAll is not None:
-        print('running AfterAll...')
+        print('finishing tests for %s' % _file)
         _afterAll(_env)
 
     col = _bcolors.WARNING

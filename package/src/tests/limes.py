@@ -1,11 +1,15 @@
 from limes.tools.qol import T
-from .testTools import AfterAll, Assert, BeforeAll, PrintStats, Test
+from limes_common.models.network import ErrorModel
+from .testTools import AfterAll, Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes import Limes
 from limes_common import utils
 
 def getLimes(env) -> Limes:
     return env['l']
+
+
+PrintTitle(__file__)
 
 @BeforeAll
 def all(env: dict):
@@ -26,16 +30,33 @@ def login(env: dict):
 def listProviders(env: dict):
     limes = getLimes(env)
     lst = limes.ListProviders()
-    if lst is not None:
+    if lst is not None and not isinstance(lst, ErrorModel):
         for p in lst.Providers:
             print('%s, last used: %s' %(p.Name, utils.format_from_utc(p.LastUse)))
     else:
         Assert.Fail()
 
+@Test
+def testCall(env: dict):
+    limes = getLimes(env)
+    res = limes.CallProvider('test_provider', 'sum', [1, 2, 3])
+    if isinstance(res, ErrorModel):
+        Assert.Fail(res.Message)
+    if isinstance(res.Data, dict):
+        Assert.Equal(res.Data['result'], 6)
+    else:
+        Assert.Fail()
+    print(res.ToDict(simple=True))
 
-# @Test
-# def testSearch(env: dict):
-#     limes = getLimes(env)
-#     pass
+@Test
+def testSearch(env: dict):
+    limes = getLimes(env)
+    x = limes.Search('guag')
+    if isinstance(x, ErrorModel):
+        Assert.Fail()
+    else:
+        for h in x.Hits:
+            print(h.Type, h.Data)
+            Assert.Equal(h.Data != {}, True)
 
 PrintStats()

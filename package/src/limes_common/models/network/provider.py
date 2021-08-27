@@ -22,28 +22,23 @@ class Status:
             self.Echo = echo
             self.Msg = msg
 
-# class Fields:
-#     def __init__(self, fields: list[tuple[str, type]] = []) -> None:
-#         self._fields = {}
-#         for n, t in fields:
-#             self._fields[n] = t
-
-#     def AsDict(self) -> dict[str, type]:
-#         return self._fields
-
-DataSchema = dict[str, Union[type, 'DataSchema']]
+DataSchema = Union[type, dict[str, 'DataSchema']]
 class Service(Model):
     def __init__(self, name: str='', input: DataSchema={}, output: DataSchema={}) -> None:
         self.Name = name
         def cleanTypes(d: DataSchema) -> Primitive:
-            out = {}
-            for k in d.keys():
-                v = d[k]
-                if isinstance(v, dict):
+            if isinstance(d, dict):
+                out = {}
+                for k in d.keys():
+                    v = d[k]
                     v = cleanTypes(v)
+                    out[k] = v
+            else:
+                raw = str(d)
+                if '<class' in raw:
+                    out = raw[8:-2] # "<class 'type'>" to just "type"
                 else:
-                    v = str(v)[8:-2] # "<class 'type'>" to just "type"
-                out[k] = v
+                    out = raw
             return out
 
         self.Input = cleanTypes(input)
@@ -54,22 +49,24 @@ class Schema(Model):
         self.Services = services
     
     @classmethod
-    def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=None):
+    def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
         if typesDict is None:
             typesDict = ProviderSerializableTypes
-        return super().Load(serialized, typesDict)
-
-class Search(Model):
-    def __init__(self, string: str) -> None:
-        super().__init__()
-        self.String = string
+        return super().Parse(serialized, typesDict)
         
 class Generic(Model):
-    def __init__(self, purpose: str='None', dictionary: dict[str, Primitive]={}) -> None:
+    def __init__(self, purpose: str='None', data: Primitive={}) -> None:
         super().__init__()
         self.Purpose = purpose
-        self.Data = dictionary
+        self.Data = data
+    
+    @classmethod
+    def Parse(cls, serialized, typesDict: type[SerializableTypes]=None):
+        if typesDict is None:
+            typesDict = ProviderSerializableTypes
+        return super().Parse(serialized, typesDict=typesDict)
 
 class ProviderSerializableTypes(SerializableTypes):
-    SCHEMA = Schema.Load, Schema()
-    SERVICE = Service.Load, Service()
+    SCHEMA = Schema.Parse, Schema()
+    SERVICE = Service.Parse, Service()
+    GENERIC = Generic.Parse, Generic()

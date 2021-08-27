@@ -85,13 +85,6 @@ class Model:
         self._raw = ''
 
     @classmethod
-    def FromResponse(cls, response: py_Response):
-        model = cls.Load(response.text)
-        model._responseCode = response.status_code
-        model._raw = response.text
-        return model
-
-    @classmethod
     def _load(cls, v, typesDict: type[SerializableTypes]):
         if not isinstance(v, dict):
             return None
@@ -120,9 +113,14 @@ class Model:
                 loaded = constr(val)
         return loaded
 
-    # note: recursively loading nested models not passing types dict to inner Load
+
+    # todo merge with Parse
     @classmethod
     def Load(cls, serialized: bytes | str | dict, typesDict: type[SerializableTypes]=SerializableTypes):
+        return cls.Parse(serialized, typesDict)
+
+    @classmethod
+    def Parse(cls, serialized: bytes | str | dict | py_Response, typesDict: type[SerializableTypes]=SerializableTypes):
         try:
             model = cls()
         except TypeError:
@@ -131,6 +129,10 @@ class Model:
             if isinstance(serialized, dict):
                 d = serialized
             else:
+                if isinstance(serialized, py_Response):
+                    model._responseCode = serialized.status_code
+                    model._raw = serialized.text
+                    serialized = serialized.text
                 d = json.loads(serialized)
                 model._jsonLoadSuccess = True
         except JSONDecodeError:
@@ -165,9 +167,35 @@ class Model:
             d[VALUE] = v
         return d
 
-    def ToDict(self) -> dict:
+    def _toDict_simple(self, v):
+        if isinstance(v, Model):
+            return v.ToDict(simple=True)
+        elif isinstance(v, list):
+            l = []
+            for i in v:
+                l.append(self._toDict_simple(i))
+            return l
+        elif isinstance(v, dict):
+            d = {}
+            for k, vv in d.items():
+                d[k] = self._toDict_simple(vv)
+            return d
+        else:
+            return v
+
+    def ToDict(self, simple=False) -> dict:
         d = {}
         for k, v in self.__dict__.items():
             if k.startswith('_'): continue
-            d[k] = self._toDict(v)
+            if simple:
+                d[k] = self._toDict_simple(v)
+            else:
+                d[k] = self._toDict(v)
+                
         return d
+
+class ErrorModel(Model):
+    def __init__(self, code: int=0, message: str='') -> None:
+        super().__init__()
+        self.ErrorCode = code
+        self.Message = message

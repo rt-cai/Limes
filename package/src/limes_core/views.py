@@ -6,6 +6,7 @@ from typing import TypeVar, Callable
 
 from limes_common.models.network import Model, server
 from limes_common import config
+from limes_common.models.network.provider import Generic
 # from . import fileHandler
 from . import providers
 
@@ -46,7 +47,7 @@ def Init(request: HttpRequest):
 @require_http_methods(['POST'])
 def Login(request: HttpRequest):
     SL = server.Login
-    res = SL.Request.Load(request.body)
+    res = SL.Request.Parse(request.body)
     # print(_toDict(request.POST))
 
     # remove old if exists
@@ -67,7 +68,7 @@ def Login(request: HttpRequest):
 @require_http_methods(['POST'])
 def Authenticate(request: HttpRequest):
     SA = server.Authenticate
-    res = SA.Request.Load(request.body)
+    res = SA.Request.Parse(request.body)
     client = _activeClients.get(res.ClientId)
 
     print('auth: %s' % (client.FirstName if client is not None else 'unknown'))
@@ -83,7 +84,7 @@ def Add(request: HttpRequest):
 
     print('adding not implimented')
 
-    req = SA.Request.Load(request.body)
+    req = SA.Request.Parse(request.body)
     client = _activeClients.get(req.ClientId)
     if not client: return fail('Not logged in')
 
@@ -101,9 +102,14 @@ def Add(request: HttpRequest):
 #     return JsonResponse(SB.MakeResponse(True, result))
 
 @require_http_methods(['POST'])
-def Providers(request: HttpRequest):
-    MODEL = server.ListProviders
-    req = MODEL.Request.Load(request.body)
-    return _toRes(_providers.Handle(req.Endpoint, req.Body))
+def List(request: HttpRequest):
+    return _toRes(_providers.HandleList(request.body))
 
-# get data by sampleID?
+@require_http_methods(['POST'])
+def Call(request: HttpRequest):
+    return _toRes(_providers.HandleCall(request.body))
+
+@require_http_methods(['POST'])
+def Search(request: HttpRequest):
+    res = _providers.HandleSearch(request.body)
+    return _toRes(res)

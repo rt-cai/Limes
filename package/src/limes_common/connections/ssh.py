@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys, subprocess
-from typing import Callable, Any, Union
+from typing import Callable, Any, TypeVar, Union
 from threading import Condition, Thread
 from queue import Queue, Empty
 import json
@@ -9,9 +9,9 @@ import traceback
 
 from limes_common.utils import current_time
 
-from . import ProviderConnection
+from . import Connection, Criteria
 from limes_common import config
-from limes_common.models.network import Model, provider as Models
+from limes_common.models.network import ErrorModel, Model, Primitive, provider as Models
 from limes_common.models.network.endpoints import ProviderEndpoint
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:
@@ -119,7 +119,7 @@ class _sshConsole:
             p.IO.close()
             p.Lock.release()
 
-class SshConnection(ProviderConnection):
+class SshConnection(Connection):
 
     class Transaction:
         def __init__(self) -> None:
@@ -138,12 +138,15 @@ class SshConnection(ProviderConnection):
         def Wait(self, timeout: float):
             self._sync(lambda: self.Lock.wait(timeout))
 
-    def __init__(self, url:str, setup: list[str], cmd: str, transactionTimeout:float, keepAliveTime:float) -> None:
-        super().__init__()
+    def __init__(self, url:str, setup: list[str], cmd: str,
+            transactionTimeout:float, keepAliveTime:float,searchableCritera: list[Criteria],
+            identityFile: str = None) -> None:
+        super().__init__(searchableCritera)
         self._transactions: dict[str, SshConnection.Transaction] = {}
         self._transactionTimeout = transactionTimeout
         self._keepAliveTime = keepAliveTime
         self._url = url
+        self._identityFile = identityFile
         self._setup = setup
         self._cmd = cmd
         self.__connection = self._getCon()
@@ -153,6 +156,8 @@ class SshConnection(ProviderConnection):
 
     def _getCon(self) -> _sshConsole:
         cmd = ['ssh', '-tt', self._url]
+        if self._identityFile is not None:
+            cmd += ['-i', self._identityFile]
         # print(cmd)
         p = subprocess.Popen(cmd,
             stdin=subprocess.PIPE,
@@ -167,7 +172,7 @@ class SshConnection(ProviderConnection):
 
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
-                parsed = Models.Message.Load(msg)
+                parsed = Models.Message.Parse(msg)
                 if parsed.MessageID in self._transactions:
                     tr = self._transactions[parsed.MessageID]
                     if parsed.IsError:
@@ -232,26 +237,32 @@ class SshConnection(ProviderConnection):
     def CheckStatus(self, echo: str) -> Models.Status.Response:
         success, res = self._makeTransaction(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
         if success:
-            return Models.Status.Response.Load(res)
+            return Models.Status.Response.Parse(res)
         else:
             return Models.Status.Response(False, res)
 
     def GetSchema(self) -> Models.Schema:
         success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA)
         if success:
-            return Models.Schema.Load(res)
+            return Models.Schema.Parse(res)
         else:
             return Models.Schema()
 
-    def MakeRequest(self, purpose: str, request: dict[str, Any], typesDict: type[Models.ProviderSerializableTypes]=None) -> tuple[str, dict[str, Models.Primitive]]:
+    T = TypeVar('T')
+    def Send(self, reqModel: Models.Generic, constr: Callable[..., T]) -> Union[T, ErrorModel]:
+        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, body=reqModel)
+        if success:
+            return constr(res)
+        else:
+            return constr({})
+
+    def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
         success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
         if success:
-            if typesDict is None:
-                typesDict = Models.ProviderSerializableTypes
-            resModel = Models.Generic.Load(res, typesDict)
-            return resModel.Purpose, resModel.Data
+            resModel = Models.Generic.Parse(res)
+            return resModel.Data
         else:
-            return 'fatal error', {'msg': 'request failed'}
+            return {'fatal error': 'request failed'}
 
     def Dispose(self):
         self.__connection.Dispose()
@@ -299,7 +310,7 @@ class Handler:
         print(Handler.SEND_FLAG + serialized)
 
     def _parseStatusRequest(self, raw: str):
-        return self.OnStatusRequest(Models.Status.Request.Load(raw))
+        return self.OnStatusRequest(Models.Status.Request.Parse(raw))
     def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
         return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
 
@@ -316,9 +327,9 @@ class Handler:
         pass
 
     def _parseGenericRequest(self, raw: str):
-        req = Models.Generic.Load(raw)
+        req = Models.Generic.Parse(raw)
         return self.OnGenericRequest(req.Purpose, req.Data)
-    def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
+    def OnGenericRequest(self, purpose: str, data: Models.Primitive) -> Models.Generic:
         """
         @purpose: name of service being invoked
         @data: data dict expected to follow the schema described by Service.Input
@@ -328,4 +339,3 @@ class Handler:
             'message': 'provider not implemented!',
             'echo': data
         })
-    

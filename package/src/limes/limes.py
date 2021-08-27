@@ -1,14 +1,11 @@
-from io import BufferedReader
 from typing import Any, Union
 import os
-from functools import reduce
-from requests.exceptions import ConnectionError
 
 from limes.tools.qol import Switch
+from limes_common.connections import Criteria
 
-from limes_common.connections.eLab import ELabConnection
-from limes_common.connections.server import ServerConnection
-from limes_common.models.network import server
+from limes_common.connections.statics import ELabConnection, ServerConnection
+from limes_common.models.network import Primitive, server, provider, ErrorModel, Model
 from limes_common.models.network.elab import SampleModel
 
 class Limes:
@@ -19,6 +16,8 @@ class Limes:
     #   def _auth() -> tuple[bool, str]:
     def _auth(self) -> bool:
         res = self._server.Authenticate()
+        if isinstance(res, ErrorModel):
+            return False
         if res.Success:
             print('Authenticated terminal as %s' % res.FirstName)
             # return True, res.FirstName
@@ -34,28 +33,42 @@ class Limes:
         res = self._eLab.Login(username, password)
 
         if res.Success:
-            self._server.Login(res.Token, res.FirstName, res.LastName)
+            self._server.Send(
+                server.Login.Request(res.Token, res.FirstName, res.LastName),
+                server.Login.Parse
+            )
             print('logged in terminal as %s' % res.FirstName)
         return res.Success
 
-    def ListProviders(self):
-        if not self._server.Ready: return None
-        return self._server.ListProviders()
+    def ListProviders(self) -> Union[server.List.Response, ErrorModel]:
+        if not self._server.Ready: return ErrorModel(500, 'server can not be reached')
+        return self._server.Send(
+            server.List.Request(),
+            server.List.Response.Parse
+        )
 
-    def CallProvider(self):
-        pass
-
-    def Search(self, token: str) -> list[SampleModel]:
-        res = self._eLab.SearchSamples(token)
+    def Search(self, token: str, criteria: list[Criteria]=[]) -> Union[server.Search.Response, ErrorModel]:
+        # res = self._eLab.SearchSamples(token)
+        res = self._server.Send(
+            server.Search.Request(token, criteria),
+            server.Search.Response.Parse
+        )
         # search locations
         # search providers
-        return res.Samples
+        return res
 
     def AddSample(self):
         pass
 
     def DeleteSample(self):
         pass
+
+    def CallProvider(self, providerName: str, purpose: str, data: Primitive):
+        res = self._server.Send(
+            server.CallProvider.Request(providerName, provider.Generic(purpose, data)),
+            server.CallProvider.Response.Parse
+        )
+        return res
 
     # def Add(self, sampleId: str, path: str, fileName: str=None) -> bool:
     #     if not self._server.Ready: return False
@@ -73,15 +86,6 @@ class Limes:
     #     else:
     #         print('file [%s] added to sample [%s]' % (fileName, res.SampleName))
     #     return res.Success
-
-    def Blast(self, queryPath: str) -> str:
-        # try:
-        #     query = open(queryPath, 'rb')
-        #     res = self._server.Blast(query)
-        #     return res.Result
-        # except:
-        #     print('[%s] not found' % (queryPath))
-        return ''
 
     def dLogin(self) -> None:
         with open('../../credentials/elab.msl') as cred:

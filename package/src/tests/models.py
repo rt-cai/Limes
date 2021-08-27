@@ -1,5 +1,5 @@
 import json
-from .testTools import Assert, BeforeAll, PrintStats, Test
+from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes_common.models.network import Model, SerializableTypes, provider as Provider
 
@@ -8,6 +8,8 @@ class TestModel(Model):
         self.string = string
         self.boolean = boolean
         self.integer = integer
+
+PrintTitle(__file__)
 
 @BeforeAll
 def all(env: dict):
@@ -24,8 +26,8 @@ class Outer(Model):
         self.inner = inner
 
 class TestTypesDict(SerializableTypes):
-    INNER = Inner.Load, Inner()
-    OUTER = Outer.Load, Outer()
+    INNER = Inner.Parse, Inner()
+    OUTER = Outer.Parse, Outer()
 
 @Test
 def modelToDict(env: dict):
@@ -52,7 +54,7 @@ def modelLoad(env: dict):
         "integer": {"L_type": "<class \'int\'>", "L_value": %s}}''' \
         % (string, str(boolean).lower(), integer)
 
-    actual = TestModel.Load(json.loads(serialized))
+    actual = TestModel.Parse(json.loads(serialized))
 
     Assert.Equal(actual.string, string)
     Assert.Equal(actual.boolean, boolean)
@@ -90,7 +92,7 @@ def nestedComplex(env: dict):
     })
     serialized = json.dumps(com.ToDict())
 
-    back = Complex.Load(serialized, TestTypesDict)
+    back = Complex.Parse(serialized, TestTypesDict)
     serialized2 = json.dumps(back.ToDict())
     Assert.Equal(serialized, serialized2)
 
@@ -107,7 +109,7 @@ def nestedLoad(env: dict):
         "a": {"L_type": "<class 'int'>", "L_value": 25},
         "b": {"L_type": "<class 'str'>", "L_value": "inside!"}}}}''' % (Inner)
     
-    actual_o = Outer.Load(serialized, TestTypesDict)
+    actual_o = Outer.Parse(serialized, TestTypesDict)
     Assert.Equal(actual_o.ToDict(), expected.ToDict())
 
 @Test
@@ -119,7 +121,7 @@ def serviceSchema(env: dict):
         },
         'o2': str
     })
-    y = Provider.Service.Load(x.ToDict())
+    y = Provider.Service.Parse(x.ToDict())
 
     Assert.Equal(x.Input, y.Input)
 

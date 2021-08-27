@@ -1,4 +1,3 @@
-from limes_common.models.network.server import Login
 from ..basic import AdvancedEnum, AbbreviatedEnum
 
 class Http(AbbreviatedEnum):
@@ -17,8 +16,9 @@ class ServerEndpoint(Endpoint):
     AUTHENTICATE = 2, [Http.POST], 'authenticate'
     INIT = 3, [Http.GET], 'init'
     ADD = 4, [Http.POST], 'add'
-    # BLAST = 5, [Http.POST], 'blast' # post becuase need to send file
-    PROVIDERS = 6, [Http.POST], 'providers'
+    LIST = 5, [Http.POST], 'list'
+    CALL = 6, [Http.POST], 'call'
+    SEARCH = 7, [Http.POST], 'search'
 
 class ELabEndpoint(Endpoint):
     LOGIN = 1, [Http.POST], 'auth/user'

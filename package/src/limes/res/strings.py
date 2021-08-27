@@ -1,6 +1,6 @@
 # todo: don't hard code this
 version = \
-'limes version 0.2.dev1'
+'limes version 0.3.dev1'
 help = '\n\n\
 %s\n\
 \n\
