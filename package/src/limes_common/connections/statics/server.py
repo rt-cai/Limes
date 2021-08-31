@@ -4,24 +4,20 @@ from getpass import getuser
 import os
 from typing import Any, Callable, TypeVar, Union
 
-from limes_common.connections import Criteria
-from limes_common.models.basic import AbbreviatedEnum
-from ..http import HttpConnection, SessionMethod
+from ..http import HttpConnection
 from ... import config
-from ...models.network import Model, ErrorModel, Primitive, server as Models, provider
-from ...models.network.endpoints import ServerEndpoint
+from ...models import Model, Primitive, server as Models, provider
+from ...models.endpoints import ServerEndpoint
 
 T = TypeVar('T')
 class ServerConnection(HttpConnection):
     def __init__(self) -> None:
-        super().__init__(config.SERVER_URL, [
-            Criteria.ALL
-        ])
+        super().__init__(config.SERVER_URL)
 
         self._id = ('%012x:%s:%s' % (uuid.getnode(), getuser(), os.getppid()))
         self._csrf = ''
         try:
-            raw = self.session.get(self._makeUrl(ServerEndpoint.INIT))
+            raw = self.session.get(self._makeUrl(ServerEndpoint.INIT.Path))
             res = Models.Init.Response.Parse(raw)
             if res._responseCode == 200:
                 self._csrf = res.CsrfToken
@@ -39,11 +35,9 @@ class ServerConnection(HttpConnection):
         # d[config.CSRF_NAME] = self._csrf
         return d
 
-    def Send(self, reqModel: Models.ServerRequest, parser: Callable[..., T],
-            req: SessionMethod=SessionMethod.POST) -> Union[T, ErrorModel]:
-        return super().Send(reqModel, parser, req=req)
-
     def Authenticate(self):
+        req = Models.ServerRequest()
+        return self.MakeRequest(req)
         return self.Send(
             Models.Authenticate.Request(self._id),
             Models.Authenticate.Response.Parse

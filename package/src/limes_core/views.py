@@ -4,9 +4,8 @@ from django.middleware.csrf import get_token
 from django.views.decorators.http import require_http_methods
 from typing import TypeVar, Callable
 
-from limes_common.models.network import Model, server
+from limes_common.models import Model, server
 from limes_common import config
-from limes_common.models.network.provider import Generic
 # from . import fileHandler
 from . import providers
 
@@ -16,17 +15,6 @@ def _toRes(model: Model):
 # T = TypeVar('T')
 # def _getReq(constr: Callable[..., T], req: HttpRequest) -> T:
 #     return constr(req.body)
-
-# doesn't work
-def _getClientIp(request: HttpRequest) -> str:
-    x_forwarded_for = str(request.META.get('HTTP_X_FORWARDED_FOR'))
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    elif request.META.get('HTTP_X_REAL_IP'):
-        ip = str(request.META.get('HTTP_X_REAL_IP'))
-    else:
-        ip = str(request.META.get('REMOTE_ADDR'))
-    return ip
 
 class Client:
     # todo: add timeout

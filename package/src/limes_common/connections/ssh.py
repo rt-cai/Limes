@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys, subprocess
-from typing import Callable, Any, TypeVar, Union
+from typing import Callable
 from threading import Condition, Thread
 from queue import Queue, Empty
 import json
@@ -8,11 +8,11 @@ import uuid
 import traceback
 
 from limes_common.utils import current_time
-
-from . import Connection, Criteria
+from . import Connection
 from limes_common import config
-from limes_common.models.network import ErrorModel, Model, Primitive, provider as Models
-from limes_common.models.network.endpoints import ProviderEndpoint
+from limes_common.models import Model, Primitive, provider as Models, ssh
+from limes_common.models.endpoints import ProviderEndpoint
+
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:
     return Console_Encode(json.dumps(model.ToDict()))
@@ -31,97 +31,93 @@ class MessageID:
     def AsHex(self):
         return self.__uuid
 
-class _pipe:
-    def __init__(self, io:subprocess.IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
-        self.IO = io
-        self.Lock = lock
-        self.Q = q
-
-class ConnectionFailedException(Exception):
-    pass
-
-class _sshConsole:
-    def __init__(self, console: subprocess.Popen[bytes], onOut: Callable[[str], None], onErr: Callable[[str], None],
-            timeout: float) -> None:
-        ios = {}
-        for name, io in [('in', console.stdin), ('out', console.stdout), ('err', console.stderr)]:
-            if io is None:
-                raise ValueError('an io is missing')
-            else:
-                ios[name] = io
-        self._in = _pipe(ios['in'])
-        self._out = _pipe(ios['out'])
-        self._err = _pipe(ios['err'])
-        self._onCloseLock = Condition()
-        self._closed = False
-
-        workers: list[Thread] = []
-        def reader(pipe: _pipe, callback: Callable[[str], None]):
-            io = iter(pipe.IO.readline, b'')
-            while True:
-                try:
-                    line = next(io)
-                except (StopIteration, ValueError):
-                    break
-                chunk = bytes.decode(line, encoding=config.ENCODING)
-                callback(chunk)
-            self.Dispose()
-        workers.append(Thread(target=reader, args=[self._out, onOut]))
-        workers.append(Thread(target=reader, args=[self._err, onErr]))
-
-        def timeoutTask():
-            self._onCloseLock.acquire()
-            self._onCloseLock.wait(timeout)
-            self._onCloseLock.release()
-            self.Dispose()
-        workers.append(Thread(target=timeoutTask))
-            
-        for w in workers:
-            w.daemon = True # stop with program
-            w.start()
-
-    def IsClosed(self) -> bool:
-        self._onCloseLock.acquire()
-        closed = self._closed
-        self._onCloseLock.release()
-        return closed
-
-    def __write(self, pipe: _pipe, statement: str):
-        # msg = ' '.join([cmd] + [Console_Encode(arg) for arg in args])
-        pipe.IO.write(bytes('%s\n' % (statement), encoding=config.ENCODING))
-
-    def Send(self, statement:str):
-        stdin = self._in
-        stdin.Lock.acquire()
-        self.__write(stdin, statement)
-        stdin.IO.flush()
-        stdin.Lock.release()
-
-    def BatchSend(self, statements: list[str]):
-        stdin = self._in
-        stdin.Lock.acquire()
-        for s in statements:
-            self.__write(stdin, s)
-        stdin.IO.flush()
-        stdin.Lock.release()
-
-    def Dispose(self):
-        self._onCloseLock.acquire()
-        if self._closed:
-            self._onCloseLock.release()
-            return
-        self._closed = True
-        self._onCloseLock.notify_all()
-        self._onCloseLock.release()
-        self.Send('logout')
-        for p in [self._in, self._out, self._err]:
-            p.Lock.acquire()
-            p.IO.close()
-            p.Lock.release()
-
 class SshConnection(Connection):
+    class _Pipe:
+        def __init__(self, io:subprocess.IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
+            self.IO = io
+            self.Lock = lock
+            self.Q = q
 
-    class Transaction:
+    class _SshConsole:
+        def __init__(self, console: subprocess.Popen[bytes], onOut: Callable[[str], None], onErr: Callable[[str], None],
+                timeout: float) -> None:
+            ios = {}
+            for name, io in [('in', console.stdin), ('out', console.stdout), ('err', console.stderr)]:
+                if io is None:
+                    raise ValueError('an io is missing')
+                else:
+                    ios[name] = io
+            self._in = SshConnection._Pipe(ios['in'])
+            self._out = SshConnection._Pipe(ios['out'])
+            self._err = SshConnection._Pipe(ios['err'])
+            self._onCloseLock = Condition()
+            self._closed = False
+
+            workers: list[Thread] = []
+            def reader(pipe: SshConnection._Pipe, callback: Callable[[str], None]):
+                io = iter(pipe.IO.readline, b'')
+                while True:
+                    try:
+                        line = next(io)
+                    except (StopIteration, ValueError):
+                        break
+                    chunk = bytes.decode(line, encoding=config.ENCODING)
+                    callback(chunk)
+                self.Dispose()
+            workers.append(Thread(target=reader, args=[self._out, onOut]))
+            workers.append(Thread(target=reader, args=[self._err, onErr]))
+
+            def timeoutTask():
+                self._onCloseLock.acquire()
+                self._onCloseLock.wait(timeout)
+                self._onCloseLock.release()
+                self.Dispose()
+            workers.append(Thread(target=timeoutTask))
+                
+            for w in workers:
+                w.daemon = True # stop with program
+                w.start()
+
+        def IsClosed(self) -> bool:
+            self._onCloseLock.acquire()
+            closed = self._closed
+            self._onCloseLock.release()
+            return closed
+
+        def __write(self, pipe: SshConnection._Pipe, statement: str):
+            # msg = ' '.join([cmd] + [Console_Encode(arg) for arg in args])
+            pipe.IO.write(bytes('%s\n' % (statement), encoding=config.ENCODING))
+
+        def Send(self, statement:str):
+            stdin = self._in
+            stdin.Lock.acquire()
+            self.__write(stdin, statement)
+            stdin.IO.flush()
+            stdin.Lock.release()
+
+        def BatchSend(self, statements: list[str]):
+            stdin = self._in
+            stdin.Lock.acquire()
+            for s in statements:
+                self.__write(stdin, s)
+            stdin.IO.flush()
+            stdin.Lock.release()
+
+        def Dispose(self):
+            self._onCloseLock.acquire()
+            if self._closed:
+                self._onCloseLock.release()
+                return
+            self._closed = True
+            self._onCloseLock.notify_all()
+            self._onCloseLock.release()
+            self.Send('logout')
+            for p in [self._in, self._out, self._err]:
+                p.Lock.acquire()
+                p.IO.close()
+                p.Lock.release()
+
+    class _Transaction:
         def __init__(self) -> None:
             self.Lock = Condition()
             self.Packets: Queue[str] = Queue()
@@ -139,10 +135,10 @@ class SshConnection(Connection):
             self._sync(lambda: self.Lock.wait(timeout))
 
     def __init__(self, url:str, setup: list[str], cmd: str,
-            transactionTimeout:float, keepAliveTime:float,searchableCritera: list[Criteria],
+            transactionTimeout:float, keepAliveTime:float,
             identityFile: str = None) -> None:
-        super().__init__(searchableCritera)
-        self._transactions: dict[str, SshConnection.Transaction] = {}
+        super().__init__()
+        self._transactions: dict[str, SshConnection._Transaction] = {}
         self._transactionTimeout = transactionTimeout
         self._keepAliveTime = keepAliveTime
         self._url = url
@@ -154,7 +150,7 @@ class SshConnection(Connection):
         self._onResponseSubscribers = []
         self._onErrorSubScribers = []
 
-    def _getCon(self) -> _sshConsole:
+    def _getCon(self) -> _SshConsole:
         cmd = ['ssh', '-tt', self._url]
         if self._identityFile is not None:
             cmd += ['-i', self._identityFile]
@@ -172,7 +168,7 @@ class SshConnection(Connection):
 
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
-                parsed = Models.Message.Parse(msg)
+                parsed = ssh.Message.Parse(msg)
                 if parsed.MessageID in self._transactions:
                     tr = self._transactions[parsed.MessageID]
                     if parsed.IsError:
@@ -182,6 +178,8 @@ class SshConnection(Connection):
                         tr.Packets.put(parsed.Body)
                         tr.Notify()
                 else:
+                    # print(parsed.MessageID)
+                    # print([self._transactions.keys()])
                     print('unregistered message: %s'%msg)
 
         def onErr(msg):
@@ -191,25 +189,25 @@ class SshConnection(Connection):
             if not msg.startswith('Connection to') and not msg.endswith('closed.'):
                 print('Fatal error> ' + msg)
 
-        con = _sshConsole(p, onOut, onErr, self._keepAliveTime)
+        con = SshConnection._SshConsole(p, onOut, onErr, self._keepAliveTime)
         con.BatchSend(setup)
         return con
 
-    def _send(self, ep:ProviderEndpoint, model: Model|None = None) -> MessageID:
+    def _send(self, ep:str, model: Model|None = None) -> MessageID:
         if self.__connection.IsClosed():
             self.__connection = self._getCon()
 
         cmd = self._cmd
         mid = MessageID()
         ser = Console_Encode(json.dumps(model.ToDict())) if model is not None else ''
-        statement = '%s %s %s %s' % (cmd, mid.AsHex(), ep.Path, ser)
+        statement = '%s %s %s %s' % (cmd, mid.AsHex(), ep, ser)
         self.__connection.Send(statement)
         return mid
 
     def _listenFor(self, mid: MessageID, timeout:float=0) -> tuple[bool, str]:
         if timeout==0:
             timeout = self._transactionTimeout
-        tr = SshConnection.Transaction()
+        tr = SshConnection._Transaction()
         self._transactions[mid.AsHex()] = tr
         tr.Wait(timeout)
         try:
@@ -217,7 +215,7 @@ class SshConnection(Connection):
         except Empty:
             return False, ''
 
-    def _makeTransaction(self, ep: ProviderEndpoint, body: Model|None = None) -> tuple[bool, str]:
+    def _makeTransaction(self, ep: str, body: Model|None = None) -> tuple[bool, str]:
         self.LastUse = current_time()
         mid = self._send(ep, body)
         return self._listenFor(mid)
@@ -234,35 +232,38 @@ class SshConnection(Connection):
     def RemoveOnErrorCallback(self, fn: Callable[[str], None]) -> None:
         self._onResponseSubscribers.remove(fn)
 
-    def CheckStatus(self, echo: str) -> Models.Status.Response:
-        success, res = self._makeTransaction(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
-        if success:
-            return Models.Status.Response.Parse(res)
-        else:
-            return Models.Status.Response(False, res)
+    # def CheckStatus(self, echo: str) -> Models.Status.Response:
+    #     success, res = self._makeTransaction(ProviderEndpoint.CHECK_STATUS, Models.Status.Request(echo))
+    #     if success:
+    #         return Models.Status.Response.Parse(res)
+    #     else:
+    #         return Models.Status.Response(False, res)
 
     def GetSchema(self) -> Models.Schema:
-        success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA)
+        success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA.Path)
         if success:
             return Models.Schema.Parse(res)
         else:
             return Models.Schema()
 
-    T = TypeVar('T')
-    def Send(self, reqModel: Models.Generic, constr: Callable[..., T]) -> Union[T, ErrorModel]:
-        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, body=reqModel)
-        if success:
-            return constr(res)
-        else:
-            return constr({})
+    # T = TypeVar('T')
+    # def Send(self, reqModel: Models.ProviderRequest, constr: Callable[..., T]) -> Union[T, ErrorModel]:
+    #     success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, body=reqModel)
+    #     if success:
+    #         return constr(res)
+    #     else:
+    #         return constr({})
 
-    def MakeRequest(self, purpose: str, request: Primitive) -> Primitive:
-        success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, Models.Generic(purpose, request))
+    def MakeRequest(self, request: Models.ProviderRequest) -> Models.GenericResponse:
+        success, res = self._makeTransaction(request._TargetEndpoint, request)
         if success:
-            resModel = Models.Generic.Parse(res)
-            return resModel.Data
+            resModel = Models.GenericResponse.Parse(res)
+            return resModel
         else:
-            return {'fatal error': 'request failed'}
+            err = Models.GenericResponse()
+            err.Code = 0
+            err.Error = 'connection failed'
+            return err
 
     def Dispose(self):
         self.__connection.Dispose()
@@ -275,28 +276,32 @@ class Handler:
     def HandleCommandLineRequest(self) -> None:
         self._lastRawRequest = sys.argv
         if len(sys.argv) == 4:
-            mid, endpoint, body = sys.argv[1:]
+            rmid, endpoint, body = sys.argv[1:]
         else:
-            mid, endpoint = sys.argv[1:]
+            rmid, endpoint = sys.argv[1:]
             body = '{}'
-        mid = MessageID(mid)
+        mid = MessageID(rmid)
         body = Console_Decode(body)
 
         def getHandlerMethod():
+            PREFIX = '_parse'
+            SUFFIX = 'Request'
+            getMethod = lambda path: '%s_%s_%s' % (PREFIX, path, SUFFIX)
+            # self._send(MessageID(), endpoint, True)
             for ep in ProviderEndpoint:
-                if ep.Path != endpoint: continue
-                path = ep.Path.title()
-                method = '_parse%sRequest' % path
-                myMethods = [m for m in dir(self) if m.startswith('_parse') and m.endswith('Request')]
+                candidate = ep.Path
+                if candidate != endpoint: continue
+                method = getMethod(candidate.title())
+                myMethods = [m for m in dir(self) if m.startswith(PREFIX)]
                 for m in myMethods:
                     if method == m:
                         return getattr(self, m)
-                return None
-            return None
+                return method
+            return self._parse_Generic_Request
         handler = getHandlerMethod()
 
-        if handler is None:
-            self._send(mid, 'Unrecognized endpoint [%s]' % (endpoint), True)
+        if isinstance(handler, str):
+            self._send(mid, 'expectd method [%s] for endpoint [%s] not implimented' % (handler, endpoint), True)
         else:
             try:
                 res = handler(body)
@@ -306,36 +311,44 @@ class Handler:
         pass
 
     def _send(self, mid: MessageID, msg: str, isError:bool = False):
-        serialized = json.dumps(Models.Message(mid.AsHex(), msg, isError).ToDict())
+        serialized = json.dumps(ssh.Message(mid.AsHex(), msg, isError).ToDict())
         print(Handler.SEND_FLAG + serialized)
 
-    def _parseStatusRequest(self, raw: str):
-        return self.OnStatusRequest(Models.Status.Request.Parse(raw))
-    def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
-        return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
+    # def _parseStatusRequest(self, raw: str):
+    #     return self.OnStatusRequest(Models.Status.Request.Parse(raw))
+    # def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
+    #     return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
 
-    def _parseSchemaRequest(self, raw: str):
-        return self.OnSchemaRequest()
-    def OnSchemaRequest(self) -> Models.Schema:
-        return Models.Schema([
-            Models.Service('Abstract service example (provider did not implement schema request)', {'a': str, 'b': bool}, {'x': int})
-        ])
+    def _parse_Schema_Request(self, raw: str) -> Model:
+        return self.On_Schema_Request()
+    def On_Schema_Request(self) -> Models.Schema:
+        example = Models.Service()
+        example.Endpoint = 'Abstract_service_example'
+        example.Input = {'a': str, 'b': bool}
+        example.Output = {'x': int}
+        sch = Models.Schema()
+        sch.Services = [example]
+        return sch
 
-    def _parseSearchRequest(self, raw: str):
-        pass
-    def OnSearchRequest(self):
-        pass
-
-    def _parseGenericRequest(self, raw: str):
-        req = Models.Generic.Parse(raw)
-        return self.OnGenericRequest(req.Purpose, req.Data)
-    def OnGenericRequest(self, purpose: str, data: Models.Primitive) -> Models.Generic:
+    # todo: better errors
+    def _parse_Generic_Request(self, raw: str) -> Model:
+        req = Models.GenericRequest.Parse(raw)
+        try:
+            res = self.On_Generic_Request(req._TargetEndpoint, req.Body)
+            return Models.GenericResponse(res)
+        except Exception as e:
+            return Models.GenericResponse({}, 500, str(e))
+        
+    def On_Generic_Request(self, endpoint: str, body: Primitive) -> Primitive:
         """
         @purpose: name of service being invoked
         @data: data dict expected to follow the schema described by Service.Input
         @return: performs service listed by OnSchemaRequest() and return in form of Service.Output
         """
-        return Models.Generic('error', {
-            'message': 'provider not implemented!',
-            'echo': data
-        })
+        return {
+            'error': {
+                'message': 'provider not implemented!',
+                'endpoint': endpoint,
+                'echo': body
+            }
+        }

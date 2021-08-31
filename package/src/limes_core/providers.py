@@ -6,7 +6,7 @@ from django.http import request
 from requests.models import Response
 
 from limes_common import config
-from limes_common.models.network import Model, ErrorModel, Primitive, server, provider
+from limes_common.models import Model, ErrorModel, Primitive, server, provider
 from limes_common.connections import Connection, Criteria
 from limes_common.connections.ssh import SshConnection
 # from limes_common.models.provider import Result as Result
@@ -75,8 +75,8 @@ class Handler:
             else: # todo support multiple tokens provider-side
                 q = ' '.join(request.Query)
             r = p.Send(
-                provider.Generic('search', q),
-                provider.Generic.Parse
+                provider.ProviderRequest('search', q),
+                provider.ProviderRequest.Parse
             )
             if isinstance(r, ErrorModel):
                 response.append({'error': r.Message})
@@ -102,7 +102,7 @@ class Handler:
         con = self._providers.get(name, None)
         if con is None:
             return ErrorModel(404, '[%s] not a registered provider' % name)
-        res = con.Send(req.Body, provider.Generic.Parse)
+        res = con.Send(req.Body, provider.ProviderRequest.Parse)
 
         print(res.ToDict(simple=True))
         return Model()

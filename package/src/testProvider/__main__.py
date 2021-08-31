@@ -1,39 +1,49 @@
 from limes_common.connections.ssh import Handler, MessageID
-from limes_common.models.network import Model, provider as Models
+from limes_common.models import Model, provider as Models, Primitive
 
 class TestProvider(Handler):
-    def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
-        return Models.Status.Response(True, req.Msg, 'Hello from the test Provider!')
+    def On_Schema_Request(self) -> Models.Schema:
+        sum = Models.Service()
+        sum.Endpoint = 'sum'
+        sum.Input = {'values': list[float]}
+        sum.Output = {'result': float}
+        
+        echo = Models.Service()
+        echo.Endpoint = 'echo'
+        echo.Input = {'message': dict}
+        echo.Output = {'echo': dict}
 
-    def OnSchemaRequest(self) -> Models.Schema:
-        S = Models.Service
-        return Models.Schema([
-            S('sum', {'values': list[float]}, {'result': float}),
-            S('echo', {'message': dict}, {'echo': dict}),
-            S('say hi', {}, {'greeting': str})
-        ])
+        hi = Models.Service()
+        hi.Endpoint = 'say hi'
+        hi.Output = {'greeting': str}
 
-    def OnGenericRequest(self, purpose: str, data: dict[str, Models.Primitive]) -> Models.Generic:
-        # self._send(MessageID(''), purpose, True)
+        sch = Models.Schema()
+        sch.Services = [sum, echo, hi]
+        return sch
+
+    def On_Generic_Request(self, endpoint: str, body: Primitive) -> Primitive:
+        # self._send(MessageID(''), endpoint+ str(body), True)
         res = 'error'
+        if not isinstance(body, dict):
+            return res
+
         out: dict[str, Models.Primitive] = {'code': '400'}
-        if purpose == 'sum':
-            vals = data.get('values', [])
+        if endpoint == 'sum':
+            vals = body.get('values', [])
             if isinstance(vals, list):
                 sum = 0
                 for v in vals:
                     if isinstance(v, int) or isinstance(v, float):
                         sum += float(v)
                 out = {'result': sum}
-            res = purpose
-        elif purpose == 'echo':
-            out = {'echo': data.get('message', {})}
-            res = purpose
-        elif purpose == 'say hi':
+            res = endpoint
+        elif endpoint == 'echo':
+            out = {'echo': body.get('message', {})}
+            res = endpoint
+        elif endpoint == 'say hi':
             out = {'greeting': 'hello'}
-            res = purpose
+            res = endpoint
 
-
-        return Models.Generic(res, out)
+        return out
 
 TestProvider().HandleCommandLineRequest()

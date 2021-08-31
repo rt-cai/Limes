@@ -1,21 +1,19 @@
 from functools import reduce
 
-from limes_common.connections import Criteria
-
 from ..http import HttpConnection
 from ... import config
-from ...models.network import elab
-from ...models.network.endpoints import ELabEndpoint
+from ...models import elab
+from ...models.endpoints import ELabEndpoint
 
 class ELabConnection(HttpConnection):
     def __init__(self) -> None:
-        super().__init__(config.ELAB_API, [
-            Criteria.SAMPLES
-        ])
+        super().__init__(config.ELAB_API)
         self._token: str = ''
 
     def _getAuthHeader(self):
         return {'authorization': self._token}
+
+
 
     def SetToken(self, token:str) -> None:
         self._token = token
