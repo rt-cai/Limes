@@ -24,6 +24,8 @@ class SerializableTypes:
 
     @classmethod
     def _parseFloat(cls, x) -> float:
+        if isinstance(x, float):
+            return x
         f = float(x)
         if f.is_integer():
             raise ValueError
@@ -92,10 +94,11 @@ class SerializableTypes:
         return all
 
     @classmethod
-    def RegisterModel(cls, modelType: type[Model]):
-        name = cls._typeStr(modelType)
-        if name not in cls.DefinedModels:
-            cls.DefinedModels[name] = modelType
+    def _registerModel(cls, child):
+        if str(child) == "<class 'limes_common.models.Model'>" or (inspect.isclass(child) and issubclass(child, Model)):
+            name = cls._typeStr(child)
+            if name not in cls.DefinedModels:
+                cls.DefinedModels[name] = child
 
     @classmethod
     def ConstrFromStr(cls, string: str) -> Callable | None:
@@ -166,6 +169,8 @@ class SerializableTypes:
                     s2, d[key] = cls.Parse(valType, v)
                     success = s1 and s2 and success
                 return success, d
+            else:
+                return True, value
 
         if base == 'list' and isinstance(value, list):
             if len(subs) == 1:
@@ -177,6 +182,8 @@ class SerializableTypes:
                     l.append(v)
                     success = success and s
                 return success, l
+            else:
+                return True, value
 
         if base == 'typing.Union':
             order = ['dict', 'tuple', 'list', 'bool', 'float', 'int', 'str']
@@ -223,19 +230,20 @@ class SerializableTypes:
             print('custom types must use a custom <SerializableTypes>')
         return False, value
 
-class Model:
+
+class AutoRegisterChildren(type):
+    def __new__(cls, name, bases, classdict):
+        new_cls = type.__new__(cls, name, bases, classdict)
+        SerializableTypes._registerModel(new_cls)
+        return new_cls
+
+class Model(metaclass=AutoRegisterChildren):
     GetTypesDict: Callable[..., type[SerializableTypes]] = lambda: SerializableTypes
 
     # INHERITING CLASSES MUST SET DEFAULTS TO ALL CONSTRUCTOR PARAMATERS
     def __init__(self) -> None:
         self._jsonLoadSuccess = False
         self._raw = ''
-        # self._register()
-        SerializableTypes.RegisterModel(self.__class__)
-
-    # @classmethod
-    # def _register(cls):
-    #     SerializableTypes.RegisterModel(cls)
 
     @classmethod
     def _getTypes(cls, typesDict: type[SerializableTypes]) -> dict[str, TypeDesc]:
@@ -248,11 +256,12 @@ class Model:
         return d
 
     @classmethod
-    def Parse(cls, raw: bytes | str | dict):
+    def Parse(cls, raw: bytes | str | dict, base: Model=None):
         try:
             model = cls()
         except TypeError:
             raise TypeError('%s inheriting <Model> must have no requred paramaters in constructor' % str(cls))
+
         try:
             if isinstance(raw, dict):
                 d = raw
@@ -265,9 +274,12 @@ class Model:
 
         typesDict = cls.GetTypesDict()
         hints = cls._getTypes(typesDict)
+        # print([hints.keys()])
         for k, t in hints.items():
             if k.startswith('_') or k == 'GetTypesDict': continue
             _, val = typesDict.Parse(t, d.get(k, None))
+            if val is None and base is not None:
+                val = base.__dict__.get(k, None)
             model.__setattr__(k, val)
         return model
 
@@ -295,3 +307,8 @@ class Model:
             if k.startswith('_'): continue
             d[k] = self._toDict(v)
         return d
+
+# decorator to register class
+def Serializable(cls: T) -> T:
+    SerializableTypes._registerModel(cls)
+    return cls

@@ -64,6 +64,7 @@ def PrintTitle(file):
     file = file.split('/')[-1][:-3]
     global _file
     _file = file
+    _cprint(_bcolors.OKBLUE, '___________________________')
     _cprint(_bcolors.OKBLUE, '%s\n' % file)
 
 def BeforeAll(fn: Callable[[dict], dict]) -> None:

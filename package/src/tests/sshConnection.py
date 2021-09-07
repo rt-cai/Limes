@@ -1,8 +1,6 @@
-
-from limes_common.connections import Criteria
 from .testTools import AfterAll, Assert, BeforeAll, PrintStats, PrintTitle, Test
-from limes_common.connections.ssh import SshConnection, Handler
-from limes_common.models import Model, Primitive, SerializableTypes, provider as Models
+from limes_common.connections.ssh import SshConnection
+from limes_common.models import Model, Primitive, provider as Models
 
 PrintTitle(__file__)
 
@@ -13,13 +11,10 @@ def all(env: dict):
         'cd ~/workspace/Python/Limes/package/src/',
         'conda activate limes'
     ]
-    cmd = 'python -m testProvider'
+    cmd = 'python -m test_provider'
     timeout = 3
     keepAlive = 10
-    criteria = [
-        Criteria.DATA
-    ]
-    con = SshConnection(url, setup, cmd, timeout, keepAlive, criteria)
+    con = SshConnection(url, setup, cmd, timeout, keepAlive)
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
     env['c'] = con
@@ -31,6 +26,8 @@ def getSchema(env: dict):
     # con.AddOnResponseCallback(lambda m: print(m))
     # con.AddOnErrorCallback(lambda m: print('e>' + m))
     s = con.GetSchema()
+    Assert.Equal(s.Code, 200)
+
     for ser in s.Services:
         print(ser.Endpoint, ser.Input, ser.Output)
 
@@ -53,7 +50,11 @@ def testEcho(env: dict):
         }
     }
 
-    data = con.MakeRequest(Models.GenericRequest('echo', sent)).Body
+    res = con.MakeRequest(Models.GenericRequest('echo', body=sent))
+    if res.Code != 200:
+        print(res.Error)
+    Assert.Equal(res.Code, 200)
+    data = res.Body
     if isinstance(data, dict):
         print(data)
         Assert.Equal(data['echo'], sent['message'])
@@ -68,12 +69,23 @@ def testOp(env: dict):
     sent: Primitive = {
         'values': [1, 2, 3.3]
     }
-    data = con.MakeRequest(Models.GenericRequest('sum', sent)).Body
+    res = con.MakeRequest(Models.GenericRequest('sum', body=sent))
+    if res.Code != 200:
+        print(res.Error)
+    Assert.Equal(res.Code, 200)
+    data = res.Body
     if isinstance(data, dict):
         print(data)
         Assert.Equal(data['result'], 6.3)
     else:
         Assert.Fail()
+
+@Test
+def testSearch(env: dict):
+    con: SshConnection = env['c']
+    r = con.Search('tol')
+    print(r.ToDict())
+
 
 @AfterAll
 def cleanup(env: dict):

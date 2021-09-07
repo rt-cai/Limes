@@ -56,42 +56,45 @@ def Login(request: HttpRequest):
 @require_http_methods(['POST'])
 def Authenticate(request: HttpRequest):
     SA = server.Authenticate
-    res = SA.Request.Parse(request.body)
-    client = _activeClients.get(res.ClientId)
+    elab_res = SA.Request.Parse(request.body)
+    client = _activeClients.get(elab_res.ClientId)
 
     print('auth: %s' % (client.FirstName if client is not None else 'unknown'))
+    res = SA.Response()
     if client is not None:
-        return _toRes(SA.Response(True, client.Token, client.FirstName, client.LastName))
+        res.Success = True
+        res.Token = client.Token
+        res.FirstName = client.FirstName
+        res.LastName = client.LastName
     else:
-        return _toRes(SA.Response(False))
-
-@require_http_methods(['POST'])
-def Add(request: HttpRequest):
-    SA = server.AddSample
-    fail = lambda m='': _toRes(SA.Response(False, message=m))
-
-    print('adding not implimented')
-
-    req = SA.Request.Parse(request.body)
-    client = _activeClients.get(req.ClientId)
-    if not client: return fail('Not logged in')
-
-    # success, msg = fileHandler.TryAddFile(client.Token, req.Meta, request.FILES[SA.FILE_KEY])
-    success, msg = (False, 'not implemented with providers')
-    if success:
-        return _toRes(SA.Response(True, sampleName=msg))
-    else:
-        return fail(msg)
+        res.Success = False
+    return _toRes(res)
 
 # @require_http_methods(['POST'])
-# def Blast(request: HttpRequest):
-#     SB = server.Blast
-#     result = fileHandler.Blast(request.FILES[SB.FILE_KEY])
-#     return JsonResponse(SB.MakeResponse(True, result))
+# def Add(request: HttpRequest):
+#     SA = server.AddSample
+#     fail = lambda m='': _toRes(SA.Response(False, message=m))
+
+#     print('adding not implimented')
+
+#     req = SA.Request.Parse(request.body)
+#     client = _activeClients.get(req.ClientId)
+#     if not client: return fail('Not logged in')
+
+#     # success, msg = fileHandler.TryAddFile(client.Token, req.Meta, request.FILES[SA.FILE_KEY])
+#     success, msg = (False, 'not implemented with providers')
+#     if success:
+#         return _toRes(SA.Response(True, sampleName=msg))
+#     else:
+#         return fail(msg)
 
 @require_http_methods(['POST'])
 def List(request: HttpRequest):
     return _toRes(_providers.HandleList(request.body))
+
+@require_http_methods(['POST'])
+def Reset(request: HttpRequest):
+    return _toRes(_providers.Reset(request.body))
 
 @require_http_methods(['POST'])
 def Call(request: HttpRequest):

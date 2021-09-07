@@ -11,7 +11,6 @@ from limes_common.utils import current_time
 from . import Connection
 from limes_common import config
 from limes_common.models import Model, Primitive, provider as Models, ssh
-from limes_common.models.endpoints import ProviderEndpoint
 
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:
@@ -30,7 +29,7 @@ class MessageID:
 
     def AsHex(self):
         return self.__uuid
-
+        
 class SshConnection(Connection):
     class _Pipe:
         def __init__(self, io:subprocess.IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
@@ -111,10 +110,16 @@ class SshConnection(Connection):
             self._closed = True
             self._onCloseLock.notify_all()
             self._onCloseLock.release()
-            self.Send('logout')
+            try:
+                self.Send('logout')
+            except BrokenPipeError:
+                pass
             for p in [self._in, self._out, self._err]:
                 p.Lock.acquire()
-                p.IO.close()
+                try:
+                    p.IO.close()
+                except BrokenPipeError:
+                    pass
                 p.Lock.release()
 
     class _Transaction:
@@ -134,7 +139,8 @@ class SshConnection(Connection):
         def Wait(self, timeout: float):
             self._sync(lambda: self.Lock.wait(timeout))
 
-    def __init__(self, url:str, setup: list[str], cmd: str,
+    def __init__(self,
+            url:str, setup: list[str], cmd: str,
             transactionTimeout:float, keepAliveTime:float,
             identityFile: str = None) -> None:
         super().__init__()
@@ -166,6 +172,7 @@ class SshConnection(Connection):
             for cb in self._onResponseSubscribers:
                 cb(msg)
 
+            # if self.x == 0: print('>%s' % msg)
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
                 parsed = ssh.Message.Parse(msg)
@@ -185,7 +192,7 @@ class SshConnection(Connection):
         def onErr(msg):
             for cb in self._onErrorSubScribers:
                 cb(msg)
-
+            # if self.x == 0: print('er>%s' % msg)
             if not msg.startswith('Connection to') and not msg.endswith('closed.'):
                 print('Fatal error> ' + msg)
 
@@ -216,7 +223,6 @@ class SshConnection(Connection):
             return False, ''
 
     def _makeTransaction(self, ep: str, body: Model|None = None) -> tuple[bool, str]:
-        self.LastUse = current_time()
         mid = self._send(ep, body)
         return self._listenFor(mid)
 
@@ -240,33 +246,42 @@ class SshConnection(Connection):
     #         return Models.Status.Response(False, res)
 
     def GetSchema(self) -> Models.Schema:
-        success, res = self._makeTransaction(ProviderEndpoint.GET_SCHEMA.Path)
+        success, res = self._makeTransaction(Models.Endpoints.GET_SCHEMA)
         if success:
             return Models.Schema.Parse(res)
         else:
             return Models.Schema()
 
-    # T = TypeVar('T')
-    # def Send(self, reqModel: Models.ProviderRequest, constr: Callable[..., T]) -> Union[T, ErrorModel]:
-    #     success, res = self._makeTransaction(ProviderEndpoint.MAKE_REQUEST, body=reqModel)
-    #     if success:
-    #         return constr(res)
-    #     else:
-    #         return constr({})
-
     def MakeRequest(self, request: Models.ProviderRequest) -> Models.GenericResponse:
-        success, res = self._makeTransaction(request._TargetEndpoint, request)
+        success, res = self._makeTransaction(request.TargetEndpoint, request)
         if success:
             resModel = Models.GenericResponse.Parse(res)
             return resModel
         else:
             err = Models.GenericResponse()
-            err.Code = 0
+            err.Code = 503
+            err.Error = 'connection failed'
+            return err
+
+    # todo: remove redundancy with make request
+    def Search(self, query: str) -> Models.Search.Response:
+        req = Models.Search.Request()
+        req.Query = query
+        success, res = self._makeTransaction(Models.Endpoints.SEARCH, req)
+        if success:
+            resModel = Models.Search.Response.Parse(res)
+            return resModel
+        else:
+            err = Models.Search.Response()
+            err.Code = 503
             err.Error = 'connection failed'
             return err
 
     def Dispose(self):
         self.__connection.Dispose()
+
+class BadRequestException(Exception):
+    pass
 
 class Handler:
     SEND_FLAG = 'From Handler > '
@@ -288,8 +303,8 @@ class Handler:
             SUFFIX = 'Request'
             getMethod = lambda path: '%s_%s_%s' % (PREFIX, path, SUFFIX)
             # self._send(MessageID(), endpoint, True)
-            for ep in ProviderEndpoint:
-                candidate = ep.Path
+            for ep in Models.Endpoints.Paths():
+                candidate = ep
                 if candidate != endpoint: continue
                 method = getMethod(candidate.title())
                 myMethods = [m for m in dir(self) if m.startswith(PREFIX)]
@@ -304,7 +319,7 @@ class Handler:
             self._send(mid, 'expectd method [%s] for endpoint [%s] not implimented' % (handler, endpoint), True)
         else:
             try:
-                res = handler(body)
+                res = handler(endpoint, body)
                 self._send(mid, json.dumps(res.ToDict()))
             except Exception as e:
                 self._send(mid, '\n%sendpoint: %s'%(str(traceback.format_exc()), endpoint), True)
@@ -319,7 +334,7 @@ class Handler:
     # def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
     #     return Models.Status.Response(False, req.Msg, 'This is an abstract Provider and must be implemented')
 
-    def _parse_Schema_Request(self, raw: str) -> Model:
+    def _parse_Schema_Request(self, ep:str, raw: str) -> Models.Schema:
         return self.On_Schema_Request()
     def On_Schema_Request(self) -> Models.Schema:
         example = Models.Service()
@@ -330,25 +345,41 @@ class Handler:
         sch.Services = [example]
         return sch
 
-    # todo: better errors
-    def _parse_Generic_Request(self, raw: str) -> Model:
-        req = Models.GenericRequest.Parse(raw)
+    def _parse_Generic_Request(self, ep: str, raw: str) -> Models.GenericResponse:
+        req = Models.GenericRequest.Parse(raw) # todo: dedicated primitive model
         try:
-            res = self.On_Generic_Request(req._TargetEndpoint, req.Body)
-            return Models.GenericResponse(res)
+            if ep == '':
+                res = Models.GenericResponse()
+                res.Code = 400
+                res.Error = 'Endpoint can not be empty'
+                return res
+            return self.On_Generic_Request(ep, req.Body)
         except Exception as e:
             return Models.GenericResponse({}, 500, str(e))
         
-    def On_Generic_Request(self, endpoint: str, body: Primitive) -> Primitive:
+    def On_Generic_Request(self, endpoint: str, body: Primitive) -> Models.GenericResponse:
         """
         @purpose: name of service being invoked
         @data: data dict expected to follow the schema described by Service.Input
         @return: performs service listed by OnSchemaRequest() and return in form of Service.Output
         """
-        return {
-            'error': {
-                'message': 'provider not implemented!',
-                'endpoint': endpoint,
-                'echo': body
-            }
-        }
+        res = Models.GenericResponse()
+        res.Code = 500
+        res.Error = 'provider not implemented!'
+        return res
+
+    def _parse_Search_Request(self, ep: str, raw: str) -> Models.Search.Response:
+        req = Models.Search.Request.Parse(raw)
+        try:
+            return self.On_Search_Request(req.Query)
+        except Exception as e:
+            res = Models.Search.Response()
+            res.Code = 500
+            res.Error = str(e)
+            return res
+
+    def On_Search_Request(self, query: str) -> Models.Search.Response:
+        res = Models.Search.Response()
+        res.Code = 500
+        res.Error = 'search not implemented!'
+        return res

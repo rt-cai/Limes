@@ -1,1 +1,1 @@
-from limes_common.models.network import Model
+from limes_common.models import Model

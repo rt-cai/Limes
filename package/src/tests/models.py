@@ -98,6 +98,36 @@ def modelLoad(env: dict):
         Assert.Equal(k in actial_d, True)
         Assert.Equal(actial_d[k], v)
 
+class X(Model):
+    d: dict
+    
+@Test
+def arbitraryDictSerialize(env: dict):
+    x = X()
+    expected = x.d = {
+        'a': 1,
+        'b': [
+            'a', 1, False
+        ]
+    }
+
+    actual = x.ToDict()
+    Assert.Equal(actual['d'], expected)
+
+@Test
+def arbitraryDictParse(env: dict):
+    ser = {
+        'd': {
+            'a': 1,
+            'b': [
+                'a', 1, False
+            ]
+        }
+    }
+
+    actual = X.Parse(ser)
+    Assert.Equal(actual.d, ser['d'])
+
 @Test
 def serviceSchema(env: dict):
     ser = provider.Service()
@@ -155,4 +185,17 @@ def typesDict_should_inherit_through_model(env: dict):
         for j in range(len(ex.Schema.Services)):
             Assert.Equal(ac.Schema.Services[j].Endpoint, ex.Schema.Services[j].Endpoint)
 
+@Test
+def int_float_ambiguity(env: dict):
+    class Holder(Model):
+        I: int
+        F: float
+
+    h = Holder()
+    h.I = 1
+    h.F = 1.0
+
+    actual = Holder.Parse(h.ToDict())
+    Assert.Equal(str(type(actual.I)), str(int))
+    Assert.Equal(str(type(actual.F)), str(float))
 PrintStats()

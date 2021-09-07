@@ -2,22 +2,28 @@ from typing import Any, Union
 import os
 
 from limes.tools.qol import Switch
-from limes_common.connections import Criteria
 
-from limes_common.connections.statics import ELabConnection, ServerConnection
-from limes_common.models.network import Primitive, server, provider, ErrorModel, Model
-from limes_common.models.network.elab import SampleModel
+from limes_common.connections.statics import eLab, server
+from limes_common.models import Primitive, Model, server as ServerModels, provider as ProviderModels
+from limes_common.models.elab import Sample
 
 class Limes:
     def __init__(self) -> None:
-        self._server = ServerConnection()
-        self._eLab = ELabConnection()
+        self._server = server.ServerConnection()
+        self._eLab = eLab.ELabConnection()
+
+        self.CallProvider = self._server.CallProvider
+        self.GetSample = self._eLab.GetSample
+        self.GetStorage = self._eLab.GetStorage
+        self.GetFullStoragePath = self._eLab.GetFullStoragePath
+        self.ReloadStorages = self._eLab.ReloadStorages
 
     #   def _auth() -> tuple[bool, str]:
     def _auth(self) -> bool:
         res = self._server.Authenticate()
-        if isinstance(res, ErrorModel):
+        if res.Code != 200:
             return False
+
         if res.Success:
             print('Authenticated terminal as %s' % res.FirstName)
             # return True, res.FirstName
@@ -26,70 +32,49 @@ class Limes:
             # return False, ''
             print('Not logged in')
         return res.Success
-                
 
-    def Login(self, username, password) -> bool:
-        if not self._server.Ready: return False
+    def Login(self, username, password) -> tuple[bool, str]:
+        if not self._server.Ready and not self._server.Reconnect(): 
+            return False, 'unable to connect to server'
         res = self._eLab.Login(username, password)
 
-        if res.Success:
-            self._server.Send(
-                server.Login.Request(res.Token, res.FirstName, res.LastName),
-                server.Login.Parse
-            )
-            print('logged in terminal as %s' % res.FirstName)
-        return res.Success
+        if res.Code == 200:
+            self._server.Login(res.user.firstName, res.user.lastName, res.token)
+            return True, 'logged in as %s' % res.user.firstName
+        elif res.Code == 401:
+            return False, 'incorrect credentials'
+        else:
+            return False, 'failed with code [%s], msg [%s]' % (res.Code, res.Error)
 
-    def ListProviders(self) -> Union[server.List.Response, ErrorModel]:
-        if not self._server.Ready: return ErrorModel(500, 'server can not be reached')
-        return self._server.Send(
-            server.List.Request(),
-            server.List.Response.Parse
-        )
+    def Login_from_file(self, path: str) -> tuple[bool, str]:
+        try:
+            with open(path) as credFile:
+                cred = credFile.readlines()
+                u = cred[0]
+                p = cred[1]
+                return self.Login(u, p)
+        except Exception as e:
+            return False, str(e)
 
-    def Search(self, token: str, criteria: list[Criteria]=[]) -> Union[server.Search.Response, ErrorModel]:
-        # res = self._eLab.SearchSamples(token)
-        res = self._server.Send(
-            server.Search.Request(token, criteria),
-            server.Search.Response.Parse
-        )
-        # search locations
-        # search providers
+    def ListProviders(self):
+        res = self._server.List()
+        es = self._eLab.GetSchema()
+        ei = ServerModels.ProviderInfo()
+        ei.Name = 'eLab'
+        ei.Schema = es
+        if res.Providers is None:
+            res.Providers = [ei]
+        else:
+            res.Providers.append(ei)
         return res
+
+    def Search(self, query: str):
+        s_res = self._server.Search(query)
+        e_res = self._eLab.Search(query)
+        return s_res.AddFrom(e_res)
 
     def AddSample(self):
         pass
 
     def DeleteSample(self):
         pass
-
-    def CallProvider(self, providerName: str, purpose: str, data: Primitive):
-        res = self._server.Send(
-            server.CallProvider.Request(providerName, provider.Generic(purpose, data)),
-            server.CallProvider.Response.Parse
-        )
-        return res
-
-    # def Add(self, sampleId: str, path: str, fileName: str=None) -> bool:
-    #     if not self._server.Ready: return False
-
-    #     if fileName is None:
-    #         tokens = path.split('/')
-    #         fileName = tokens[len(tokens) - 1]
-
-    #     path = os.path.abspath(path)
-    #     file = open(path, 'rb')
-    #     res = self._server.Add(sampleId, path, fileName, file)
-
-    #     if not res.Success:
-    #         print(res.Message)
-    #     else:
-    #         print('file [%s] added to sample [%s]' % (fileName, res.SampleName))
-    #     return res.Success
-
-    def dLogin(self) -> None:
-        with open('../../credentials/elab.msl') as cred:
-            lines = cred.readlines()
-            lines = list(map(lambda l: l.replace('\n', ''), lines))
-            if not self.Login(lines[0], lines[1]):
-                print('quick login failed')
