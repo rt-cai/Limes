@@ -72,9 +72,3 @@ class Limes:
         s_res = self._server.Search(query)
         e_res = self._eLab.Search(query)
         return s_res.AddFrom(e_res)
-
-    def AddSample(self):
-        pass
-
-    def DeleteSample(self):
-        pass
