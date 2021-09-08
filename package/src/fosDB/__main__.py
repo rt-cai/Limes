@@ -1,28 +1,22 @@
 from limes_common.connections.ssh import Handler
-from limes_common.models.network import provider as Models
+from limes_common.models import provider as Models, Primitive
 
 class FosDB(Handler):
-    def OnStatusRequest(self, req: Models.Status.Request) -> Models.Status.Response:
-        return Models.Status.Response(True, req.Msg, 'Hello from FosDB!')
-
-    def OnSchemaRequest(self) -> Models.Schema:
+    def On_Schema_Request(self) -> Models.Schema:
         S = Models.Service
         return Models.Schema([
-            S('search')
+            S('Search', {'q': str}, {'r': str})
         ])
 
-    def OnGenericRequest(self, purpose: str, req: Models.Primitive) -> Models.Generic:
-        if purpose == 'search':
-            return Models.Generic('result', {
-                'result for': req
-            })
-        else:
-            return Models.Generic('unknown request', [purpose, req])
+    def On_Generic_Request(self, endpoint: str, body: Primitive) -> Models.GenericResponse:
+        res = Models.GenericResponse()
+        res.Code = 200
+        return res
 
-def SearchDemo():
-    pass
+# def SearchDemo():
+#     pass
 
     # details()
 
-# FosDB().HandleCommandLineRequest()
-SearchDemo()
+FosDB().HandleCommandLineRequest()
+# SearchDemo()

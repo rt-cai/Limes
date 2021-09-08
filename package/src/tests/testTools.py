@@ -19,7 +19,7 @@ class Assert:
     @classmethod    
     def Equal(cls, a, b):
         if str(a) != str(b):
-            raise AssertionError('expected [%s] to equal [%s]' % (a, b))
+            raise AssertionError('expected [%s]\nto equal [%s]' % (a, b))
 
     @classmethod
     def Fail(cls, msg: str = 'explicit fail'):
@@ -53,6 +53,8 @@ _env = {}
 _beforeAll: Callable[[dict], dict] = lambda x: x
 _afterAll: Union[Callable[[dict], None], None] = None
 _beforeAllCalled = False
+_exception: Union[tuple[Exception, str], None] = None
+
 
 _passed = 0
 _all = 0
@@ -62,13 +64,15 @@ def PrintTitle(file):
     file = file.split('/')[-1][:-3]
     global _file
     _file = file
+    _cprint(_bcolors.OKBLUE, '___________________________')
     _cprint(_bcolors.OKBLUE, '%s\n' % file)
 
 def BeforeAll(fn: Callable[[dict], dict]) -> None:
-    global _beforeAll, _beforeAllCalled
+    global _beforeAll, _beforeAllCalled, _exception
     _beforeAll = fn
     _beforeAllCalled = False
     _afterAll = None
+    _exception = None
 
 def Test(fn: Callable[[dict], None]) -> None:
     global _env
@@ -88,8 +92,9 @@ def Test(fn: Callable[[dict], None]) -> None:
     except AssertionError as e:
         _cprint(_bcolors.FAIL, 'failed:\n%s' % (e))
     except Exception as x:
+        global _exception
+        if _exception is None: _exception = x, fn.__name__
         _cprint(_bcolors.FAIL, 'uncaught exception:\n%s' % (x))
-        # raise x
     _all += 1
     print()
 
@@ -109,3 +114,8 @@ def PrintStats():
         col = _bcolors.FAIL
     _cprint(col, '%s of %s passed' % (_passed, _all))
     print('=================================')
+
+    if _exception is not None:
+        e, n = _exception
+        _cprint(_bcolors.FAIL, 'Uncaught exception for %s' % n)
+        raise e

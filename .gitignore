@@ -13,7 +13,9 @@ package/LICENSE
 package/pyproject.toml
 *.fasta
 *.fastq
+*.npy
 db/
 dbScratch/
 scratch/
-static_providers.json
+static_providers*.json
+test_data/

@@ -1,2 +1,2 @@
-class AbstractClassException(Exception):
+class AbstractMethodException(Exception):
     pass

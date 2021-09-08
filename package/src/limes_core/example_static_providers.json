@@ -9,9 +9,6 @@
         ],
         "command": "python -m testProvider",
         "timeout": 3,
-        "keepAlive": 10,
-        "criterias": [
-            "ALL"
-        ]
+        "keepAlive": 10
     }
 ]

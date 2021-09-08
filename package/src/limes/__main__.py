@@ -66,8 +66,7 @@ def main(args:List[str] = sys.argv[1:]):
         '': base,
         '-h': lambda: Constants.help,
         '--help': lambda: Constants.help,
-        'login': Login,
-        'dlogin': lambda: limes.dLogin(),
+        'login': Login
         # 'search': Search,
         # 'blast': Blast,
         # 'add': Add,

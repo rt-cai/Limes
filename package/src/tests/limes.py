@@ -1,5 +1,5 @@
 from limes.tools.qol import T
-from limes_common.models.network import ErrorModel
+import limes_common
 from .testTools import AfterAll, Assert, BeforeAll, PrintStats, PrintTitle, Test
 
 from limes import Limes
@@ -23,40 +23,45 @@ def login(env: dict):
         creds = [l[:-1] for l in creds.readlines()]
         u = creds[0]
         p = creds[1]
-        x = limes.Login(u, p)
-        Assert.Equal(x, True)
+        suc, msg = limes.Login(u, p)
+        print(msg)
+        Assert.Equal(suc, True)
 
 @Test
 def listProviders(env: dict):
     limes = getLimes(env)
     lst = limes.ListProviders()
-    if lst is not None and not isinstance(lst, ErrorModel):
-        for p in lst.Providers:
-            print('%s, last used: %s' %(p.Name, utils.format_from_utc(p.LastUse)))
-    else:
-        Assert.Fail()
+    Assert.Equal(lst.Code, 200)
+    Assert.Equal(len(lst.Providers) > 0, True)
+    print([p.Name for p in lst.Providers])
 
 @Test
 def testCall(env: dict):
     limes = getLimes(env)
-    res = limes.CallProvider('test_provider', 'sum', [1, 2, 3])
-    if isinstance(res, ErrorModel):
-        Assert.Fail(res.Message)
-    if isinstance(res.Data, dict):
-        Assert.Equal(res.Data['result'], 6)
-    else:
-        Assert.Fail()
-    print(res.ToDict(simple=True))
+    res = limes.CallProvider('test_provider', 'sum', {'values': [3, 4, 5.5]})
+    Assert.Equal(res.Code, 200)
+    payload = res.ResponsePayload
+    if isinstance(payload.Body, dict):
+        print(payload.Code, payload.Error, payload.Body)
+        Assert.Equal(payload.Body.get('result', 0), 12.5)
 
 @Test
 def testSearch(env: dict):
     limes = getLimes(env)
-    x = limes.Search('guag')
-    if isinstance(x, ErrorModel):
-        Assert.Fail()
+    res = limes.Search('guag peptide')
+    Assert.Equal(res.Code, 200)
+    for k, v in res.Hits.items():
+        print(k, v)
+
+@Test
+def passthrough_elabStorage(env: dict):
+    limes = getLimes(env)
+    sid = 783963
+    x = limes.GetStorage(sid)
+    if x is not None:
+        print(x.name)
+        print([i.name for i in limes.GetFullStoragePath(sid)])
     else:
-        for h in x.Hits:
-            print(h.Type, h.Data)
-            Assert.Equal(h.Data != {}, True)
+        Assert.Fail()
 
 PrintStats()

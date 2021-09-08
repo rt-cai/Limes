@@ -1,13 +1,8 @@
+from __future__ import annotations
 import json
-from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
 
-from limes_common.models.network import Model, SerializableTypes, provider as Provider
-
-class TestModel(Model):
-    def __init__(self, string = '', boolean = False, integer = 0) -> None:
-        self.string = string
-        self.boolean = boolean
-        self.integer = integer
+from tests.testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
+from limes_common.models import Model, Primitive, SerializableTypes, provider, server
 
 PrintTitle(__file__)
 
@@ -16,129 +11,191 @@ def all(env: dict):
     return env
 
 class Inner(Model):
-    def __init__(self, a: int = 0, b: str = '') -> None:
-        self.a = a
-        self.b = b
+    a: int
+    b: bool
+
+    def __init__(self) -> None:
+        # this prevents <Outer> from being registered as a <Model>
+        pass
 
 class Outer(Model):
-    def __init__(self, x: str = '', inner: Inner = Inner()) -> None:
-        self.x = x
-        self.inner = inner
-
+    P: Primitive
+    Dic: dict[str, Inner]
+    L: list[Inner]
+    B: bool
+    S: str
+    I: Inner
+    GetTypesDict = lambda: TestTypesDict # this is useful for non-Model types
 class TestTypesDict(SerializableTypes):
-    INNER = Inner.Parse, Inner()
-    OUTER = Outer.Parse, Outer()
+    # parser fn, type
+    INNER = Inner.Parse, Inner
+    OUTER = Outer.Parse, Outer
 
 @Test
 def modelToDict(env: dict):
-    string = 'asdf'
-    boolean = False
-    integer = 12565
-    expected = """{"string": {"L_type": "<class 'str'>", "L_value": "%s"},
-        "boolean": {"L_type": "<class 'bool'>", "L_value": %s},
-        "integer": {"L_type": "<class 'int'>", "L_value": %s}}""" \
-        % (string, str(boolean).lower(), integer)
 
-    model = TestModel(string, boolean, integer)
-    actual = json.dumps(model.ToDict())
+    actual = Outer()
+    i = actual.I = Inner()
+    i.a, i.b = 11, True
 
-    Assert.Equal(json.loads(actual), json.loads(expected))
+    actual.P = {
+        'prim': 1
+    }
+    p = actual.P
+    d = actual.Dic = {
+        'in': i 
+    }
+    l = actual.L = [
+        i
+    ]
+    b = actual.B = True
+    s = actual.S = 'string'
+    expected = {'I': i.ToDict(), 'P': p, 'Dic': {'in': i.ToDict()}, 'L': [i.ToDict()], 'B': b, 'S': s}
+    
+    Assert.Equal(str(actual.ToDict()), str(expected))
 
 @Test
 def modelLoad(env: dict):
-    string = 'le string'
-    boolean = True
-    integer = 9000
-    serialized = '''{"string": {"L_type": "<class \'str\'>", "L_value": "%s"},
-        "boolean": {"L_type": "<class \'bool\'>", "L_value": %s},
-        "integer": {"L_type": "<class \'int\'>", "L_value": %s}}''' \
-        % (string, str(boolean).lower(), integer)
+    expected = Outer()
+    i = expected.I = Inner()
+    i.a, i.b = 11, True
 
-    actual = TestModel.Parse(json.loads(serialized))
+    expected.P = {
+        'prim': 1, 
+        'more': True,
+        'strings': 'ssssss',
+        'l': [
+            {'nest': {'x': [{'b':'B'}, {'a': 'A'}]}},
+            4
+        ]
+    }
+    p = expected.P
+    d = expected.Dic = {
+        'in': i 
+    }
+    l = expected.L = [
+        i
+    ]
+    b = expected.B = True
+    s = expected.S = 'string'
+    serial = """{"I": {"a": 11, "b": true},
+        "P": {"prim": 1, "more": true, "strings": "ssssss", "l": [
+            {"nest": {"x": [{"b": "B"}, {"a": "A"}]}}, 4
+        ]},
+        "Dic": {"in": {"a": 11, "b": true}},
+        "L": [{"a": 11, "b": true}],
+        "B": true,
+        "S": "string"}
+    """
 
-    Assert.Equal(actual.string, string)
-    Assert.Equal(actual.boolean, boolean)
-    Assert.Equal(actual.integer, integer)
+    actual = Outer.Parse(serial)
+    for i in range(len(actual.L)):
+        ac = actual.L[i]
+        Assert.Equal(str(type(ac)), str(Inner))
 
-@Test
-def nestedSerialize(env: dict):
-    a = 25
-    b = 'inside!'
-    inner = Inner(a, b)
-    x = 'le x string'
-    outer = Outer(x, inner)
-    actual = json.dumps(outer.ToDict())
+    actial_d  = actual.ToDict()
+    for k, v in json.loads(serial).items():
+        Assert.Equal(k in actial_d, True)
+        Assert.Equal(actial_d[k], v)
 
-    expected = '''{"x": {"L_type": "<class 'str'>", "L_value": "le x string"}, 
-    "inner": {"L_type": "%s", "L_value": {
-        "a": {"L_type": "<class 'int'>", "L_value": 25},
-        "b": {"L_type": "<class 'str'>", "L_value": "inside!"}}}}''' % (Inner)
-
-    Assert.Equal(json.loads(actual), json.loads(expected))
-
-@Test
-def nestedComplex(env: dict):
-    class Complex(Model):
-        def __init__(self, lst = [], dict = {}) -> None:
-            self.List = lst
-            self.Dict = dict
-
-    com = Complex([
-        1, 'lst', False,
-        Inner(23, 'inner-lst')
-    ], {
-        'TF': True,
-        'inner': Inner(2, 'inner-dict')
-    })
-    serialized = json.dumps(com.ToDict())
-
-    back = Complex.Parse(serialized, TestTypesDict)
-    serialized2 = json.dumps(back.ToDict())
-    Assert.Equal(serialized, serialized2)
-
-@Test
-def nestedLoad(env: dict):
-    a = 25
-    b = 'inside!'
-    inner = Inner(a, b)
-    x = 'le x string'
-    expected = Outer(x, inner)
-
-    serialized = '''{"x": {"L_type": "<class 'str'>", "L_value": "le x string"}, 
-    "inner": {"L_type": "%s", "L_value": {
-        "a": {"L_type": "<class 'int'>", "L_value": 25},
-        "b": {"L_type": "<class 'str'>", "L_value": "inside!"}}}}''' % (Inner)
+class X(Model):
+    d: dict
     
-    actual_o = Outer.Parse(serialized, TestTypesDict)
-    Assert.Equal(actual_o.ToDict(), expected.ToDict())
+@Test
+def arbitraryDictSerialize(env: dict):
+    x = X()
+    expected = x.d = {
+        'a': 1,
+        'b': [
+            'a', 1, False
+        ]
+    }
+
+    actual = x.ToDict()
+    Assert.Equal(actual['d'], expected)
+
+@Test
+def arbitraryDictParse(env: dict):
+    ser = {
+        'd': {
+            'a': 1,
+            'b': [
+                'a', 1, False
+            ]
+        }
+    }
+
+    actual = X.Parse(ser)
+    Assert.Equal(actual.d, ser['d'])
 
 @Test
 def serviceSchema(env: dict):
-    x = Provider.Service('asdf', {
+    ser = provider.Service()
+    ep = ser.Endpoint = 'asdf'
+    i = ser.Input = {
         'o1': {
             'i1': bool,
-            'i2': int
+            'i2': int,
+            'i3': Outer
         },
         'o2': str
-    })
-    y = Provider.Service.Parse(x.ToDict())
+    }
 
-    Assert.Equal(x.Input, y.Input)
+    i_expect = ser.Input = {
+        'o1': {
+            'i1': str(bool),
+            'i2': str(int),
+            'i3': str(Outer)
+        },
+        'o2': str(str)
+    }
+
+    y = provider.Service.Parse(ser.ToDict())
+    # print(ser.Input)
+    Assert.Equal(y.Input, i_expect)
 
 @Test
-def rawDict(env: dict):
-    x = Provider.Generic('test', {
-        'd': {
-            'a': 1,
-            'b': True
-        },
-        'l': [
-            0.3, 'a string'
-        ],
-        'p': 'pval'
-    })
-    y = Provider.Generic.Load(json.dumps(x.ToDict()))
-    Assert.Equal(x.Data, y.Data)
-    
+def typesDict_should_inherit_through_model(env: dict):
+    lr = server.List.Response()
 
+    p1 = server.ProviderInfo()
+    p1.Name = 'test1'
+    p1.Schema = provider.Schema([
+        provider.Service('ep1', {'a': int, 'b': bool}, {'res': str}),
+        provider.Service('ep2', {'c': int, 'd': bool}, {'res2': str})
+    ])
+
+    p2 = server.ProviderInfo()
+    p2.Name = 'test2'
+    p2.Schema = provider.Schema([
+        provider.Service('tt1', {'x1': str}, {'res': str}),
+        provider.Service('tt2', {'x2': str}, {'res2': list})
+    ])
+
+    lr.Providers = [p1, p2]
+    actual = server.List.Response.Parse(lr.ToDict())
+    expected = lr
+    
+    Assert.Equal(len(actual.Providers), len(expected.Providers))
+    for i in range(len(expected.Providers)):
+        ac = actual.Providers[i]
+        ex = expected.Providers[i]
+        Assert.Equal(ac.Name, ex.Name)
+        Assert.Equal(len(ac.Schema.Services), len(ex.Schema.Services))
+        for j in range(len(ex.Schema.Services)):
+            Assert.Equal(ac.Schema.Services[j].Endpoint, ex.Schema.Services[j].Endpoint)
+
+@Test
+def int_float_ambiguity(env: dict):
+    class Holder(Model):
+        I: int
+        F: float
+
+    h = Holder()
+    h.I = 1
+    h.F = 1.0
+
+    actual = Holder.Parse(h.ToDict())
+    Assert.Equal(str(type(actual.I)), str(int))
+    Assert.Equal(str(type(actual.F)), str(float))
 PrintStats()

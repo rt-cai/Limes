@@ -4,7 +4,7 @@
 # PYPI=testpypi
 PYPI=pypi
 
-ver="0.3.dev1"
+ver="0.4.1.dev1"
 TOKEN=`cat credentials/${PYPI}`
 configs=(LICENSE pyproject.toml README.md setup.cfg)
 
