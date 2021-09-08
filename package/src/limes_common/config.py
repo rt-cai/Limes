@@ -1,6 +1,6 @@
 from pytz import timezone
 
-_DEBUG = False
+_DEBUG = True
 
 TIME_ZONE = timezone('Canada/Pacific')
 ENCODING = 'utf-8'

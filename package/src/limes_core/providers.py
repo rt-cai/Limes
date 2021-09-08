@@ -128,7 +128,7 @@ class Handler:
         res.Hits = {}
         def doSearch(name, p:Connection):
             r = p.Search(request.Query)
-            if r.Hits is None: return
+            if r.__dict__.get('Hits', None) is None: return
             for k, v in r.Hits.items():
                 # todo: don't break the key
                 k_withName = '%s_%s' % (name, k)

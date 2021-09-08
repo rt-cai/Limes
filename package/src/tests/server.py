@@ -56,16 +56,16 @@ def serverList(env: dict):
         for s in p.Schema.Services:
             print(s.Endpoint, s.Input, s.Output)
 
-# @Test
-# def serverReloadProviders(env: dict):
-#     serv = getserv(env)
-#     res = serv.ResetProviders()
-#     Assert.Equal(res.Code, 200)
-#     Assert.Equal(len(res.Providers) > 0, True)
-#     for p in res.Providers:
-#         print(p.Name)
-#         for s in p.Schema.Services:
-#             print(s.Endpoint, s.Input, s.Output)
+@Test
+def serverReloadProviders(env: dict):
+    serv = getserv(env)
+    res = serv.ReloadProviders()
+    Assert.Equal(res.Code, 200)
+    Assert.Equal(len(res.Providers) > 0, True)
+    for p in res.Providers:
+        print(p.Name)
+        for s in p.Schema.Services:
+            print(s.Endpoint, s.Input, s.Output)
 
 @Test
 def serverSearch(env: dict):
@@ -80,7 +80,7 @@ def serverSearch(env: dict):
 @Test
 def serverCallProvider(env: dict):
     serv = getserv(env)
-    res = serv.CallProvider('test_provider', 'sum', {'values': [1, 2, 3.3]})
+    res = serv.CallProvider('fosDB', 'sum', {'values': [1, 2, 3.3]})
     Assert.Equal(res.Code, 200)
     res = res.ResponsePayload.Body
     if isinstance(res, dict):
