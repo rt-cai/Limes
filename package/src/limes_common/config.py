@@ -22,6 +22,7 @@ else:
     SERVER_BIND = 'sh-lims.microbiology.ubc.ca:8001'
 SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
 SERVER_DB_PATH = 'limes_server/db'
+SERVER_SECRET_KEY_PATH = 'limes_server/credentials/secret_key'
 
 # PROVIDER_STATICS_PATH = 'limes_core/example_static_providers.json'
 PROVIDER_STATICS_PATH = 'limes_core/static_providers.json'
