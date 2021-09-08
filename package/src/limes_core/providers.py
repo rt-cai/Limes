@@ -66,10 +66,10 @@ def _loadStatics() -> ProviderDictionary:
             t.daemon = True
             t.start()
 
-        if len(loaded) > 0:
-            return loaded
+        # if len(loaded) > 0:
+    return loaded
     # return {}
-    raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
+    # raise Exception('failed to load [%s]' % config.PROVIDER_STATICS_PATH)
 
 def _shutdownConnections(a, b):
     pass
