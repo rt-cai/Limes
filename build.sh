@@ -16,6 +16,14 @@ build=true
 
 for arg in "$@"; do
     case $arg in
+    --react | -r)
+        echo "building React client"
+        wdir=`pwd`
+        cd package/src/website
+        npm run build
+        cd $wdir
+        exit 0
+        ;;
     --clean | -c)
         echo "cleaning previous builds..."
         wdir=`pwd`

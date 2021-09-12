@@ -1,6 +1,8 @@
 import json
-from typing import Union
+from typing import Callable, Union
 from threading import Thread, Condition
+
+from flask import Flask, request
 
 from limes_common import config, utils
 from limes_common.models import Model, Primitive, server, provider
@@ -75,9 +77,11 @@ def _shutdownConnections(a, b):
 import signal
 
 class Handler:
-    def __init__(self) -> None:
+    def __init__(self, views) -> None:
         signal.signal(signal.SIGINT, _shutdownConnections)
         self._providers: ProviderDictionary = _loadStatics()
+        for v in [self.List, self.Reset, self.Search, self.Call]:
+            views[v.__name__.lower()] = v
 
     def _shutdownConnections(self, x, y):
         for c in self._providers.values():
@@ -86,20 +90,10 @@ class Handler:
             except Exception:
                 pass
 
-    def Handle(self, endpoint: str, raw: bytes) -> Model:
-        method = 'Handle%s' % endpoint.title()
-        myMethods = [m for m in dir(self) if m.startswith('Handle')]
-        for m in myMethods:
-            if m == method:
-                return getattr(self, m)(raw)
+    def _toRes(self, model: Model):
+        return model.ToDict()
 
-        #else
-        res = provider.ProviderResponse()
-        res.Code = 404
-        res.Error = 'providers endpoint [%s] does not exist' % endpoint
-        return res
-
-    def HandleList(self, raw: bytes):
+    def List(self):
         res = server.List.Response()
         for k, info in self._providers.items():
             pi = server.ProviderInfo()
@@ -111,21 +105,20 @@ class Handler:
             info.Lock.release()
 
             res.Providers.append(pi)
-        return res
+        return self._toRes(res)
 
-    def Reset(self, raw: bytes):
+    def Reset(self):
         for p in self._providers.values():
             p.Con.Close()
         self._providers: ProviderDictionary = _loadStatics()
-        return self.HandleList(raw)
+        return self.List()
 
-
-    def HandleSearch(self, raw: bytes):
-        request = server.Search.Request.Parse(raw)
+    def Search(self):
+        req = server.Search.Request.Parse(request.data)
         res = server.Search.Response()
         res.Hits = {}
         def doSearch(name, p:Connection):
-            r = p.Search(request.Query)
+            r = p.Search(req.Query)
             if r.__dict__.get('Hits', None) is None: return
             for k, v in r.Hits.items():
                 # todo: don't break the key
@@ -136,10 +129,10 @@ class Handler:
             doSearch(name, p.Con)
             names.append(name)
         res.Code = 200
-        return res
+        return self._toRes(res)
 
-    def HandleCall(self, raw: bytes):
-        req = server.CallProvider.Request.Parse(raw)
+    def Call(self):
+        req = server.CallProvider.Request.Parse(request.data)
         name = req.ProviderName
         p_req = req.RequestPayload
 
@@ -148,7 +141,7 @@ class Handler:
         if theProvider is None:
             res.Code = 404
             res.Error = '[%s] is not a registered provider' % name
-            return res
+            return self._toRes(res)
         else:
             p_res = theProvider.Con.MakeRequest(p_req)
             if isinstance(p_res, provider.GenericResponse):
@@ -157,26 +150,4 @@ class Handler:
                 g_res = provider.GenericResponse()
                 g_res.Body = p_res.ToDict()
                 res.ResponsePayload = g_res
-            return res
-    
-# def _registerStatics():
-#     recieveAddr, port = config.SERVER_BIND.split(':')
-#     for p in statics.GetList(recieveAddr, int(port)):
-#         _registerProvider(p)
-#     pass
-# _registerStatics()
-
-# def QueryBySample(sampleId: str) -> Result:
-#     # get list of providers from local "cache" (db?)
-#     # ask each provider (multithread this to parallel network delay)
-#     # aggregate results
-#     return Result(False)
-
-# def _registerProvider(p: ProviderConnection) -> Result:
-#     if p.Name in _registeredProviders:
-#         return Result(False, 'provider [%s] exists' % p.Name)
-#     else:
-#         status = p.CheckStatus()
-#         if status.Success:
-#             _registeredProviders[p.Name] = p
-#         return status
+            return self._toRes(res)
