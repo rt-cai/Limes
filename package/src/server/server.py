@@ -9,7 +9,7 @@ from limes_common import config
 from limes_common.models import Model, server
 from .providers import Handler as ProviderHandler
 
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__, static_url_path='', static_folder='public')
 
 _views: dict[str, Callable] = {}
 
