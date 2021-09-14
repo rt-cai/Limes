@@ -1,8 +1,9 @@
-export interface AppProps {
+import { Theme } from "@material-ui/core";
 
-}
+export interface AppProps {}
 
 export interface MainFunctionCardProps {
+    theme: Theme
     settings: MainFunctionCardSettings
     onClick: (settings: MainFunctionCardSettings) => void
 }
@@ -14,10 +15,15 @@ export interface MainFunctionCardSettings {
 }
 
 export interface MainFunctionsGridProps {
+    theme: Theme
     functions: MainFunctionCardSettings[]
     clicked: (settings: MainFunctionCardSettings) => void
 }
 
 export interface PrintProps {
+    
+}
+
+export interface LoginProps {
     
 }

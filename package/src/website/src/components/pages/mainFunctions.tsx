@@ -30,6 +30,7 @@ export class MainFunctionsComponent extends React.Component<MainFunctionsGridPro
                     {this.state.functions.map((fn) => (
                         <Grid key={fn.name} item>
                             <MainFunctionCard
+                                theme={this.props.theme}
                                 settings={fn}
                                 onClick={this.cardClicked}
                             />

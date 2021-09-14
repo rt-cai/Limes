@@ -26,7 +26,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     }
 
     private onSampleInputChanged() {
-        
+
     }
 
     render(): JSX.Element {
@@ -73,7 +73,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                         Print Samples
                     </Typography>
                     <TextField
-                        id="outlined-textarea"
+                        id="samplesInput"
                         label="Samples"
                         placeholder={inputPlaceholder}
                         multiline

@@ -6,6 +6,7 @@ import { HeaderComponent } from './components/headers/header';
 import { MainFunctionsComponent } from './components/pages/mainFunctions';
 import { PrintComponent } from './components/pages/print';
 import { AppProps, MainFunctionCardSettings } from './models/props';
+import { LoginModal } from './popups/login';
 
 const theme = createTheme({
   palette: {
@@ -41,7 +42,12 @@ export class App extends React.Component<AppProps, AppState> {
         disabled: true,
       }
     ]
-    this.defaultActiveComponent = <MainFunctionsComponent functions={mainFunctions} clicked={(settings: MainFunctionCardSettings) => this.toFunctionPage(settings)}/>
+    this.defaultActiveComponent = (
+      <MainFunctionsComponent
+        theme={theme}
+        functions={mainFunctions}
+        clicked={(settings: MainFunctionCardSettings) => this.toFunctionPage(settings)}
+      />)
     this.state = {
       activeComponent: this.defaultActiveComponent
     }
@@ -58,6 +64,7 @@ export class App extends React.Component<AppProps, AppState> {
       <MuiThemeProvider theme={theme}>
         <div className='app-container'>
         <HeaderComponent />
+        <LoginModal/>
         {this.state.activeComponent}
         </div>
       </MuiThemeProvider>
