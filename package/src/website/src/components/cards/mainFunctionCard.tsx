@@ -1,26 +1,61 @@
 import React from 'react';
-import "./mainFunctionCard.css"
-import { Typography, Card, Paper } from '@material-ui/core';
-import { MainFunctionCardProperties } from '../../models/props';
+// import "./mainFunctionCard.css"
+import { Typography, Grid, Card } from '@material-ui/core';
+import { MainFunctionCardProps, MainFunctionCardSettings } from '../../models/props';
 
-export class MainFunctionCard extends React.Component<MainFunctionCardProperties> {
-    private _mainText: string;
+interface MainFunctionCardState {
+    disabled: boolean
+}
 
-    constructor(props: MainFunctionCardProperties) {
+export class MainFunctionCard extends React.Component<MainFunctionCardProps, MainFunctionCardState> {
+    private mainText: string;
+    private cardStyle: React.CSSProperties;
+    private onClick: (settings: MainFunctionCardSettings) => void;
+    private settings: MainFunctionCardSettings;
+
+    constructor(props: MainFunctionCardProps) {
         super(props);
-        this._mainText = props.text;
+        const s = props.settings
+
+        this.settings = props.settings
+        this.mainText = s.name
+        this.state = {
+            disabled: s.disabled
+        }
+        this.cardStyle = {
+            width: '200px',
+            height: '200px',
+            // border: '1px solid red'
+            background: s.disabled? 'lightgrey': '',
+            cursor: s.disabled? '': 'pointer',
+        }
+        this.onClick = props.onClick
     }
 
     render(): JSX.Element {
-        return (
-            <Paper className='paper'>
-            <Card className='card'>
-                <Typography variant="h5" component="h2">
-                    {this._mainText}
-                </Typography>
-            </Card>
-            </Paper>
+        const cardStyle = this.cardStyle;
+        const colStyle: React.CSSProperties = {
+            // border: '1px solid red'
+            height: '100%'
+        }
 
+        return (
+            <Card style={cardStyle} onClick={this.state.disabled? ()=>{} : () => this.onClick(this.settings)}>
+                <Grid
+                    container
+                    spacing={0}
+                    justifyContent='center'
+                    alignItems='center'
+                    direction='column'
+                    style={colStyle}
+                >
+                    <Grid item>
+                        <Typography variant="h5" component="h2">
+                            {this.mainText}
+                        </Typography>
+                    </Grid>
+                </Grid>
+            </Card>
         )
     }
 }
