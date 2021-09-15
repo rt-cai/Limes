@@ -38,6 +38,7 @@ class ProviderResponse(Model):
     Code: int
     Error: str
     Type: str
+    ElapsedTime: float
 
     def ToDict(self) -> dict:
         self.Type = self.GetType()

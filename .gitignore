@@ -1,21 +1,34 @@
+# secrets
 certFiles
+credentials
+static_providers*.json
+
+# caches
 __pycache__
 .vscode
 .vs
-credentials
 .ipynb_checkpoints
-*/dist
-*/build
+
+# dependencies
+node_modules
+
+# production
+dist
+build
+package/src/server/public/
 *.egg-info
+
+# building pip package
 package/README.md
 package/setup.cfg
 package/LICENSE
 package/pyproject.toml
+
+# scratch
 *.fasta
 *.fastq
 *.npy
 db/
 dbScratch/
 scratch/
-static_providers*.json
 test_data/

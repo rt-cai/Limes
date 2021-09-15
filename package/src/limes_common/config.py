@@ -1,6 +1,6 @@
 from pytz import timezone
 
-_DEBUG = False
+_DEBUG = True
 
 TIME_ZONE = timezone('Canada/Pacific')
 ENCODING = 'utf-8'
@@ -20,9 +20,9 @@ if _DEBUG:
     SERVER_BIND = '127.0.0.1:8001'
 else:
     SERVER_BIND = 'sh-lims.microbiology.ubc.ca:8001'
+SERVER_API_ENDPOINT = '/api/%s/' % (SERVER_API_VER)
 SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
-SERVER_DB_PATH = 'limes_server/db'
-SERVER_SECRET_KEY_PATH = 'limes_server/credentials/secret_key'
+SERVER_SECRET_KEY_PATH = 'server/credentials/secret_key'
 
 # PROVIDER_STATICS_PATH = 'limes_core/example_static_providers.json'
 PROVIDER_STATICS_PATH = 'limes_core/static_providers.json'

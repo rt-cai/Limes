@@ -3,6 +3,7 @@ from typing import Callable, TypeVar, Union
 import json
 
 from limes_common import config
+from limes_common.utils import current_sec_time
 from limes_common.connections import Connection
 from limes_common.models import Primitive, Model, provider as Models
 from limes_common.models.http import GET, POST
@@ -46,7 +47,7 @@ class HttpConnection(Connection):
 
     def MakeRequest(self, request: Models.ProviderRequest) -> Models.GenericResponse:
         ep = request.TargetEndpoint
-        doRequest = self.methods.get(request.Method, None)
+        doRequest = self.methods.get(request.Method.lower(), None)
         if ep is None or doRequest is None:
             msg = 'no endpoint given' if ep is None else 'bad http method [%s]'%request.Method
             return Models.GenericResponse({}, 0, msg)
@@ -58,6 +59,7 @@ class HttpConnection(Connection):
                 body = {'body': request.Body}
         else:
             body = self._makeJson(request)
+        startTime = current_sec_time()
         res = doRequest(
             self._makeUrl(ep),
             json=body,
@@ -66,8 +68,11 @@ class HttpConnection(Connection):
             timeout = config.HTTP_TIMEOUT
         )
         code = res.status_code
+        endTime = current_sec_time()
         try:
             body: dict[str, Primitive] = json.loads(res.text)
         except Exception:
             body = {'raw': res.text}
-        return Models.GenericResponse(body, code)
+        report = Models.GenericResponse(body, code)
+        report.ElapsedTime = endTime - startTime
+        return report

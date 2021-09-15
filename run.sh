@@ -6,9 +6,18 @@ src=package/src
 cd $src
 sw=$1
 case $sw in
+    react | -r)
+    cd website
+    npm run start
+    ;;
+    server-rebuild-react | -sr)
+    cd $dir
+    ./build.sh -r
+    cd $src
+    gunicorn -c server/gunicorn.conf.py server.wsgi
+    ;;
     server | -s)
-    set -- "${@:2}" #removed the 1st parameter
-    gunicorn -c limes_server/gunicorn.conf.py limes_server.wsgi
+    gunicorn -c server/gunicorn.conf.py server.wsgi
     ;;
     fosdb | -f)
     echo "> fosDB"
