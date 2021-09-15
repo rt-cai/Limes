@@ -13,6 +13,7 @@ interface LoginState {
     error: boolean
     label: string
     loading: boolean
+    tried: boolean
 }
 
 export abstract class LoginModal extends React.Component<LoginProps, LoginState> {
@@ -31,26 +32,28 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
             error: false,
             label: this.defaultLabel,
             loading: false,
+            tried: false,
         }
 
         this.elabService = props.elabService;
     }
 
-    protected loginFailed(msg: string) {
+    protected loginFailed(msg: string, tried: boolean=true) {
         this.setState({
             error: true,
             label: msg,
             loading: false,
+            tried: tried,
         })
     }
 
     protected loginSuccess() {
-        this.setState({ open: false, loading: false })
+        this.setState({ open: false, loading: false, tried: false })
     }
 
     protected login() {
         // console.log([this.state.username, this.state.password])
-        if (this.state.error) { return }
+        if (this.state.tried) { return }
         this.setState({ label: '', loading: true})
         if (!(this.state.username && this.state.password)) {
             this.loginFailed('fields cannot be empty')
@@ -59,7 +62,6 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
 
         this.elabService.Login(this.state.username, this.state.password)
             .then(([success, msg]) => {
-                console.log(success)
                 if (success) {
                     this.loginSuccess()
                 } else {
@@ -67,9 +69,8 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
                 }
             }).catch(e => {
                 console.error(e)
-                this.loginFailed(e)
+                this.loginFailed(typeof(e)==='string'? e: 'No response. Are you on the UBC network?', false)
             })
-        // this.setState({open: false})
     }
 
     private onClose() { }
@@ -106,6 +107,7 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
                 onchange: (e: any) => {
                     this.setState({
                         error: false,
+                        tried: false,
                         username: e.target.value
                     })
                 },
@@ -118,10 +120,11 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
                 onchange: (e: any) => {
                     this.setState({
                         error: false,
+                        tried: false,
                         password: e.target.value
                     })
                 },
-                onkeydown: (e: any) => { e.key == "Enter" && this.loginRef?.focus() },
+                onkeydown: (e: any) => { e.key === "Enter" && this.loginRef?.focus() },
             }
         ]
 
@@ -189,28 +192,15 @@ class Dev_LoginModal extends LoginModal {
         super(props)
 
         this.state = {
-            username: "",
-            password: "",
+            username: U,
+            password: P,
             open: false,
             error: false,
             label: this.defaultLabel,
             loading: false,
+            tried: false,
         }
-    }
-
-    protected login() {
-        this.elabService.Login(U, P)
-            // this.elabService.Login(U, 'P')
-            .then(([success, msg]) => {
-                if (success) {
-                    this.loginSuccess()
-                } else {
-                    this.loginFailed(msg)
-                }
-            }).catch(e => {
-                console.error(e)
-                this.loginFailed(e)
-            })
+        
     }
 }
 

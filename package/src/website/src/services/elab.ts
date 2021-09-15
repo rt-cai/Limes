@@ -41,7 +41,7 @@ export abstract class ElabService {
             })})
         .then(raw => {
             const res = raw.data.ResponsePayload;
-            // console.log(res)
+            console.log(res)
             switch(res.Code) {
                 case 200:
                     this.token = res.Body.token
@@ -49,7 +49,7 @@ export abstract class ElabService {
                 case 401:
                     return [false, 'Incorrect username/password']
                 default:
-                    return Promise.reject(res.Body.message)
+                    return Promise.reject('Oops, something crashed, please tell Tony...')
             }
         })
     }
