@@ -8,6 +8,7 @@ from limes_common import config, utils
 from limes_common.models import Model, Primitive, server, provider
 from limes_common.connections import Connection
 from limes_common.connections.ssh import SshConnection
+from limes_common.connections.statics.eLab import ELabConnection
 # from limes_common.models.provider import Result as Result
 
 # _registeredProviders: dict[str, ProviderConnection] = {}
@@ -66,6 +67,8 @@ def _loadStatics() -> ProviderDictionary:
             t.start()
 
         # if len(loaded) > 0:
+    elabcon = ELabConnection()
+    loaded['elab'] = ProviderReference(elabcon, elabcon.GetSchema())
     print('loaded %s' % len(loaded))
     return loaded
     # return {}
@@ -135,6 +138,7 @@ class Handler:
         req = server.CallProvider.Request.Parse(request.data)
         name = req.ProviderName
         p_req = req.RequestPayload
+        # print(request.data)
 
         theProvider = self._providers.get(name, None)
         res = server.CallProvider.Response()

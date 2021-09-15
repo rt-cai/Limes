@@ -81,7 +81,7 @@ class Reset(Transaction):
 class CallProvider(Transaction):
     class Request(ServerRequest):
         ProviderName: str
-        Endpoint: str
+        # Endpoint: str
         RequestPayload: Models.GenericRequest
         def __init__(self) -> None:
             super().__init__(Endpoints.CALL, POST)

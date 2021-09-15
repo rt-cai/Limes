@@ -4,13 +4,15 @@ import { Typography, TextField, Grid, Card, Button } from '@material-ui/core';
 import { DataGrid, GridColDef } from '@material-ui/data-grid';
 
 interface SampleInfo {
-    id: number
-    barcode: number
+    id: number // barcode
     name: string
 }
 
 interface PrintState {
     samples: SampleInfo[]
+    sampleRaw: string
+    printDisabled: boolean
+    printAllDisabled: boolean
 }
 
 export class PrintComponent extends React.Component<PrintProps, PrintState> {
@@ -19,19 +21,32 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
 
         this.state = {
             samples: [
-                {id: 0, barcode: 123, name: 'a'},
-                {id: 1, barcode: 456, name: 'b'},
-            ]
+                {id: 123, name: 'a'},
+                {id: 456, name: 'b'},
+            ],
+            sampleRaw: '',
+            printDisabled: true,
+            printAllDisabled: false,
         }
     }
 
-    private onSampleInputChanged() {
+    private onSampleInputChanged(e: any) {
+        const sampleInputText = e.target.value;
+        this.setState({sampleRaw: sampleInputText})
+        // console.log(sampleInputText)
+    }
 
+    private onPrint() {
+
+    }
+
+    private onPrintAll() {
+        console.log(this.state.sampleRaw)
     }
 
     render(): JSX.Element {
         const sampleColumns: GridColDef[] = [
-            { field: 'barcode', headerName: 'Barcode', width: 150 },
+            { field: 'id', headerName: 'Barcode', width: 150 },
             { field: 'name', headerName: 'Name', width: 150 },
         ]
 
@@ -79,7 +94,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                         multiline
                         variant="outlined"
                         style={inputStyle}
-                        onChange={this.onSampleInputChanged}
+                        onChange={(e)=>{this.onSampleInputChanged(e)}}
                     >
                     </TextField>
                     <Grid style={dataGridStyle}>
@@ -93,10 +108,20 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                         />
                     </Grid>
                     <Grid>
-                        <Button variant="contained" color="primary" disabled style={buttonStyle}>
+                        <Button 
+                            variant="contained"
+                            color="primary" 
+                            disabled={this.state.printDisabled}
+                            style={buttonStyle} 
+                            onClick={()=>this.onPrint()}>
                             Print
                         </Button>
-                        <Button variant="contained" color="primary" style={buttonStyle}>
+                        <Button 
+                            variant="contained" 
+                            color="primary" 
+                            disabled={this.state.printAllDisabled}
+                            style={buttonStyle}
+                            onClick={()=>this.onPrintAll()}>
                             Print All
                         </Button>
                     </Grid>

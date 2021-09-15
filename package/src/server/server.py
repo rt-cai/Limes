@@ -3,7 +3,9 @@ import inspect
 import sys
 from typing import Callable
 from flask import Flask, request
+from flask_cors import CORS
 from flask.helpers import send_from_directory
+from flask_cors.decorator import cross_origin
 
 from limes_common import config
 from limes_common.models import Model, server
@@ -87,7 +89,7 @@ def add_Api_Views():
             del views[name]
         ep = '%s%s' % (config.SERVER_API_ENDPOINT, name)
         # todo, add methods to endpoint class
-        if name == 'init':
+        if name in ['init', 'list']:
             m = 'GET'
         else:
             m = 'POST'    
@@ -104,9 +106,6 @@ add_Api_Views()
 # website
 
 @app.route('/')
+@cross_origin()
 def Home():
     return app.send_static_file('index.html')
-
-@app.route('/force/fav')
-def favicon():
-    return app.send_static_file('favicon.ico')

@@ -1,17 +1,25 @@
 import React from 'react';
 import { LoginProps } from '../models/props';
-import { Dialog, Grid, TextField, Button } from '@material-ui/core';
+import { Modal, Grid, TextField, Button, CircularProgress, Fade, Typography, Card} from '@material-ui/core';
+import { ElabService } from '../services/elab';
+
+import { DEBUG } from '../config'
+import { U, P } from '../credentials/elab'
 
 interface LoginState {
     username: string
     password: string
-    loginRef?: any
     open: boolean
+    error: boolean
+    label: string
+    loading: boolean
 }
 
-export class LoginModal extends React.Component<LoginProps, LoginState> {
-    private readonly UID = "username"
-    private readonly PID = "password"
+export abstract class LoginModal extends React.Component<LoginProps, LoginState> {
+    protected passwordRef: any
+    protected loginRef: any
+    protected readonly defaultLabel = ""
+    protected readonly elabService: ElabService
 
     constructor(props: LoginProps) {
         super(props)
@@ -20,94 +28,190 @@ export class LoginModal extends React.Component<LoginProps, LoginState> {
             username: "",
             password: "",
             open: true,
+            error: false,
+            label: this.defaultLabel,
+            loading: false,
         }
+
+        this.elabService = props.elabService;
     }
 
-    private textChanged(id: string, e: any) {
-        let newState: any = {};
-        newState[id] = e.target.value;
-        this.setState(newState);
+    protected loginFailed(msg: string) {
+        this.setState({
+            error: true,
+            label: msg,
+            loading: false,
+        })
     }
 
-    private watchEnter(id: string, e: any) {
-        if (e.key==="Enter" && id===this.PID) {
-            this.state.loginRef?.focus()
-            // this.login();
+    protected loginSuccess() {
+        this.setState({ open: false, loading: false })
+    }
+
+    protected login() {
+        // console.log([this.state.username, this.state.password])
+        if (this.state.error) { return }
+        this.setState({ label: '', loading: true})
+        if (!(this.state.username && this.state.password)) {
+            this.loginFailed('fields cannot be empty')
+            return
         }
+
+        this.elabService.Login(this.state.username, this.state.password)
+            .then(([success, msg]) => {
+                console.log(success)
+                if (success) {
+                    this.loginSuccess()
+                } else {
+                    this.loginFailed(msg)
+                }
+            }).catch(e => {
+                console.error(e)
+                this.loginFailed(e)
+            })
+        // this.setState({open: false})
     }
 
-    private login() {
-        this.setState({open: false})
-    }
+    private onClose() { }
 
-    private onClose() {
-
-    }
-    
     render(): JSX.Element {
-        const dialogStyle: React.CSSProperties = {
-            // width: '50vw',  
-            // height: '50vh'
+        const modalStyle: React.CSSProperties = {}
+        const mainGridStyle: React.CSSProperties = {
+            outline: 'transparent',
+            height: '100%',
+            // border: '1px solid red'
         }
-        const gridStyle: React.CSSProperties = {
-            // border: '1px solid red',
-            padding: '1vw',
-            // width: '50vw',
+        const cardStyle: React.CSSProperties = {
+            outline: 'transparent',
+            padding: '1em 2em 1.2em 2em', // t r b l
+            width: '25em',
+            // height: '20em',
         }
+        const cardGridStyle: React.CSSProperties = {}
+        const labelStyle: React.CSSProperties = {}
         const inputStyle: React.CSSProperties = {
-            width: '25vw',
-            minWidth: '350px',
-            marginTop: '1vh'
+            width: '100%',
+            marginBottom: '1em',
+            // border: '1px solid red'
         }
         const buttonStyle: React.CSSProperties = {
-            marginTop: '2vh',
-            width: '10vw'
+            width: '10em',
         }
 
         const textFields = [
             {
-                id: this.UID,
+                name: "username",
                 label: "Username",
                 placeholder: "username",
+                onchange: (e: any) => {
+                    this.setState({
+                        error: false,
+                        username: e.target.value
+                    })
+                },
             },
             {
-                id: this.PID,
+                name: "password",
                 label: "Password",
-                placeholder: "*****" ,
-                type: "password"
+                placeholder: "*****",
+                type: "password",
+                onchange: (e: any) => {
+                    this.setState({
+                        error: false,
+                        password: e.target.value
+                    })
+                },
+                onkeydown: (e: any) => { e.key == "Enter" && this.loginRef?.focus() },
             }
         ]
 
         return (
-            <Dialog open={this.state.open} onClose={this.onClose} style={dialogStyle}>
-                <Grid container justifyContent="center" style={gridStyle}>
-                    <form>
-                        {textFields.map((f) => (
-                            <Grid key={f.id} item>
-                                <TextField
-                                    id={f.id}
-                                    label={f.label}
-                                    placeholder={f.placeholder}
-                                    style={inputStyle}
-                                    type={f.type}
-                                    onChange={(e) => { this.textChanged(f.id, e) }}
-                                    onKeyDown={(e) => { this.watchEnter(f.id, e) }}
-                                />
+            <Modal open={this.state.open} onClose={this.onClose} style={modalStyle}>
+                <Grid container spacing={0} direction="column" alignItems="center" justify="center" style={mainGridStyle}>
+                    <Card style={cardStyle}>
+                        <Grid container justify="center" direction="column" style={cardGridStyle} spacing={0}>
+                            <Typography variant="h5" component="h2" align="center" style={labelStyle}>
+                                Login
+                            </Typography>
+                            <Typography variant="subtitle1" align="center" color="error" style={labelStyle}>
+                                {this.state.label}
+                            </Typography>
+                            <Grid item container justifyContent="center" direction="column">
+                                <form>
+                                    {textFields.map((f) => (
+                                        <Grid item key={f.name}>
+                                            <TextField
+                                                label={f.label}
+                                                name={f.name}
+                                                placeholder={f.placeholder}
+                                                style={inputStyle}
+                                                type={f.type}
+                                                error={this.state.error}
+                                                onChange={f.onchange}
+                                                onKeyDown={f.onkeydown}
+                                            />
+                                        </Grid>
+                                    ))}
+                                </form>
                             </Grid>
-                        ))}
-                    </form>
-                    <Grid container justifyContent="center" >
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            style={buttonStyle}
-                            onClick={()=>{this.login()}}
-                            ref={(e)=>{!this.state.loginRef && this.setState({loginRef: e})}}>
-                            Login
-                        </Button>
-                    </Grid>
+                            <Grid container justify="center" >
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    style={buttonStyle}
+                                    disabled={this.state.loading}
+                                    onClick={() => { this.login() }}
+                                    ref={(e: any) => { this.loginRef = e }}>
+                                    Login
+                                    <Fade
+                                        in={this.state.loading}>
+                                        <CircularProgress size={20} thickness={5} style={{
+                                            position: 'absolute'
+
+                                        }}/>
+                                    </Fade>
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Card>
                 </Grid>
-            </Dialog>
+            </Modal>
         )
     }
 }
+
+class Prod_LoginModal extends LoginModal {
+
+}
+
+class Dev_LoginModal extends LoginModal {
+    constructor(props: LoginProps) {
+        super(props)
+
+        this.state = {
+            username: "",
+            password: "",
+            open: false,
+            error: false,
+            label: this.defaultLabel,
+            loading: false,
+        }
+    }
+
+    protected login() {
+        this.elabService.Login(U, P)
+            // this.elabService.Login(U, 'P')
+            .then(([success, msg]) => {
+                if (success) {
+                    this.loginSuccess()
+                } else {
+                    this.loginFailed(msg)
+                }
+            }).catch(e => {
+                console.error(e)
+                this.loginFailed(e)
+            })
+    }
+}
+
+export const ConcreteLoginModal = DEBUG ? Dev_LoginModal : Prod_LoginModal

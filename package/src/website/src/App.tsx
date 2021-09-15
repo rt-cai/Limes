@@ -3,10 +3,12 @@ import React from 'react';
 import './App.css';
 import { MuiThemeProvider, createTheme } from '@material-ui/core/styles';
 import { HeaderComponent } from './components/headers/header';
+import { ConcreteLoginModal } from './popups/login';
 import { MainFunctionsComponent } from './components/pages/mainFunctions';
 import { PrintComponent } from './components/pages/print';
 import { AppProps, MainFunctionCardSettings } from './models/props';
-import { LoginModal } from './popups/login';
+import { ElabService, ConcreteElabService } from './services/elab';
+import { DEBUG } from './config'
 
 const theme = createTheme({
   palette: {
@@ -28,14 +30,18 @@ interface AppState {
 
 export class App extends React.Component<AppProps, AppState> {
   private defaultActiveComponent: any
+  private elabService: ElabService
 
   constructor(props: AppProps) {
     super(props)
+    this.elabService = new ConcreteElabService()
+
+    const makePrintComponent = () => <PrintComponent elabService={this.elabService}/>
     const mainFunctions: MainFunctionCardSettings[] = [
       {
         name: 'Print',
         disabled: false,
-        makeNextPage: () => <PrintComponent />
+        makeNextPage: makePrintComponent
       },
       {
         name: 'Scanner coming soon!',
@@ -49,7 +55,7 @@ export class App extends React.Component<AppProps, AppState> {
         clicked={(settings: MainFunctionCardSettings) => this.toFunctionPage(settings)}
       />)
     this.state = {
-      activeComponent: this.defaultActiveComponent
+      activeComponent: DEBUG? makePrintComponent(): this.defaultActiveComponent,
     }
   }
 
@@ -64,7 +70,7 @@ export class App extends React.Component<AppProps, AppState> {
       <MuiThemeProvider theme={theme}>
         <div className='app-container'>
         <HeaderComponent />
-        <LoginModal/>
+        <ConcreteLoginModal elabService={this.elabService}/>
         {this.state.activeComponent}
         </div>
       </MuiThemeProvider>
