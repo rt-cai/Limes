@@ -15,7 +15,6 @@ node_modules
 # production
 dist
 build
-package/src/server/public/
 *.egg-info
 
 # building pip package
