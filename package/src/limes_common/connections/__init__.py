@@ -12,6 +12,15 @@ class Connection:
     # def CheckStatus(self, echo: str='') -> Models.Status.Response:
     #     raise AbstractClassException(_notImplimentedMsg)
 
+    def __init__(self) -> None:
+        self._token = ''
+
+    def SetAuth(self, token: str):
+        self._token = token
+
+    def Logout(self):
+        self._token = ''
+        
     def GetSchema(self) -> Models.Schema:
         raise AbstractMethodException(_notImplimentedMsg)
 

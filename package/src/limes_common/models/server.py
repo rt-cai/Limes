@@ -6,6 +6,7 @@ from limes_common.models.provider import Transaction
 from limes_common.models.http import GET, POST
 
 class Endpoints(provider.Endpoints):
+    REGISTER_CLIENT = 'registerclient'
     LOGIN = 'login'
     AUTHENTICATE = 'authenticate'
     INIT = 'init'
@@ -13,10 +14,12 @@ class Endpoints(provider.Endpoints):
     LIST = 'list'
     CALL = 'call'
     SEARCH = 'search'
-    RESET = 'reset'
+    RELOAD_PROVIDERS = 'reloadproviders'
+    RELOAD_CACHE = 'reloadcache'
+    BARCODES= 'barcodes'
 
 class ServerRequest(Models.ProviderRequest):
-    ClientId: str
+    ClientID: str
 
 class ServerResponse(Models.ProviderResponse):
     pass
@@ -41,19 +44,36 @@ class Authenticate(Transaction):
         FirstName: str
         LastName: str
 
-class Login(Transaction):
+class RegisterClient(Transaction):
     class Request(ServerRequest):
         ELabKey: str
         FirstName: str
         LastName: str
         def __init__(self) -> None:
-            super().__init__(Endpoints.LOGIN, POST)
+            super().__init__(Endpoints.REGISTER_CLIENT, POST)
 
     class Response(ServerResponse):
         Success: bool
         def __init__(self, success: bool=False) -> None:
             super().__init__()
             self.Success = success
+
+class Login(Transaction):
+    class Request(ServerRequest):
+        Username: str
+        Password: str
+        def __init__(self) -> None:
+            super().__init__(Endpoints.LOGIN, POST)
+
+    class Response(ServerResponse):
+        Success: bool
+        FirstName: str
+        LastName: str
+        ClientID: str
+        def __init__(self, success: bool=False) -> None:
+            super().__init__()
+            self.Success = success
+
 
 class ProviderInfo(Model):
     Name: str
@@ -62,7 +82,7 @@ class ProviderInfo(Model):
 class List(Transaction):
     class Request(ServerRequest):
         def __init__(self) -> None:
-            super().__init__(Endpoints.LIST, POST)
+            super().__init__(Endpoints.LIST, GET)
 
     class Response(ServerResponse):
         Providers: list[ProviderInfo]
@@ -70,13 +90,23 @@ class List(Transaction):
             super().__init__()
             self.Providers = []
 
-class Reset(Transaction):
+class ReloadProviders(Transaction):
     class Request(ServerRequest):
         def __init__(self) -> None:
-            super().__init__(Endpoints.RESET, POST)
+            super().__init__(Endpoints.RELOAD_PROVIDERS, POST)
 
     class Response(List.Response):
         pass
+
+class ReloadCache(Transaction):
+    class Request(ServerRequest):
+        def __init__(self) -> None:
+            super().__init__(Endpoints.RELOAD_CACHE, POST)
+
+    class Response(ServerResponse):
+        def __init__(self, code: int=0) -> None:
+            super().__init__()
+            self.Code = code
 
 class CallProvider(Transaction):
     class Request(ServerRequest):
@@ -96,3 +126,12 @@ class Search(Transaction):
 
     class Response(Models.Search.Response):
         pass
+
+class BarcodeLookup(Transaction):
+    class Request(ServerRequest):
+        Barcodes: list[str]
+        def __init__(self) -> None:
+            super().__init__(Endpoints.BARCODES, POST)
+
+    class Response(ServerResponse):
+        Results: dict

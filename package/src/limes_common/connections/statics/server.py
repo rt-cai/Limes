@@ -35,7 +35,7 @@ class ServerConnection(HttpConnection):
         return {config.CSRF_NAME: self._csrf}
 
     def _makeJson(self, data: Models.ServerRequest) -> dict[str, Any]:
-        data.ClientId = self._id
+        data.ClientID = self._id
         d = data.ToDict()
         return d
 
@@ -72,17 +72,30 @@ class ServerConnection(HttpConnection):
             transaction.Response()
         )
 
-    def Login(self, firstName: str, lastName: str, token: str):
-        req = Models.Login.Request()
+    def RegisterClient(self, firstName: str, lastName: str, token: str):
+        req = Models.RegisterClient.Request()
         req.ELabKey = token
         req.FirstName = firstName
         req.LastName = lastName
-        transaction = Models.Login
-        return self._makeParseRequest(
+        transaction = Models.RegisterClient
+        res = self._makeParseRequest(
             req,
             transaction.Response.Parse,
             transaction.Response()
         )
+        return res
+
+    def Login(self, username: str, password: str):
+        req = Models.Login.Request()
+        req.Username = username
+        req.Password = password
+        transaction = Models.Login
+        res = self._makeParseRequest(
+            req,
+            transaction.Response.Parse,
+            transaction.Response()
+        )
+        return res
 
     def List(self):
         transaction = Models.List
@@ -93,7 +106,15 @@ class ServerConnection(HttpConnection):
         )
 
     def ReloadProviders(self):
-        transaction = Models.Reset
+        transaction = Models.ReloadProviders
+        return self._makeParseRequest(
+            transaction.Request(),
+            transaction.Response.Parse,
+            transaction.Response()
+        )
+
+    def ReloadCache(self):
+        transaction = Models.ReloadCache
         return self._makeParseRequest(
             transaction.Request(),
             transaction.Response.Parse,
@@ -108,6 +129,15 @@ class ServerConnection(HttpConnection):
         payload.TargetEndpoint = providerEndpoint
         payload.Body = body
         req.RequestPayload = payload
+        return self._makeParseRequest(
+            req,
+            transaction.Response.Parse,
+            transaction.Response()
+        )
+    def BarcodeLookup(self, barcodes: list[str]):
+        transaction = Models.BarcodeLookup
+        req = transaction.Request()
+        req.Barcodes = barcodes
         return self._makeParseRequest(
             req,
             transaction.Response.Parse,

@@ -84,7 +84,7 @@ def testOp(env: dict):
 def testSearch(env: dict):
     con: SshConnection = env['c']
     r = con.Search('tol')
-    print(r.ToDict())
+    print('%s results for tol' % len(r.Hits))
 
 
 @AfterAll

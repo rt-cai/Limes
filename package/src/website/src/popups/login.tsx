@@ -1,7 +1,7 @@
 import React from 'react';
 import { LoginProps } from '../models/props';
 import { Modal, Grid, TextField, Button, CircularProgress, Fade, Typography, Card} from '@material-ui/core';
-import { ElabService } from '../services/elab';
+import { ApiService } from '../services/api';
 
 import { DEBUG } from '../config'
 import { U, P } from '../credentials/elab'
@@ -20,7 +20,7 @@ export abstract class LoginModal extends React.Component<LoginProps, LoginState>
     protected passwordRef: any
     protected loginRef: any
     protected readonly defaultLabel = ""
-    protected readonly elabService: ElabService
+    protected readonly elabService: ApiService
 
     constructor(props: LoginProps) {
         super(props)

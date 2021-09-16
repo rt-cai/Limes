@@ -66,7 +66,7 @@ class TestProvider(Handler):
         import numpy as np
         dataDir = 'test_provider/test_data'
         guagDir = '%s/prokka' % dataDir
-        k12Dir = '%s/ecoli_k12' % dataDir
+        # k12Dir = '%s/ecoli_k12' % dataDir
         # g_ch: dict = np.load('%s/d_graph.npy' % k12Dir, allow_pickle=True).item()
         # sp_ch: dict = np.load('%s/d_species.npy' % k12Dir, allow_pickle=True).item()
         g_fos: dict = np.load('%s/d_graph.npy' % guagDir,allow_pickle=True).item()

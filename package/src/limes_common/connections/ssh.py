@@ -172,7 +172,7 @@ class SshConnection(Connection):
             for cb in self._onResponseSubscribers:
                 cb(msg)
 
-            # if self.x == 0: print('>%s' % msg)
+            # print('>%s' % msg)
             if msg.startswith(Handler.SEND_FLAG):
                 msg = msg[len(Handler.SEND_FLAG):]
                 parsed = ssh.Message.Parse(msg)

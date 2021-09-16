@@ -12,7 +12,7 @@ class Endpoints:
 
     @classmethod
     def Paths(cls):
-        return [i[1] for i in filter(lambda i: i[0].isupper(), cls.__dict__.items())]
+        return [i[1].lower() for i in filter(lambda i: i[0].isupper(), cls.__dict__.items())]
 
 class ProviderRequest(Model):
     TargetEndpoint: str

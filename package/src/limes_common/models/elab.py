@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union
 from limes_common import config
 from limes_common.models import Model, provider as Models
@@ -85,23 +86,15 @@ class SearchHits(ELabResponse):
     totalRecords: int
     data: list
 
-class SampleSearch(Transaction):
+class GetSamples(Transaction):
     class Request(ELabRequest):
-        def __init__(self, query: str='') -> None:
-            super().__init__(Endpoints.SAMPLES, GET, queryParams={'search': query})
+        def __init__(self, queryParams: dict[str, str] = {}) -> None:
+            super().__init__(Endpoints.SAMPLES, GET, queryParams=queryParams)
 
     class Response(SearchHits):
         data: list[Sample]
 
-class SampleNameSearch(Transaction):
-    class Request(ELabRequest):
-        def __init__(self, query: str='') -> None:
-            super().__init__(Endpoints.SAMPLES, GET, queryParams={'name': query})
-
-    class Response(SearchHits):
-        data: list[Sample]
-
-class GetSample(Transaction):
+class GetSampleById(Transaction):
     class Request(ELabRequest):
         def __init__(self, sampleID: int=0) -> None:
             super().__init__('%s/%s' % (Endpoints.SAMPLES, sampleID), GET)
@@ -109,11 +102,15 @@ class GetSample(Transaction):
     class Response(Sample, ELabResponse):
         pass
 
-class Storage(Model):
-    storageID: int
-    storageLayerID: int
+class StorageSimple(Model):
     parentStorageLayerID: int
     storageLayerDefinitionID: int
+    storageLayerID: int
+    name: str
+
+
+class Storage(StorageSimple):
+    storageID: int
     position: int
     maxSize: int
     dimension: dict
@@ -121,8 +118,8 @@ class Storage(Model):
     isGrid: bool
     userID: int
     created: str
-    name: str
     link: str
+    path: list[StorageSimple]
 
 class AllStorages(Transaction):
     class Request(ELabRequest):

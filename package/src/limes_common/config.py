@@ -25,7 +25,7 @@ SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
 SERVER_SECRET_KEY_PATH = 'server/credentials/secret_key'
 
 # PROVIDER_STATICS_PATH = 'limes_core/example_static_providers.json'
-PROVIDER_STATICS_PATH = 'limes_core/static_providers.json'
+PROVIDER_STATICS_PATH = 'server/static_providers.json'
 PROVIDER_DEFAULT_TRANSACTION_TIMEOUT = 5
 PROVIDER_DEFAULT_CONNECTION_TIMEOUT = 60
 
