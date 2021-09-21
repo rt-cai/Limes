@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys, subprocess
-from typing import Callable
+from typing import IO, Callable
 from threading import Condition, Thread
 from queue import Queue, Empty
 import json
@@ -32,7 +32,7 @@ class MessageID:
         
 class SshConnection(Connection):
     class _Pipe:
-        def __init__(self, io:subprocess.IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
+        def __init__(self, io:IO[bytes], lock: Condition=Condition(), q: Queue=Queue()) -> None:
             self.IO = io
             self.Lock = lock
             self.Q = q

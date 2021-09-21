@@ -41,7 +41,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             printDisabled: true,
             printAllDisabled: false,
             lastChange: Date.now(),
-            sendingPrint: true,
+            sendingPrint: false,
             gettingData: false,
         }
     }
