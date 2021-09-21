@@ -6,7 +6,8 @@ import { ApiService } from "../../services/api";
 
 enum LabelType {
     SAMPLE = 'Sample',
-    STORAGE_LOCATION = 'Storage'
+    STORAGE_LOCATION = 'Location',
+    CUSTOM = 'Unknown',
 }
 
 interface SampleInfo {
@@ -34,20 +35,8 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         super(props)
         this.elabService = props.elabService
         this.state = {
-            labels: [
-                {
-                    id: '005000009764619',
-                    name: 'example box',
-                    type: LabelType.STORAGE_LOCATION,
-                    disabled: true,
-                },
-                {
-                    id: '1234567',
-                    name: 'example sample',
-                    type: LabelType.SAMPLE,
-                },
-            ],
-            labelsRaw: '12345\n1x\n0001\na',
+            labels: [],
+            labelsRaw: '',
             // labelsRaw: '',
             printDisabled: true,
             printAllDisabled: false,
@@ -55,32 +44,58 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             sendingPrint: true,
             gettingData: false,
         }
-
-        setTimeout(() => {
-        this.elabService.BarcodeLookup(['008000000783959', '005000009764619', '005000009764621'])
-        }, 500)
     }
 
     private parseLabels() {
         const labels = this.state.labelsRaw.split('\n')
+        const isInteger = (v: string) => !/[^0-9]/.test(v)
+        const isBarcode = labels.map(isInteger)
         const barcodes = labels
-        .filter((v) => !/[^0-9]/.test(v))
+        .filter(isInteger)
 
         this.elabService.BarcodeLookup(barcodes)
-        .then((x)=>{
-
+        .then((data)=>{
+            const newLabels: SampleInfo[] = labels.map((l) => {
+                if (data[l] == undefined) {
+                    const tokens = l.split(' ')
+                    const ret = {
+                        id: '',
+                        name: '',
+                        type: LabelType.CUSTOM,
+                    }
+                    if (tokens.length > 1 && isInteger(tokens[0])) {
+                        const temp = tokens.shift();
+                        ret.id = temp? temp: ''
+                        ret.name = tokens.join(' ');
+                    } else {
+                        ret.id = ''
+                        ret.name = l
+                    }
+                    return ret
+                } else {
+                    // console.log(data[l])
+                    const d: any = data[l]
+                    return {
+                        id: `...${l.substring(10,)}`,
+                        name: d.name,
+                        type: d['sampleID']? LabelType.SAMPLE: LabelType.STORAGE_LOCATION,
+                    }
+                }
+            })
+            this.setState({
+                labels: newLabels
+            })
         }).catch((err)=>{
             console.error(err);
+        }).finally(()=>{
+            this.setState({
+                gettingData: false
+            })
         })
 
         this.setState({
             gettingData: true
         })
-        setTimeout(() => {
-            this.setState({
-                gettingData: false
-            })
-        }, 1000);
     }
 
     private onLabelInputChanged(e: any) {
@@ -109,9 +124,9 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     render(): JSX.Element {
         const sampleColumns: GridColDef[] = [
             { field: 'disabled', hide: true },
-            { field: 'id', headerName: 'Barcode', width: 150, sortable: false },
-            { field: 'name', headerName: 'Name', width: 150, sortable: false },
-            { field: 'type', headerName: 'Type', width: 150, sortable: false },
+            { field: 'id', headerName: 'Barcode', width: 100, sortable: false },
+            { field: 'name', headerName: 'Name', width: 400, sortable: false },
+            { field: 'type', headerName: 'Type', width: 100, sortable: false },
         ]
 
         const outerStyle: React.CSSProperties = {

@@ -129,7 +129,7 @@ class SshConnection(Connection):
             self.Errors: Queue[str] = Queue()
         
         def _sync(self, fn):
-            self.Lock.acquire()
+            self.Lock.acquire() 
             fn()
             self.Lock.release()
 

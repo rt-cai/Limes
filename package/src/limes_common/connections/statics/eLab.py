@@ -134,7 +134,7 @@ class ELabConnection(HttpConnection):
         if withPath and res is not None:
             res.path = self.GetFullStoragePath(layerID)
         return res
-
+    
     def GetStorageSimple(self, layerID: int):
         raw = self.GetStorage(layerID)
         if raw is not None:
@@ -161,12 +161,14 @@ class ELabConnection(HttpConnection):
         samples = []
         res = {}
         bl = 0
+        prefixL = 3 # 005<ID>
         for b in barcodes:
             bl = len(b)
+            if bl < prefixL: continue
             if b.startswith(SAMPLE_PRE):
                 samples.append(b)
             else:
-                storage = self.GetStorage(int(b[3:]), withPath=True)
+                storage = self.GetStorage(int(b[prefixL:]), withPath=True)
                 res[b] = storage
         
         if len(samples) > 0:

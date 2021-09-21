@@ -3,9 +3,9 @@ import inspect
 import sys
 from typing import Callable
 from flask import Flask, request
-import uuid
+from flask_socketio import SocketIO
 
-from numpy import isin
+import uuid
 
 from limes_common import config
 from limes_common.models import Model, server

@@ -19,7 +19,7 @@ export abstract class ApiService {
 
     private makeBody(body: any) {
         body.ClientID = this.clientID;
-        console.log(this.clientID)
+        // console.log(this.clientID)
         return body
     }
 
@@ -39,7 +39,7 @@ export abstract class ApiService {
                     that.clientID = res.ClientID
                     that.firstname = res.FirstName
                     that.lastname = res.LastName
-                    console.log(that)
+                    // console.log(that)
                     return [true, '']
                 case 401:
                     return [false, 'Incorrect username/password']
@@ -53,15 +53,12 @@ export abstract class ApiService {
         const b = this.makeBody({
             Barcodes: barcodes
         })
-        console.log(b)
         return this.requester.POST({
             path: 'barcodes',
             body: b
-        })
-            .then(raw => {
-                const res = raw.data.Results;
-                
-                console.log(raw)
+        }).then(raw => {
+            const res = raw.data.Results;
+            return res;
         })
     }
 }
