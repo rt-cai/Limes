@@ -13,6 +13,8 @@ from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
 app = Flask(__name__, static_url_path='', static_folder='public')
+app.config['SECRET_KEY'] = 'secret'
+sio = SocketIO(app)
 
 _views: dict[str, Callable] = {}
 
@@ -80,6 +82,7 @@ def Login():
         
 
 def Barcodes():
+    print('s')
     SB = server.BarcodeLookup
     req = SB.Request.Parse(request.data)
     client = _clientManager.Get(req.ClientID)
@@ -141,3 +144,9 @@ def Home():
 @app.route('/forcefavicon')
 def ForceFavicon():
     return app.send_static_file('favicon.ico')
+
+# peripherals
+
+@sio.on('print')
+def PrintReport(data):
+    print('s>>%s' % (data))

@@ -1,6 +1,6 @@
 
-py=python3
-# py=python
+# py=python3
+py=python
 dir=`pwd`
 src=package/src
 cd $src
@@ -18,6 +18,7 @@ case $sw in
     ;;
     server | -s)
     gunicorn -c server/gunicorn.conf.py server.wsgi
+    # python -m server
     ;;
     fosdb | -f)
     echo "> fosDB"
