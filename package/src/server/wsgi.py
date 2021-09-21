@@ -1,7 +1,7 @@
 from . import server
 
 if __name__ == "__main__":
-    print('s')
-    server.app.run()
+    # server.app.run()
+    server.sio.run(server.app)
 
 application = server.app
