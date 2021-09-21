@@ -27,7 +27,7 @@ class Limes:
         if res.Success:
             print('Authenticated terminal as %s' % res.FirstName)
             # return True, res.FirstName
-            self._eLab.SetToken(res.Token)
+            self._eLab.SetAuth(res.Token)
         else:
             # return False, ''
             print('Not logged in')
@@ -39,7 +39,7 @@ class Limes:
         res = self._eLab.Login(username, password)
 
         if res.Code == 200:
-            self._server.Login(res.user.firstName, res.user.lastName, res.token)
+            self._server.RegisterClient(res.user.firstName, res.user.lastName, res.token)
             return True, 'logged in as %s' % res.user.firstName
         elif res.Code == 401:
             return False, 'incorrect credentials'

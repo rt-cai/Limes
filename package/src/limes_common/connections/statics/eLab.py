@@ -1,6 +1,7 @@
 import numpy as np
 
 from limes_common import config
+from limes_common import models
 from limes_common.connections import T
 from limes_common.connections.http import HttpConnection
 from limes_common.models import Model, elab as Models, provider as ProviderModels
@@ -37,14 +38,10 @@ class Storages:
 class ELabConnection(HttpConnection):
     def __init__(self) -> None:
         super().__init__(config.ELAB_API)
-        self._token: str = ''
         self._storages = Storages()
 
     def _makeHeader(self):
         return {'authorization': self._token}
-
-    def SetToken(self, token:str) -> None:
-        self._token = token
 
     def LoggedIn(self) -> bool:
         return self._token != ''
@@ -85,13 +82,16 @@ class ELabConnection(HttpConnection):
             transaction.Response()
         )
         if res.Code == 200:
-            self.SetToken(res.token)
-        return res 
+            self.SetAuth(res.token)
+        return res
+
+    def Logout(self):
+        self._token = ''
 
     def SearchSamples(self, query: str):
         query = query.lower()
-        transaction = Models.SampleSearch
-        req = transaction.Request(query)
+        transaction = Models.GetSamples
+        req = transaction.Request({"search": query})
         return self._makeParseRequest(
             req,
             transaction.Response.Parse,
@@ -99,7 +99,7 @@ class ELabConnection(HttpConnection):
         )
 
     def GetSample(self, sampleID: int):
-        transaction = Models.GetSample
+        transaction = Models.GetSampleById
         req = transaction.Request(sampleID)
         return self._makeParseRequest(
             req,
@@ -127,19 +127,66 @@ class ELabConnection(HttpConnection):
                 results += d[n]
         return results
     
-    def GetStorage(self, layerID: int):
+    def GetStorage(self, layerID: int, withPath=False):
         # default = Models.Storage()
         default = None
-        return self._storages._byLayerId.get(layerID, default)
+        res = self._storages._byLayerId.get(layerID, default)
+        if withPath and res is not None:
+            res.path = self.GetFullStoragePath(layerID)
+        return res
+    
+    def GetStorageSimple(self, layerID: int):
+        raw = self.GetStorage(layerID)
+        if raw is not None:
+            res = Models.StorageSimple()
+            res.name = raw.name
+            res.storageLayerID = raw.storageLayerID
+            res.parentStorageLayerID = raw.parentStorageLayerID
+            res.storageLayerDefinitionID = raw.storageLayerDefinitionID
+            return res
+        else:
+            return raw
 
-    def GetFullStoragePath(self, layerID: int) -> list[Models.Storage]:
-        layer = self.GetStorage(layerID)
+
+    def GetFullStoragePath(self, layerID: int) -> list[Models.StorageSimple]:
+        layer = self.GetStorageSimple(layerID)
         path = []
         while layer is not None:
             path.append(layer)
-            layer = self.GetStorage(layer.parentStorageLayerID)
+            layer = self.GetStorageSimple(layer.parentStorageLayerID)
         return path
 
+    def LookupBarcodes(self, barcodes: list[str]):
+        SAMPLE_PRE = '005'
+        samples = []
+        res = {}
+        bl = 0
+        prefixL = 3 # 005<ID>
+        for b in barcodes:
+            bl = len(b)
+            if bl < prefixL: continue
+            if b.startswith(SAMPLE_PRE):
+                samples.append(b)
+            else:
+                storage = self.GetStorage(int(b[prefixL:]), withPath=True)
+                res[b] = storage
+        
+        if len(samples) > 0:
+            def toBar(s):
+                if len(s) + len(SAMPLE_PRE) < bl:
+                    return toBar('0%s'%s)
+                else:
+                    return '%s%s' % (SAMPLE_PRE, s)
+            transaction = Models.GetSamples
+            s_req = transaction.Request({"barcodes": ','.join(samples)})
+            s_res = self._makeParseRequest(
+                s_req,
+                transaction.Response.Parse,
+                transaction.Response())
+            if s_res.Code == 200:
+                for v in s_res.data:
+                    res[toBar(str(v.sampleID))] = v
+        return res
     # def _truncateToId(self, id: str) -> str:
     #     return id[-9:] if len(id) > 9 else id
 

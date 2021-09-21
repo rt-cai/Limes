@@ -307,8 +307,3 @@ class Model(metaclass=AutoRegisterChildren):
             if k.startswith('_'): continue
             d[k] = self._toDict(v)
         return d
-
-# decorator to register class
-def Serializable(cls: T) -> T:
-    SerializableTypes._registerModel(cls)
-    return cls

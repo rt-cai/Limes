@@ -7,7 +7,7 @@ import { ConcreteLoginModal } from './popups/login';
 import { MainFunctionsComponent } from './components/pages/mainFunctions';
 import { PrintComponent } from './components/pages/print';
 import { AppProps, MainFunctionCardSettings } from './models/props';
-import { ElabService, ConcreteElabService } from './services/elab';
+import { ApiService, ApiServiceFactory } from './services/api';
 import { DEBUG } from './config'
 
 const theme = createTheme({
@@ -30,11 +30,11 @@ interface AppState {
 
 export class App extends React.Component<AppProps, AppState> {
   private defaultActiveComponent: any
-  private elabService: ElabService
+  private elabService: ApiService
 
   constructor(props: AppProps) {
     super(props)
-    this.elabService = new ConcreteElabService()
+    this.elabService = ApiServiceFactory.GetApiService()
 
     const makePrintComponent = () => <PrintComponent elabService={this.elabService}/>
     const mainFunctions: MainFunctionCardSettings[] = [
@@ -66,6 +66,8 @@ export class App extends React.Component<AppProps, AppState> {
   }
 
   render(): JSX.Element {
+    const fav: any = document.getElementById("favicon");
+    fav.href = '/forcefavicon'
     return (
       <MuiThemeProvider theme={theme}>
         <div className='app-container'>

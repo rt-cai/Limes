@@ -1,5 +1,5 @@
 import { Theme } from "@material-ui/core";
-import { ElabService } from "../services/elab";
+import { ApiService } from "../services/api";
 
 export interface AppProps {}
 
@@ -22,9 +22,9 @@ export interface MainFunctionsGridProps {
 }
 
 export interface PrintProps {
-    elabService: ElabService
+    elabService: ApiService
 }
 
 export interface LoginProps {
-    elabService: ElabService 
+    elabService: ApiService 
 }
