@@ -196,7 +196,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     render(): JSX.Element {
         const sampleColumns: GridColDef[] = [
             { field: 'disabled', hide: true },
-            { field: 'id', headerName: 'ID', width: 0, sortable: false },
+            { field: 'id', headerName: 'ID', hide: true },
             { field: 'bar', headerName: 'Barcode', width: 100, sortable: false },
             { field: 'text', headerName: 'Text', width: 600, sortable: false },
         ]
