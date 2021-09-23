@@ -1,3 +1,4 @@
+from __future__ import annotations
 from limes_common.models import Model, server
 
 class Client:
@@ -8,6 +9,14 @@ class Client:
         self.LastName = res.LastName
 
 class ClientManager:
+    I: ClientManager|None = None
+
+    @classmethod
+    def GetInstance(cls):
+        if cls.I is None:
+            cls.I = ClientManager()
+        return cls.I
+
     def __init__(self) -> None:
         self._activeClients: dict[str, Client] = {}
         self._clientsByToken: dict[str, str] = {} # token: clientId

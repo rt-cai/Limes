@@ -8,7 +8,7 @@ from flask_socketio import SocketIO
 import uuid
 
 from limes_common import config
-from limes_common.models import Model, server
+from limes_common.models import Model, server, elab
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
@@ -21,7 +21,7 @@ _views: dict[str, Callable] = {}
 def _toRes(model: Model):
     return model.ToDict()
 
-_clientManager = ClientManager()
+_clientManager = ClientManager.GetInstance()
 _providers = ProviderHandler(_views, _clientManager)
 
 # todo: csrf + maybe encryption 
@@ -65,7 +65,7 @@ def Login():
         reg.ELabKey = e_res.token
         reg.FirstName = e_res.user.firstName
         reg.LastName = e_res.user.lastName
-        reg.ClientID = '%012x' % (uuid.getnode())
+        reg.ClientID = '%012x' % (uuid.uuid1().int)
         _clientManager.RegisterClient(reg)
         
         res.FirstName = reg.FirstName
@@ -79,10 +79,8 @@ def Login():
 
     elab.Logout()
     return _toRes(res)
-        
 
 def Barcodes():
-    print('s')
     SB = server.BarcodeLookup
     req = SB.Request.Parse(request.data)
     client = _clientManager.Get(req.ClientID)
@@ -100,6 +98,72 @@ def Barcodes():
 
     return _toRes(res)
     # return {}
+
+def AllStorages():
+    MODEL = server.AllStorages
+    req = MODEL.Request.Parse(request.data)
+    client = _clientManager.Get(req.ClientID)
+    res = MODEL.Response()
+
+    if client is not None:
+        elab = _providers.GetElabCon()
+        elab.SetAuth(client.Token)
+        res.Results = elab.GetAllStorages()
+        elab.Logout()
+    else:
+        res.Code = 401
+        res.Error = 'Authentication failed'
+
+    return _toRes(res)
+
+def SamplesByStorage():
+    MODEL = server.SamplesByStorage
+    req = MODEL.Request.Parse(request.data)
+    client = _clientManager.Get(req.ClientID)
+
+    res = MODEL.Response()
+
+    if client is not None:
+        elab = _providers.GetElabCon()
+        elab.SetAuth(client.Token)
+        res.Results = elab.GetSampleByStorage(req.StorageLayerID).data
+        elab.Logout()
+    else:
+        res.Code = 401
+        res.Error = 'Authentication failed'
+
+    return _toRes(res)
+
+_printReports = {}
+def PrintOps():
+    SP = server.Printing
+    req = SP.BaseRequest.Parse(request.data)
+    OPS = server.PrintOp
+    res = SP.Response()
+    if req.Op == OPS.PRINT:
+        pr = SP.PrintRequest.Parse(request.data, base=req)
+        global _print_i
+        pr.ID = '%012x' % (uuid.uuid1().int)
+        sio.emit('print', pr.ToDict())
+        res.ID = pr.ID
+    elif req.Op == OPS.GET_PRINTERS:
+        pass
+    elif req.Op == OPS.GET_TEMPLATES:
+        pass
+    elif req.Op == OPS.POLL_REPORT:
+        pr = SP.PollReport.Parse(request.data, base=req)
+        res = SP.Report()
+        m =  _printReports.get(pr.ID, None)
+        if m is not None:
+            del _printReports[pr.ID]
+        else:
+            m = ''
+        res.Message = m
+    else:
+        res.Code = 400
+        print('x')
+ 
+    return _toRes(res)
 
 def add_Api_Views():
     current_module = sys.modules[__name__]
@@ -147,6 +211,6 @@ def ForceFavicon():
 
 # peripherals
 
-@sio.on('print')
+@sio.on('printReport')
 def PrintReport(data):
-    print('s>>%s' % (data))
+    _printReports[data['ID']] = data['Message']

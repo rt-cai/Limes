@@ -1,5 +1,6 @@
 import { Theme } from "@material-ui/core";
 import { ApiService } from "../services/api";
+import { Sample } from "./common";
 
 export interface AppProps {}
 
@@ -21,10 +22,15 @@ export interface MainFunctionsGridProps {
     clicked: (settings: MainFunctionCardSettings) => void
 }
 
-export interface PrintProps {
+interface WithElabServiceProp {
     elabService: ApiService
+    startingSamples?: Sample[]
 }
 
-export interface LoginProps {
-    elabService: ApiService 
+export interface PrintProps extends WithElabServiceProp { }
+
+export interface LoginProps extends WithElabServiceProp { }
+
+export interface StorageSearchProps extends WithElabServiceProp {
+    onPrintCallback: (samples: Sample[]) => void
 }

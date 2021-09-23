@@ -1,0 +1,140 @@
+// import React from "react";
+// import { BulkAddProps } from '../../models/props';
+// import { makeStyles, createStyles } from "@material-ui/core/styles";
+// import { Typography, TextField, Grid, Card, Button, LinearProgress, Fade, CircularProgress } from '@material-ui/core';
+// import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
+// import { DropzoneArea } from 'material-ui-dropzone'
+// import { ApiService } from "../../services/api";
+
+// interface AddState {
+//     loadingCsv: boolean
+//     items: any
+//     dropzoneText: string
+//     dropzoneColour: string
+// }
+
+// export class BulkAddComponent extends React.Component<BulkAddProps, AddState> {
+//     private elabService: ApiService
+//     private readonly DRAGZONE_TEXT = 'Drag and drop a CSV here or click'
+//     constructor(props: BulkAddProps) {
+//         super(props)
+//         this.elabService = props.elabService
+//         this.state = {
+//             loadingCsv: true,
+//             dropzoneText: this.DRAGZONE_TEXT,
+//             dropzoneColour: "primary",
+//             items: []
+//         }
+//     }
+
+//     private onFileUpload(files: File[]) {
+//         if (files.length === 0) return
+//         console.log(files[0])
+//         const reader = new FileReader()
+
+//         reader.onabort = () => console.log('file reading was aborted')
+//         reader.onerror = () => console.log('file reading has failed')
+//         reader.onload = () => {
+//         // Do whatever you want with the file contents
+//           const binaryStr = reader.result
+//           console.log(binaryStr)
+//         }
+//         reader.readAsText(files[0])
+//         this.setState({
+//             dropzoneText: this.DRAGZONE_TEXT,
+//         })
+//     }
+
+//     private onFileDelete(file: File) {
+
+//     }
+
+//     render(): JSX.Element {
+//         // const classes = this.classes
+//         const sampleColumns: GridColDef[] = [
+//             { field: 'disabled', hide: true },
+//             { field: 'id', headerName: 'Barcode', width: 100, sortable: false },
+//             { field: 'name', headerName: 'Name', width: 400, sortable: false },
+//             { field: 'type', headerName: 'Type', width: 100, sortable: false },
+//         ]
+
+//         const outerStyle: React.CSSProperties = {
+//             marginTop: '5vh',
+//             justifyContent: 'center',
+//             alignItems: 'center',
+//             alignContent: 'center',
+//             // border: '1px solid orange'
+//         }
+//         const cardStyle: React.CSSProperties = {
+//             // border: '1px solid green',
+//             width: '90vw',
+//             padding: '2em',
+//         }
+
+//         const classes = this.props
+//         return (
+//             <Grid container justifyContent='center' style={outerStyle}>
+//                 <Card style={cardStyle}>
+//                     <Grid container direction="column" spacing={3}>
+//                         <Grid item>
+//                             <Typography variant="h5" component="h2" align="left" gutterBottom={true} style={{}}>
+//                                 Bulk Add
+//                             </Typography>
+//                         </Grid>
+//                         <Grid item>
+//                             <DropzoneArea
+//                                 dropzoneText={this.state.dropzoneText}
+//                                 filesLimit={1}
+//                                 showPreviews={true}
+//                                 showPreviewsInDropzone={false}
+//                                 useChipsForPreview={true}
+//                                 previewGridProps={{container: { spacing: 1, direction: 'row' }}}
+//                                 previewChipProps={{color: "primary", style: {marginTop: '1em'} }}
+//                                 previewText=""
+//                                 onChange={this.onFileUpload.bind(this)}
+//                             />
+//                         </Grid>
+//                         <Grid item style={{ height: '30em'}} justify="center">
+//                             <Fade in={this.state.loadingCsv} style={{
+//                                 position: 'absolute',
+//                                 marginTop: '5em',
+//                                 left: '48.5vw',
+//                             }}>
+//                                 <CircularProgress size={50}/>
+//                             </Fade>
+//                             <DataGrid
+//                                 rows={this.state.items}
+//                                 columns={sampleColumns}
+//                                 rowsPerPageOptions={[100]}
+//                                 onPageSizeChange={() => {}}
+//                                 isRowSelectable={(params: GridRowParams) => !params.row.disabled}
+//                                 checkboxSelection
+//                                 disableSelectionOnClick
+//                                 disableColumnMenu
+//                                 disableColumnFilter
+//                                 disableColumnSelector
+//                                 style={{opacity: this.state.loadingCsv? 0.25: 1}}
+//                             />
+//                             <Grid item>
+//                                 <Fade in={true}>
+//                                     <LinearProgress />
+//                                 </Fade>
+//                             </Grid>
+//                         </Grid>
+//                         <Grid item>
+//                             <Button
+//                                 variant="contained"
+//                                 color="primary"
+//                                 // disabled={this.state.printDisabled}
+//                                 // style={buttonStyle}
+//                                 // onClick={() => this.onPrint()}
+//                             >
+//                                 Add
+//                             </Button>
+//                         </Grid>
+//                     </Grid>
+//                 </Card>
+//             </Grid>
+//         )
+//     }
+// }

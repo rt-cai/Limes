@@ -17,10 +17,13 @@ export abstract class ApiService {
         this.lastname = ''
     }
 
-    private makeBody(body: any) {
+    private makeBody(body: any={}) {
         body.ClientID = this.clientID;
-        // console.log(this.clientID)
         return body
+    }
+
+    public LoggedIn() {
+        return this.clientID !== ''
     }
 
     public Login(username: string, password: string): Promise<[boolean, string]> {
@@ -39,7 +42,7 @@ export abstract class ApiService {
                     that.clientID = res.ClientID
                     that.firstname = res.FirstName
                     that.lastname = res.LastName
-                    // console.log(that)
+                    console.log(`logged in as ${res.FirstName}`)
                     return [true, '']
                 case 401:
                     return [false, 'Incorrect username/password']
@@ -59,6 +62,62 @@ export abstract class ApiService {
         }).then(raw => {
             const res = raw.data.Results;
             return res;
+        })
+    }
+
+    public GetStorages(): Promise<any> {
+        const b = this.makeBody()
+        return this.requester.POST({
+            path: 'allstorages',
+            body: b
+        }).then(raw => {
+            const res = raw.data.Results
+            return res
+        })
+    }
+
+    public GetSamplesByStorage(id: number): Promise<any> {
+        const b = this.makeBody({
+            StorageLayerID: id
+        })
+        return this.requester.POST({
+            path: 'samplesbystorage',
+            body: b
+        }).then(raw => {
+            const res = raw.data.Results
+            return res
+        })
+    }
+
+    public ReloadStorages(): void {
+        const b = this.makeBody()
+        this.requester.POST({
+            path: 'reloadcache',
+            body: b
+        })
+    }
+
+    public PrintLabels(labels: any) {
+        const b = this.makeBody(labels)
+        b.Op = 'print'
+        return this.requester.POST({
+            path: 'printops',
+            body: b
+        }).then(raw => {
+            return raw.data.ID
+        })
+    }
+
+    public PollPrintReport(id: string) {
+        const b = this.makeBody({
+            ID: id,
+            Op: 'pollreport',
+        })
+        return this.requester.POST({
+            path: 'printops',
+            body: b
+        }).then(raw=> {
+            return raw.data.Message
         })
     }
 }

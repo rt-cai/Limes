@@ -8,6 +8,7 @@ from limes_common.models.http import GET, POST, PUT
 class Endpoints(Models.Endpoints):
     AUTH = 'auth/user'
     SAMPLES = 'samples'
+    STORAGE = 'storage'
     STORAGE_LAYERS = 'storageLayers'
 
 class ELabRequest(Models.ProviderRequest):
@@ -101,6 +102,14 @@ class GetSampleById(Transaction):
 
     class Response(Sample, ELabResponse):
         pass
+
+class GetSampleByStorage(Transaction):
+    class Request(ELabRequest):
+        def __init__(self, storageLayerID: int=0) -> None:
+            super().__init__('%s/%s/samples' % (Endpoints.STORAGE_LAYERS, storageLayerID), GET)
+
+    class Response(ELabResponse):
+        data: list[Sample]
 
 class StorageSimple(Model):
     parentStorageLayerID: int
