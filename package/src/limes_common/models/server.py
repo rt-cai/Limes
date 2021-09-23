@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from limes_common.models import Model, Primitive, provider as Models
+from werkzeug.wrappers import BaseRequest
+
+from limes_common.models import Model, Primitive, elab, provider as Models
 from limes_common.models import provider
 from limes_common.models.provider import Transaction
 from limes_common.models.http import GET, POST
@@ -17,6 +19,9 @@ class Endpoints(provider.Endpoints):
     RELOAD_PROVIDERS = 'reloadproviders'
     RELOAD_CACHE = 'reloadcache'
     BARCODES= 'barcodes'
+    PRINT='printops'
+    ALL_STORAGES='allstorages'
+    SAMPLES_BY_STORAGE='samplesbystorage'
 
 class ServerRequest(Models.ProviderRequest):
     ClientID: str
@@ -135,3 +140,60 @@ class BarcodeLookup(Transaction):
 
     class Response(ServerResponse):
         Results: dict
+
+class AllStorages(Transaction):
+    class Request(ServerRequest):
+        def __init__(self) -> None:
+            super().__init__(Endpoints.ALL_STORAGES, POST)
+
+    class Response(ServerResponse):
+        Results: list[elab.Storage]
+
+class SamplesByStorage(Transaction):
+    class Request(ServerRequest):
+        StorageLayerID: int
+        def __init__(self) -> None:
+            super().__init__(Endpoints.SAMPLES_BY_STORAGE, POST)
+        
+    class Response(ServerResponse):
+        Results: list[elab.Sample]
+
+class LabelData(Model):
+    Barcode: str
+    Texts: list[str]
+
+class PrintOp:
+    PRINT = 'print'
+    GET_PRINTERS = 'getprinters'
+    GET_TEMPLATES = 'gettemplates'
+    POLL_REPORT = 'pollreport'
+
+class Printing(Transaction):
+    class BaseRequest(ServerRequest):
+        Op: str
+        def __init__(self, op: str='') -> None:
+            self.Op = op
+            super().__init__(Endpoints.PRINT, POST)
+    class PrintRequest(Model):
+        Labels: list[LabelData]
+        PrinterName: str
+        TemplateName: str
+        ID: str
+
+    class GetPrinters(BaseRequest):
+        def __init__(self) -> None:
+            super().__init__(PrintOp.GET_PRINTERS)
+
+    class GetTemplates(BaseRequest):
+        def __init__(self) -> None:
+            super().__init__(PrintOp.GET_TEMPLATES)
+
+    class Report(ServerResponse):
+        Message: str
+
+    class PollReport(BaseRequest):
+        ID: str
+        def __init__(self) -> None:
+            super().__init__(PrintOp.POLL_REPORT)
+    class Response(ServerResponse):
+        ID: str

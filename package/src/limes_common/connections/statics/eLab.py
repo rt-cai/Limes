@@ -107,6 +107,15 @@ class ELabConnection(HttpConnection):
             transaction.Response()
         )
 
+    def GetSampleByStorage(self, storagelayerID: int):
+        transaction = Models.GetSampleByStorage
+        req = transaction.Request(storagelayerID)
+        return self._makeParseRequest(
+            req,
+            transaction.Response.Parse,
+            transaction.Response()
+        )
+
     def ReloadStorages(self):
         transaction = Models.AllStorages
         req = transaction.Request()
@@ -134,6 +143,9 @@ class ELabConnection(HttpConnection):
         if withPath and res is not None:
             res.path = self.GetFullStoragePath(layerID)
         return res
+
+    def GetAllStorages(self):
+        return list(self._storages._byLayerId.values())
     
     def GetStorageSimple(self, layerID: int):
         raw = self.GetStorage(layerID)
@@ -146,7 +158,6 @@ class ELabConnection(HttpConnection):
             return res
         else:
             return raw
-
 
     def GetFullStoragePath(self, layerID: int) -> list[Models.StorageSimple]:
         layer = self.GetStorageSimple(layerID)

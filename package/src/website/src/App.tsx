@@ -6,6 +6,8 @@ import { HeaderComponent } from './components/headers/header';
 import { ConcreteLoginModal } from './popups/login';
 import { MainFunctionsComponent } from './components/pages/mainFunctions';
 import { PrintComponent } from './components/pages/print';
+import { StorageSearchComponent } from './components/pages/storageSearch';
+
 import { AppProps, MainFunctionCardSettings } from './models/props';
 import { ApiService, ApiServiceFactory } from './services/api';
 import { DEBUG } from './config'
@@ -14,10 +16,10 @@ const theme = createTheme({
   palette: {
     primary: {
       main: '#00abab',
-      contrastText: 'white'
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#98ff6d',
+      main: '#d32f2f',
     },
     contrastThreshold: 3,
     tonalOffset: 0.2,
@@ -37,11 +39,23 @@ export class App extends React.Component<AppProps, AppState> {
     this.elabService = ApiServiceFactory.GetApiService()
 
     const makePrintComponent = () => <PrintComponent elabService={this.elabService}/>
+    const makeStorageSearchComponent = () => <StorageSearchComponent elabService={this.elabService} onPrintCallback={
+      (samples) => {
+        this.setState({
+          activeComponent: <PrintComponent elabService={this.elabService} startingSamples={samples}/>
+        })
+      }
+    }/>
     const mainFunctions: MainFunctionCardSettings[] = [
       {
         name: 'Print',
         disabled: false,
         makeNextPage: makePrintComponent
+      },
+      {
+        name: 'Search Storage Locations',
+        disabled: false,
+        makeNextPage: makeStorageSearchComponent
       },
       {
         name: 'Scanner coming soon!',
@@ -55,7 +69,13 @@ export class App extends React.Component<AppProps, AppState> {
         clicked={(settings: MainFunctionCardSettings) => this.toFunctionPage(settings)}
       />)
     this.state = {
-      activeComponent: DEBUG? makePrintComponent(): this.defaultActiveComponent,
+      activeComponent: DEBUG? <PrintComponent elabService={this.elabService} startingSamples={[
+        9763616,
+        9763617,
+        9763618,
+        9763619,
+        9763620,
+      ].map(i=>{return {id: i, name:'s', type: 't'}})}/>: this.defaultActiveComponent,
     }
   }
 

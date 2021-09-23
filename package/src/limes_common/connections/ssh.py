@@ -117,9 +117,12 @@ class SshConnection(Connection):
             for p in [self._in, self._out, self._err]:
                 p.Lock.acquire()
                 try:
-                    p.IO.close()
-                except BrokenPipeError:
+                    if not p.IO.closed: p.IO.close()
+                except (BrokenPipeError):
                     pass
+                except RuntimeError as re:
+                    if not re.args[0].startswith('reentrant call'): # todo, fix this
+                        raise re
                 p.Lock.release()
 
     class _Transaction:

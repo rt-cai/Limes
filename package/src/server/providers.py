@@ -2,7 +2,6 @@ import json
 from os import error
 from typing import Any, Callable, Union
 from threading import Thread, Condition
-
 from flask import Flask, request
 
 from limes_common import config, utils
@@ -27,8 +26,17 @@ class ProviderReference:
         self.LastUse = 0.0
 
 ProviderDictionary = dict[str, ProviderReference]
+_statics: Union[ProviderDictionary, None] = None
+StaticsNotInitializedMessage= 'statics was not initialized'
 
-def _loadStatics() -> ProviderDictionary:
+def _loadStatics(reload=False):
+    if _statics is not None and not reload:
+        return _statics
+
+    def finish(d):
+        global _statics
+        _statics = d
+
     print('## loading static providers')
     def GetSchema(ref: ProviderReference):
         s = ref.Con.GetSchema()
@@ -73,23 +81,23 @@ def _loadStatics() -> ProviderDictionary:
         elabcon = ELabConnection()
         loaded['elab'] = ProviderReference(elabcon, elabcon.GetSchema())
         print('loaded %s' % len(loaded))
-        return loaded
+        finish(loaded)
     except FileNotFoundError:
         print('!!! file [%s] required !!!' % config.PROVIDER_STATICS_PATH)
-        return {}
-
+        finish(None)
 import signal
 
 class Handler:
     def __init__(self, views, clients: ClientManager) -> None:
         signal.signal(signal.SIGINT, self._shutdownConnections)
         self._clients = clients
-        self._providers: ProviderDictionary = _loadStatics()
+        _loadStatics()
         for v in [self.List, self.ReloadProviders, self.ReloadCache, self.Search, self.Call]:
             views[v.__name__.lower()] = v
 
     def _shutdownConnections(self, x, y):
-        for c in self._providers.values():
+        if _statics is None: raise Exception(StaticsNotInitializedMessage)
+        for c in _statics.values():
             try:
                 c.Con.Close()
             except Exception:
@@ -99,15 +107,16 @@ class Handler:
         return model.ToDict()
 
     def GetElabCon(self):
-        def f() -> Any:
-            return self._providers['elab'].Con
+        def f() -> Any:    
+            if _statics is None: raise Exception(StaticsNotInitializedMessage)
+            return _statics['elab'].Con
         con: ELabConnection = f()
         return con
 
     def List(self):
         res = server.List.Response()
-        
-        for k, info in self._providers.items():
+        if _statics is None: raise
+        for k, info in _statics.items():
             pi = server.ProviderInfo()
             pi.Name = k
 
@@ -120,18 +129,21 @@ class Handler:
         return self._toRes(res)
 
     def ReloadProviders(self):
-        for p in self._providers.values():
-            p.Con.Close()
-        self._providers: ProviderDictionary = _loadStatics()
+        if _statics is not None:
+            for p in _statics.values():
+                p.Con.Close()
+        _loadStatics(reload=True)
         return self.List()
 
     def ReloadCache(self):
+        print('reloading cache')
         con = self.GetElabCon()
         if con is not None:
             req = server.ReloadCache.Request.Parse(request.data)
             self._authProvider(con, req.ClientID)
             res = con.ReloadStorages()
             con.Logout()
+            print('complete')
             return self._toRes(server.ReloadCache.Response(res.Code))
         else:
             return self._toRes(server.ReloadCache.Response(500))
@@ -155,7 +167,9 @@ class Handler:
                 k_withName = '%s_%s' % (name, k)
                 res.Hits[k_withName] = v
         names = []
-        for name, p in self._providers.items():
+
+        if _statics is None: raise Exception(StaticsNotInitializedMessage)
+        for name, p in _statics.items():
             doSearch(name, p.Con)
             names.append(name)
         res.Code = 200
@@ -166,7 +180,8 @@ class Handler:
         name = req.ProviderName
         p_req = req.RequestPayload
 
-        theProvider = self._providers.get(name, None)
+        if _statics is None: raise Exception(StaticsNotInitializedMessage)
+        theProvider = _statics.get(name, None)
         res = server.CallProvider.Response()
         if theProvider is None:
             res.Code = 404
