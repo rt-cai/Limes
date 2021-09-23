@@ -236,7 +236,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                                 placeholder={inputPlaceholder}
                                 multiline
                                 variant="outlined"
-                                style={{ width: '70em' }}
+                                style={{ width: '70em'}}
                                 defaultValue={this.toBarcodes(this.props.startingSamples).join('\n')}
                                 onChange={(e) => { this.onLabelInputChanged(e) }}
                             >
@@ -294,6 +294,18 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                                 style={buttonStyle}
                                 onClick={() => this.onPrintAll()}>
                                 Print All
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                disabled={this.state.printAllDisabled}
+                                style={buttonStyle}
+                                onClick={() => navigator.clipboard.writeText(
+                                    ['Barcode\tTexts'] + this.state.labels.map((l) => {
+                                        return `${l.id}\t${l.text}`
+                                    }).join('\n')
+                                )}>
+                                Copy to Clipboard
                             </Button>
                         </Grid>
                     </Grid>

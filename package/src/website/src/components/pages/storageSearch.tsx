@@ -102,6 +102,12 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                 return cands
             }
 
+            this.setState({
+                errorText: '',
+                errorCands: '',
+                currentLocation: '',
+            })
+
             let res = ""
             let found
             let success = true
@@ -114,10 +120,6 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                     domain = s.children
                     res += `, ${s.name}`
                     found = s
-                    this.setState({
-                        errorText: '',
-                        errorCands: '',
-                    })
                 } else if (cands.length === 0) {
                     success = false
                     this.setState({
