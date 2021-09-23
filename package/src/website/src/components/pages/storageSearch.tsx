@@ -14,6 +14,7 @@ interface Storage {
 
 interface SearchState {
     searching: boolean
+    currentLocation: string
     results: string
     lastChange: number
     storages: Storage[]
@@ -35,7 +36,8 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
             storages: [],
             selectedSamples: [],
             errorText: '',
-            errorCands: ''
+            errorCands: '',
+            currentLocation: '',
         }
     }
 
@@ -135,6 +137,9 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
             }
     
             if (success && found) {
+                this.setState({
+                    currentLocation: res
+                })
                 resolve(found.id)
             } else {
                 return resolve(0)
@@ -229,17 +234,22 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                             </TextField>
                         </Grid>
                         <Grid item>
-                                <Typography align="left" style={{
-                                    color: 'red',
-                                }}>
-                                    {this.state.errorText}
-                                </Typography>
-                                <Typography align="left"  style={{
-                                    color: 'red',
-                                }}>
-                                    {this.state.errorCands}
-                                </Typography>
-                            </Grid>
+                            <Typography align="left" style={{
+                                color: 'primary',
+                            }}>
+                                {this.state.currentLocation}
+                            </Typography>
+                            <Typography align="left" style={{
+                                color: 'red',
+                            }}>
+                                {this.state.errorText}
+                            </Typography>
+                            <Typography align="left" style={{
+                                color: 'red',
+                            }}>
+                                {this.state.errorCands}
+                            </Typography>
+                        </Grid>
                         <Grid item style={{ height: '30em' }} justify="center">
                             <Fade in={this.state.searching} style={{
                                 position: 'absolute',
