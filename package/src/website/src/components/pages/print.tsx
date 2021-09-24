@@ -204,18 +204,14 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
 
     }
 
-    private onOpenSelectTemplate() {
-
-    }
-
     private onRefresh() {
         this.apiService.RefreshPrintInfo().then(id=>{
             return this.awaitResults(id)
         }).then((data)=> {
             // console.log(data)
             this.setState({
-                availablePrinters: data.printers,
-                availableTemplates: data.templates,
+                availablePrinters: data.printers? data.printers : [],
+                availableTemplates: data.templates? data.templates : [],
             })
         })
     }
@@ -328,7 +324,6 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
                                 onClick={this.onRefresh.bind(this)}
                                 style={{
                                     margin: '0.6em',
@@ -341,7 +336,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
+                                disabled={!this.state.labelTemplateName || !this.state.printerName}
                                 style={buttonStyle}
                                 onClick={() => this.onPrintAll()}>
                                 Print All
@@ -349,7 +344,6 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
                                 style={buttonStyle}
                                 onClick={() => navigator.clipboard.writeText(
                                     ['Barcode\tTexts'] + this.state.labels.map((l) => {
