@@ -1,7 +1,8 @@
 import React from "react";
 import { PrintProps } from '../../models/props';
-import { Typography, TextField, Grid, Card, Button, LinearProgress, Fade, CircularProgress} from '@material-ui/core';
+import { Typography, TextField, Grid, Card, Button, LinearProgress, Fade, CircularProgress, MenuItem} from '@material-ui/core';
 import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { ApiService } from "../../services/api";
 import { Sample } from "../../models/common";
 
@@ -27,6 +28,9 @@ interface PrintState {
     printing: boolean
     gettingData: boolean
     labelTemplateName: string
+    printerName: string
+    availablePrinters: string[]
+    availableTemplates: string[]
 }
 
 export class PrintComponent extends React.Component<PrintProps, PrintState> {
@@ -44,7 +48,10 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             lastChange: Date.now(),
             printing: false,
             gettingData: false,
-            labelTemplateName: ''
+            labelTemplateName: '',
+            printerName: '',
+            availablePrinters: [],
+            availableTemplates: [],
         }
     }
 
@@ -66,6 +73,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         if (this.props.startingSamples) {
             this.parseLabels(this.toBarcodes(this.props.startingSamples))
         }
+        this.onRefresh()
     }
 
     private parseLabels(labels:string[]=[]) {
@@ -86,7 +94,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         .then((data)=>{
             const newLabels: LabelData[] = labels.map((l) => {
                 if (data[l] === undefined) {
-                    const tokens = l.includes('\t')? l.split('\t'): l.split(' ')
+                    const tokens = l.includes('\t')? l.split('\t'): l.split(',').map(t=>t.trim())
                     const ret = {
                         id: '',
                         bar: '',
@@ -146,8 +154,26 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         }, this.UPDATE_DELAY);
     }
 
-    private onPrint() {
-
+    private awaitResults(id: any): Promise<any> {
+        return new Promise((resolve, reject)=> {
+            let tries = 25
+            const poll = () => {
+                tries--;
+                if (tries <= 0) {
+                    reject()
+                }
+                setTimeout(() => {
+                    this.apiService.PollPrintInfo(id).then((data) => {
+                        if (data.Success) {
+                            resolve(data.Data)
+                        } else {
+                            poll()
+                        }
+                    })
+                }, 500);
+            }
+            poll();
+        })
     }
 
     private onPrintAll() {
@@ -162,35 +188,36 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             printing: true
         })
 
-        const stop = () => {
+        this.apiService.PrintLabels(data).then(id=>{
+            return this.awaitResults(id)
+        }).then((data: any) => {
+            console.log(data)
+            alert(data.Message)
+        }).catch(() => {
+            // ignore
+        }).finally(()=> [
             this.setState({
                 printing: false
             })
-        }
+        ])
 
-        this.apiService.PrintLabels(data).then(id=>{
-            let tries = 25
-            const poll = () => {
-                tries--;
-                if (tries <= 0) {
-                    stop()
-                    return
-                }
-                setTimeout(() => {
-                    this.apiService.PollPrintReport(id).then((m) => {
-                        if (!m || m==='') {
-                            poll()
-                        } else {
-                            stop()
-                            alert(m)
-                        }
-                    })
-                }, 500);
-            }
-            poll()
+
+    }
+
+    private onOpenSelectTemplate() {
+
+    }
+
+    private onRefresh() {
+        this.apiService.RefreshPrintInfo().then(id=>{
+            return this.awaitResults(id)
+        }).then((data)=> {
+            // console.log(data)
+            this.setState({
+                availablePrinters: data.printers,
+                availableTemplates: data.templates,
+            })
         })
-
-
     }
 
     render(): JSX.Element {
@@ -221,6 +248,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             '005000000123456',
             '...'
         ].join('\n')
+
         return (
             <Grid container justifyContent='center' style={outerStyle}>
                 <Card style={cardStyle}>
@@ -255,7 +283,6 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                                 rowsPerPageOptions={[100]}
                                 onPageSizeChange={() => {}}
                                 isRowSelectable={(params: GridRowParams) => !params.row.disabled}
-                                // checkboxSelection
                                 disableSelectionOnClick
                                 disableColumnMenu
                                 disableColumnFilter
@@ -270,23 +297,47 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                         </Grid>
                         <Grid item>
                             <TextField
-                                label="Label Template Name"
-                                placeholder={'default'}
+                                select
+                                label="Label Template"
                                 variant="outlined"
-                                style={{ width: '70em' }}
+                                style={{ width: '20.5em' , marginRight: '1em' }}
+                                value={this.state.labelTemplateName}
+                                // onChange={handleChange}
                                 onChange={(e) => { this.setState({labelTemplateName: e.target.value}) }}
                             >
+                                {this.state.availableTemplates.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                        {option}
+                                    </MenuItem>
+                                ))}
                             </TextField>
-                        </Grid>
-                        <Grid item>
-                            {/* <Button
+                            <TextField
+                                select
+                                label="Printer Name"
+                                variant="outlined"
+                                style={{ width: '20em' }}
+                                value={this.state.printerName}
+                                onChange={(e) => { this.setState({ printerName: e.target.value }) }}
+                            >
+                                {this.state.availablePrinters.map((option) => (
+                                    <MenuItem key={option} value={option}>
+                                        {option}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                            <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printDisabled}
-                                style={buttonStyle}
-                                onClick={() => this.onPrint()}>
-                                Print
-                            </Button> */}
+                                disabled={this.state.printAllDisabled}
+                                onClick={this.onRefresh.bind(this)}
+                                style={{
+                                    margin: '0.6em',
+                                }}
+                            >
+                                <RefreshRoundedIcon />
+                            </Button>
+                        </Grid>
+                        <Grid item>
                             <Button
                                 variant="contained"
                                 color="primary"

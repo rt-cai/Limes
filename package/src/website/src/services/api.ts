@@ -108,16 +108,28 @@ export abstract class ApiService {
         })
     }
 
-    public PollPrintReport(id: string) {
+    public PollPrintInfo(id: string) {
         const b = this.makeBody({
             ID: id,
-            Op: 'pollreport',
+            Op: 'poll',
         })
         return this.requester.POST({
             path: 'printops',
             body: b
         }).then(raw=> {
-            return raw.data.Message
+            return raw.data
+        })
+    }
+
+    public RefreshPrintInfo() {
+        const b = this.makeBody({
+            Op: 'refreshinfo',
+        })
+        return this.requester.POST({
+            path: 'printops',
+            body: b
+        }).then(raw => {
+            return raw.data.ID
         })
     }
 }

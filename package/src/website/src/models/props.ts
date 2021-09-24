@@ -4,6 +4,10 @@ import { Sample } from "./common";
 
 export interface AppProps {}
 
+export interface HeaderProps {
+    onHome: () => void
+}
+
 export interface MainFunctionCardProps {
     theme: Theme
     settings: MainFunctionCardSettings

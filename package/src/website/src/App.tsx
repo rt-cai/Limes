@@ -53,7 +53,7 @@ export class App extends React.Component<AppProps, AppState> {
         makeNextPage: makePrintComponent
       },
       {
-        name: 'Search Storage Locations',
+        name: 'Samples By Storage Location',
         disabled: false,
         makeNextPage: makeStorageSearchComponent
       },
@@ -91,7 +91,7 @@ export class App extends React.Component<AppProps, AppState> {
     return (
       <MuiThemeProvider theme={theme}>
         <div className='app-container'>
-        <HeaderComponent />
+        <HeaderComponent onHome={() => {this.setState({activeComponent: this.defaultActiveComponent})}}/>
         <ConcreteLoginModal elabService={this.elabService}/>
         {this.state.activeComponent}
         </div>
