@@ -164,9 +164,8 @@ class LabelData(Model):
 
 class PrintOp:
     PRINT = 'print'
-    GET_PRINTERS = 'getprinters'
-    GET_TEMPLATES = 'gettemplates'
-    POLL_REPORT = 'pollreport'
+    REFRESH_INFO = 'refreshinfo'
+    POLL = 'poll'
 
 class Printing(Transaction):
     class BaseRequest(ServerRequest):
@@ -180,20 +179,18 @@ class Printing(Transaction):
         TemplateName: str
         ID: str
 
-    class GetPrinters(BaseRequest):
+    class RefreshInfo(BaseRequest):
         def __init__(self) -> None:
-            super().__init__(PrintOp.GET_PRINTERS)
-
-    class GetTemplates(BaseRequest):
-        def __init__(self) -> None:
-            super().__init__(PrintOp.GET_TEMPLATES)
-
-    class Report(ServerResponse):
-        Message: str
+            super().__init__(PrintOp.REFRESH_INFO)
 
     class PollReport(BaseRequest):
         ID: str
         def __init__(self) -> None:
-            super().__init__(PrintOp.POLL_REPORT)
+            super().__init__(PrintOp.POLL)
+
+    class Report(ServerResponse):
+        Data: dict
+        Success: bool
+
     class Response(ServerResponse):
         ID: str

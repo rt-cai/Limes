@@ -179,7 +179,11 @@ class ELabConnection(HttpConnection):
             if b.startswith(SAMPLE_PRE):
                 samples.append(b)
             else:
-                storage = self.GetStorage(int(b[prefixL:]), withPath=True)
+                try:
+                    code = int(b[prefixL:])
+                except:
+                    code = 0
+                storage = self.GetStorage(code, withPath=True)
                 res[b] = storage
         
         if len(samples) > 0:

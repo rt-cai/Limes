@@ -135,30 +135,42 @@ def SamplesByStorage():
     return _toRes(res)
 
 _printReports = {}
+_printInfo = {}
 def PrintOps():
     SP = server.Printing
     req = SP.BaseRequest.Parse(request.data)
     OPS = server.PrintOp
     res = SP.Response()
+
+    getID = lambda: '%012x' % (uuid.uuid1().int)
+    INFO_ID = 'infoid'
     if req.Op == OPS.PRINT:
         pr = SP.PrintRequest.Parse(request.data, base=req)
-        global _print_i
-        pr.ID = '%012x' % (uuid.uuid1().int)
+        pr.ID = getID()
         sio.emit('print', pr.ToDict())
         res.ID = pr.ID
-    elif req.Op == OPS.GET_PRINTERS:
-        pass
-    elif req.Op == OPS.GET_TEMPLATES:
-        pass
-    elif req.Op == OPS.POLL_REPORT:
+    elif req.Op == OPS.REFRESH_INFO:
+        sio.emit('printers', {})
+        sio.emit('templates', {})
+        res.ID = INFO_ID
+    elif req.Op == OPS.POLL:
         pr = SP.PollReport.Parse(request.data, base=req)
         res = SP.Report()
-        m =  _printReports.get(pr.ID, None)
-        if m is not None:
-            del _printReports[pr.ID]
+
+        if pr.ID == INFO_ID:
+            res.Data = _printInfo
+            res.Success = True
         else:
-            m = ''
-        res.Message = m
+            def check(d):
+                m =  d.get(pr.ID, None)
+                if m is not None:
+                    del d[pr.ID]
+                return m
+
+            m = check(_printReports)
+            res.Success = m is not None
+            if m is not None:
+                res.Data = {'Message': m}
     else:
         res.Code = 400
         print('x')
@@ -211,6 +223,28 @@ def ForceFavicon():
 
 # peripherals
 
+_ccount = 0
+@sio.on('connect')
+def clientConnected(auth=None):
+    global _ccount
+    _ccount += 1
+    print('sio client connect, auth [%s], total: %s' % (auth, _ccount))
+
+@sio.on('disconnect')
+def clientDiconnect(auth=None):
+    global _ccount
+    _ccount -= 1
+    print('sio client disconnect, auth [%s], total: %s' % (auth, _ccount))
+
 @sio.on('printReport')
 def PrintReport(data):
     _printReports[data['ID']] = data['Message']
+
+
+@sio.on('printers')
+def listPrinters(data):
+    _printInfo['printers'] = data['printers']
+
+@sio.on('templates')
+def listTemplates(data):
+    _printInfo['templates'] = data['templates']
