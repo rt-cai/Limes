@@ -12,11 +12,11 @@ interface HeaderState {
 export class HeaderComponent extends React.Component<HeaderProps, HeaderState> {
     render(): JSX.Element {
         const textStyle: React.CSSProperties = {
-            padding: '2vh 0.5vw'
+            padding: '1em 0.2em'
         }
         const titleStyle: React.CSSProperties = {
-            paddingLeft: '10vw',
-            paddingRight: '0.2vw'
+            paddingLeft: '1em',
+            paddingRight: '0.2em'
         }
         return (
             <AppBar position="static">
@@ -43,7 +43,7 @@ export class HeaderComponent extends React.Component<HeaderProps, HeaderState> {
                             </Box>
                         </Typography>
                     </div>
-                    <img src={elabLogo} alt='eLab' height='40vw' width='40vw'/>
+                    <img src={elabLogo} alt='eLab' height='35em' width='35em'/>
                     <div style={textStyle}>
                         <Typography variant="subtitle1">
                             Powered by eLab

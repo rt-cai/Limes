@@ -89,11 +89,13 @@ export abstract class ApiService {
         })
     }
 
-    public ReloadStorages(): void {
+    public ReloadStorages() {
         const b = this.makeBody()
-        this.requester.POST({
+        return this.requester.POST({
             path: 'reloadcache',
             body: b
+        }).then(raw => {
+            return raw.status
         })
     }
 

@@ -3,7 +3,6 @@ import { StorageSearchProps } from '../../models/props';
 import { Typography, TextField, Grid, Card, Button, LinearProgress, Fade, CircularProgress } from '@material-ui/core';
 import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
 import { ApiService } from "../../services/api";
-import { Sample } from "../../models/common";
 
 interface Storage {
     id: number
@@ -12,15 +11,23 @@ interface Storage {
     children: Storage[]
 }
 
+interface SampleRow {
+    id: number
+    name: string
+    type: string
+}
+
 interface SearchState {
     searching: boolean
     currentLocation: string
     results: string
     lastChange: number
     storages: Storage[]
-    selectedSamples: Sample[]
+    selectedSamples: SampleRow[]
     errorText: string
     errorCands: string
+    reloadingStorage: boolean
+    searchText: string
 }
 
 export class StorageSearchComponent extends React.Component<StorageSearchProps, SearchState> {
@@ -38,45 +45,47 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
             errorText: '',
             errorCands: '',
             currentLocation: '',
+            reloadingStorage: false,
+            searchText: '',
         }
     }
 
-    public componentDidMount() {
-        const setup = () => {
-            this.apiService.GetStorages().then(res => {
-                if (!res) return 0
-                const allmap: Map<number, Storage> = res.reduce((acc: Map<number, Storage>, s: any) => {
-                    const name: string = s['name']
-                    const id = s['storageLayerID']
-                    const v: Storage = {
-                        id: id,
-                        name: name.toLowerCase(),
-                        parent: s['parentStorageLayerID'],
-                        children: [],
-                    }
-                    acc.set(id, v)
-                    return acc
-                }, new Map())
-    
-                const parents: Storage[] = []
-                allmap.forEach((v, k, map) => {
-                    if (v.parent === 0) {
-                        parents.push(v)
-                    }else{
-                        allmap.get(v.parent)?.children.push(v)
-                    }
-                })
-    
-                this.setState({
-                    storages: parents
-                })
-            })
-        }
+    private setup() {
+        this.apiService.GetStorages().then(res => {
+            if (!res) return 0
+            const allmap: Map<number, Storage> = res.reduce((acc: Map<number, Storage>, s: any) => {
+                const name: string = s['name']
+                const id = s['storageLayerID']
+                const v: Storage = {
+                    id: id,
+                    name: name.toLowerCase(),
+                    parent: s['parentStorageLayerID'],
+                    children: [],
+                }
+                acc.set(id, v)
+                return acc
+            }, new Map())
 
+            const parents: Storage[] = []
+            allmap.forEach((v, k, map) => {
+                if (v.parent === 0) {
+                    parents.push(v)
+                }else{
+                    allmap.get(v.parent)?.children.push(v)
+                }
+            })
+
+            this.setState({
+                storages: parents
+            })
+        })
+    }
+
+    public componentDidMount() {
         let tries = 5
         const doTry = () => {
             if (this.apiService.LoggedIn()) {
-                setup()
+                this.setup()
             } else {
                 tries --;
                 if (tries <= 0) return
@@ -108,7 +117,7 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                 currentLocation: '',
             })
 
-            let res = ""
+            let res = []
             let found
             let success = true
             let domain = this.state.storages
@@ -118,20 +127,22 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                 if (cands.length === 1) {
                     const s = cands[0]
                     domain = s.children
-                    res += `, ${s.name}`
+                    res.push(s.name)
                     found = s
                 } else if (cands.length === 0) {
                     success = false
+                    const currentLoc = res.join(', ')
                     this.setState({
                         searching: false,
-                        errorText: `No storage location with name [${term}]`,
+                        errorText: term && term.length>0? `No storage location with name [${term}]`: `Maybe you have an extra comma?`,
+                        errorCands: currentLoc.length>0? ` in ${currentLoc}` : ``,
                     })
                     break
                 } else { // more than one
                     success = false
                     this.setState({
                         searching: false,
-                        errorText: `Ambiguity for [${term}] between:`,
+                        errorText: term && term.length>0? `Ambiguity for [${term}] between:` : `Specify one of:`,
                         errorCands: `${cands.map((s) => {return s.name}).join(', ')}`,
                     })
                     break
@@ -139,8 +150,12 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
             }
     
             if (success && found) {
+                let bar = `${found.id}`
+                while (bar.length < 12) bar = `0${bar}`
+                if (bar.length == 12) bar = `008${bar}`
+                while (bar.length < 15) bar = `0${bar}`
                 this.setState({
-                    currentLocation: res
+                    currentLocation: `${res.join(', ')} - ${bar}`
                 })
                 resolve(found.id)
             } else {
@@ -153,7 +168,7 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
         return this.apiService.GetSamplesByStorage(id).then((samples: any[]) => {
             if (!samples) samples = []
             this.setState({
-                selectedSamples: samples.map<Sample>((s) => {
+                selectedSamples: samples.map((s) => {
                     return {
                         id: s.sampleID,
                         name: s.name,
@@ -165,10 +180,11 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
         })
     }
 
-    private onSearchChanged(e: any) {
-        const searchText = e.target.value;
+    private onSearchChanged(e: any=undefined) {
+        const searchText = e? e.target.value: this.state.searchText;
         this.setState({
             lastChange: Date.now(),
+            searchText: searchText,
         })
 
         setTimeout(() => {
@@ -180,13 +196,27 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
 
                 this.doSearch(searchText)
                 .then((id: number) => {
-                    console.log(id)
                     if (id === 0) return
         
                     return this.getSamples(id)
                 })
             }
         }, this.UPDATE_DELAY);
+    }
+
+    private onReloadStorages() {
+        this.setState({
+            reloadingStorage: true,
+        })
+        this.apiService.ReloadStorages().then((s)=>{
+            if (s == 200) {
+                this.setup()
+                this.onSearchChanged()
+            }
+            this.setState({
+                reloadingStorage: false,
+            })
+        })
     }
 
     render(): JSX.Element {
@@ -276,7 +306,7 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                             <Button
                                 variant="contained"
                                 color="primary"
-                                onClick={() => {this.props.onPrintCallback(this.state.selectedSamples)}}
+                                onClick={() => {this.props.onPrintCallback(this.state.selectedSamples.map((s)=>s.id))}}
                                 style={buttonStyle}
                             >
                                 Print Labels
@@ -284,10 +314,14 @@ export class StorageSearchComponent extends React.Component<StorageSearchProps, 
                             <Button
                                 variant="contained"
                                 color="secondary"
-                                onClick={() => {this.apiService.ReloadStorages()}}
+                                disabled={this.state.reloadingStorage}
+                                onClick={this.onReloadStorages.bind(this)}
                                 style={buttonStyle}
                             >
                                 Reload Storages
+                                <Fade in={this.state.reloadingStorage} style={{position: 'absolute'}}>
+                                    <CircularProgress size={33} color='secondary'/>
+                                </Fade>
                             </Button>
                         </Grid>
                     </Grid>

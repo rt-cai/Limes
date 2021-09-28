@@ -28,7 +28,7 @@ export interface MainFunctionsGridProps {
 
 interface WithElabServiceProp {
     elabService: ApiService
-    startingSamples?: Sample[]
+    startingBarcodes?: number[]
 }
 
 export interface PrintProps extends WithElabServiceProp { }
@@ -36,5 +36,5 @@ export interface PrintProps extends WithElabServiceProp { }
 export interface LoginProps extends WithElabServiceProp { }
 
 export interface StorageSearchProps extends WithElabServiceProp {
-    onPrintCallback: (samples: Sample[]) => void
+    onPrintCallback: (barcodes: number[]) => void
 }
