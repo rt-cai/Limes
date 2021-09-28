@@ -42,6 +42,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     private apiService: ApiService;
     private readonly UPDATE_DELAY = 650;
     private lastChange: number;
+    private readonly NO_ELAB_RECORD = '*(No eLab Record)';
 
     constructor(props: PrintProps) {
         super(props)
@@ -109,7 +110,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                     bar: tf? tf:'',
                     bardisp: tf? dispBar(tf): '',
                     addText: tokens.join(', '),
-                    name: '* No eLab Record',
+                    name: this.NO_ELAB_RECORD,
                     type: LabelType.CUSTOM,
                     tokens: tokens,
                 }
@@ -186,9 +187,11 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     private onPrintAll() {
         const data = {
             Labels: this.state.labels.map((l) => {
-                return { Barcode: l.bar, Texts: [l.name].concat(l.tokens) }
+                const first = l.name===this.NO_ELAB_RECORD? [] : [l.name]
+                return { Barcode: l.bar, Texts: first.concat(l.tokens) }
             }),
-            TemplateName: this.state.labelTemplateName 
+            TemplateName: this.state.labelTemplateName,
+            PrinterName: this.state.printerName,
         }
 
         this.setState({
