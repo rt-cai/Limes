@@ -171,27 +171,31 @@ class ELabConnection(HttpConnection):
         SAMPLE_PRE = '005'
         samples = []
         res = {}
-        bl = 0
-        prefixL = 3 # 005<ID>
+        BARCODE_L = 15
+        PREFIX_L = 3 # 005<ID>
+
+        def toBar(s):
+            while len(s) < BARCODE_L - PREFIX_L:
+                s = '0%s' % s
+            if len(s) == BARCODE_L - PREFIX_L:
+                s = '%s%s' % (SAMPLE_PRE, s)
+            while len(s) < BARCODE_L:
+                s = '0%s' % s
+            return s
+
         for b in barcodes:
-            bl = len(b)
-            if bl < prefixL: continue
+            b = toBar(b)
             if b.startswith(SAMPLE_PRE):
                 samples.append(b)
             else:
                 try:
-                    code = int(b[prefixL:])
+                    code = int(b[PREFIX_L:])
                 except:
                     code = 0
                 storage = self.GetStorage(code, withPath=True)
                 res[b] = storage
         
         if len(samples) > 0:
-            def toBar(s):
-                if len(s) + len(SAMPLE_PRE) < bl:
-                    return toBar('0%s'%s)
-                else:
-                    return '%s%s' % (SAMPLE_PRE, s)
             transaction = Models.GetSamples
             s_req = transaction.Request({"barcodes": ','.join(samples)})
             s_res = self._makeParseRequest(

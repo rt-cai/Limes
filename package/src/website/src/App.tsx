@@ -42,7 +42,7 @@ export class App extends React.Component<AppProps, AppState> {
     const makeStorageSearchComponent = () => <StorageSearchComponent elabService={this.elabService} onPrintCallback={
       (samples) => {
         this.setState({
-          activeComponent: <PrintComponent elabService={this.elabService} startingSamples={samples}/>
+          activeComponent: <PrintComponent elabService={this.elabService} startingBarcodes={samples}/>
         })
       }
     }/>
@@ -69,13 +69,12 @@ export class App extends React.Component<AppProps, AppState> {
         clicked={(settings: MainFunctionCardSettings) => this.toFunctionPage(settings)}
       />)
     this.state = {
-      activeComponent: DEBUG? <PrintComponent elabService={this.elabService} startingSamples={[
-        9763616,
-        9763617,
-        9763618,
-        9763619,
-        9763620,
-      ].map(i=>{return {id: i, name:'s', type: 't'}})}/>: this.defaultActiveComponent,
+      // activeComponent: DEBUG? <PrintComponent elabService={this.elabService} startingBarcodes={[
+      //   9764829,
+      //   9763563,
+      //   9763564,
+      // ]}/>: this.defaultActiveComponent,
+      activeComponent: DEBUG? makeStorageSearchComponent() : this.defaultActiveComponent,
     }
   }
 

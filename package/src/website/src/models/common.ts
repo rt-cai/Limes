@@ -1,5 +1,5 @@
 export interface Sample{
-    id: number
+    barcode: number
     name: string
     type: string
 }

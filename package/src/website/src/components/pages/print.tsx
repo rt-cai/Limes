@@ -5,6 +5,7 @@ import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { ApiService } from "../../services/api";
 import { Sample } from "../../models/common";
+import { RawOff } from "@mui/icons-material";
 
 enum LabelType {
     SAMPLE = 'Sample',
@@ -13,10 +14,13 @@ enum LabelType {
 }
 
 interface LabelData {
-    id: string
+    id: number
     bar: string
-    text: string
+    bardisp: string
+    name: string 
+    addText: string
     type: LabelType
+    tokens: string[]
 }
 
 interface PrintState {
@@ -24,41 +28,46 @@ interface PrintState {
     labelsRaw: string
     printDisabled: boolean
     printAllDisabled: boolean
-    lastChange: number
     printing: boolean
     gettingData: boolean
     labelTemplateName: string
     printerName: string
     availablePrinters: string[]
     availableTemplates: string[]
+    refreshing: boolean
+    copied: number
 }
 
 export class PrintComponent extends React.Component<PrintProps, PrintState> {
-    private apiService: ApiService
+    private apiService: ApiService;
     private readonly UPDATE_DELAY = 650;
+    private lastChange: number;
+    private readonly NO_ELAB_RECORD = '*(No eLab Record)';
 
     constructor(props: PrintProps) {
         super(props)
         this.apiService = props.elabService
+        this.lastChange = Date.now();
         this.state = {
             labels: [],
             labelsRaw: '',
             printDisabled: true,
             printAllDisabled: false,
-            lastChange: Date.now(),
             printing: false,
             gettingData: false,
             labelTemplateName: '',
             printerName: '',
             availablePrinters: [],
             availableTemplates: [],
+            refreshing: false,
+            copied: 0
         }
     }
 
     private toBarcodes(samples: Sample[] | undefined) {
         if (!samples) return []
         return samples.map((samp) => {
-            const S = samp.id
+            const S = samp.barcode
             const BAR_L = 15
             const PRE = '005'
             let bar = `${S}`
@@ -70,8 +79,8 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     }
 
     public componentDidMount() {
-        if (this.props.startingSamples) {
-            this.parseLabels(this.toBarcodes(this.props.startingSamples))
+        if (this.props.startingBarcodes) {
+            this.parseLabels(this.props.startingBarcodes.map((n)=>`${n}`))
         }
         this.onRefresh()
     }
@@ -81,9 +90,9 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             labels = this.state.labelsRaw.split('\n')
         }
         labels = labels.filter((s)=>{return s.trim().length>0})
+        const l_tokens: string[][] = labels.map((l)=>l.includes('\t')? l.split('\t'): l.split(',').map(t=>t.trim()))
         const isInteger = (v: string) => !/[^0-9]/.test(v)
-        const isBarcode = labels.map(isInteger)
-        const barcodes = labels.filter(isInteger)
+        const barcodes: string[] = l_tokens.filter((tok)=>isInteger(tok[0])).map((tok)=>tok[0])
 
         const dispBar = (bar: string) => {
             const cut = Math.max(0, bar.length - 5)
@@ -91,37 +100,37 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         }
 
         this.apiService.BarcodeLookup(barcodes)
-        .then((data)=>{
-            const newLabels: LabelData[] = labels.map((l) => {
-                if (data[l] === undefined) {
-                    const tokens = l.includes('\t')? l.split('\t'): l.split(',').map(t=>t.trim())
-                    const ret = {
-                        id: '',
-                        bar: '',
-                        text: l,
-                        type: LabelType.CUSTOM,
-                    }
-                    if (tokens.length > 1 && isInteger(tokens[0])) {
-                        const temp = tokens.shift();
-                        ret.bar = temp? dispBar(temp): '';
-                        ret.id = temp? temp: '';
-                        ret.text = tokens.join(' ');
-                    } else {
-                        ret.id = ''
-                        ret.bar = ''
-                        ret.text = l
-                    }
-                    return ret
-                } else {
-                    // console.log(data[l])
-                    const d: any = data[l]
-                    return {
-                        bar: dispBar(l),
-                        id: l,
-                        text: d.name,
-                        type: d['sampleID']? LabelType.SAMPLE: LabelType.STORAGE_LOCATION,
+        .then((raw)=>{
+            const data = raw? raw : {}
+            let id = 0;
+            const newLabels: LabelData[] = l_tokens.map((tokens) => {
+                const tf = tokens.shift()
+                const ret = {
+                    id: id,
+                    bar: tf? tf:'',
+                    bardisp: tf? dispBar(tf): '',
+                    addText: tokens.join(', '),
+                    name: this.NO_ELAB_RECORD,
+                    type: LabelType.CUSTOM,
+                    tokens: tokens,
+                }
+
+                if (tf) {
+                    let bar: string = tf
+                    while (bar.length < 12) bar = `0${bar}`
+                    if (bar.length == 12) bar = `005${bar}`
+                    while (bar.length < 15) bar = `0${bar}`
+                    console.log(data)
+                    if (data[bar] !== undefined) {
+                        const d: any = data[bar]
+                        ret.name = d?.name
+                        ret.bar = bar
+                        ret.type = d['sampleID']? LabelType.SAMPLE: LabelType.STORAGE_LOCATION
                     }
                 }
+
+                id += 1
+                return ret
             })
             this.setState({
                 labels: newLabels
@@ -141,14 +150,13 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
 
     private onLabelInputChanged(e: any) {
         const sampleInputText = e.target.value;
-        this.setState({
-            labelsRaw: sampleInputText,
-            lastChange: Date.now()
-        })
-
+        this.lastChange = Date.now()
         setTimeout(() => {
             const now = Date.now()
-            if (now - this.state.lastChange >= this.UPDATE_DELAY) {
+            if (now - this.lastChange >= this.UPDATE_DELAY) {
+                this.setState({
+                    labelsRaw: sampleInputText,
+                })
                 this.parseLabels()
             }
         }, this.UPDATE_DELAY);
@@ -179,9 +187,11 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
     private onPrintAll() {
         const data = {
             Labels: this.state.labels.map((l) => {
-                return { Barcode: l.id, Texts: [l.text] }
+                const first = l.name===this.NO_ELAB_RECORD? [] : [l.name]
+                return { Barcode: l.bar, Texts: first.concat(l.tokens) }
             }),
-            TemplateName: this.state.labelTemplateName 
+            TemplateName: this.state.labelTemplateName,
+            PrinterName: this.state.printerName,
         }
 
         this.setState({
@@ -204,28 +214,50 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
 
     }
 
-    private onOpenSelectTemplate() {
-
-    }
-
     private onRefresh() {
+        this.setState({
+            refreshing: true,
+        })
         this.apiService.RefreshPrintInfo().then(id=>{
             return this.awaitResults(id)
         }).then((data)=> {
             // console.log(data)
+            const printers = data.printers && data.printers.length>0? data.printers : ['default']
+            const templates = data.templates && data.templates.length>0? data.templates : ['default']
             this.setState({
-                availablePrinters: data.printers,
-                availableTemplates: data.templates,
+                availablePrinters: printers,
+                availableTemplates: templates,
+                refreshing: false,
             })
         })
+    }
+
+    private onToClipboard() {
+        this.setState({
+            copied: this.state.copied + 1
+        })
+        const DELIM = '\t'
+        const header: string = [`Name (don't copy back)`, `Barcode`, `Addtional Text`].join(DELIM)
+        const rows: string[] = this.state.labels.map((l)=>{
+            return [l.name, l.bar, l.addText].join(DELIM)
+        })
+        const full: string = [header].concat(rows).join('\n')
+        navigator.clipboard.writeText(full)
+
+        setTimeout(() => {
+            this.setState({
+                copied: this.state.copied - 1
+            })
+        }, 1000);
     }
 
     render(): JSX.Element {
         const sampleColumns: GridColDef[] = [
             { field: 'disabled', hide: true },
             { field: 'id', headerName: 'ID', hide: true },
-            { field: 'bar', headerName: 'Barcode', width: 100, sortable: false },
-            { field: 'text', headerName: 'Text', width: 600, sortable: false },
+            { field: 'bardisp', headerName: 'Barcode', width: 100, sortable: false },
+            { field: 'name', headerName: 'Item Name', width: 400, sortable: false },
+            { field: 'addText', headerName: 'Additional Text', width: 600, sortable: false },
         ]
 
         const outerStyle: React.CSSProperties = {
@@ -244,8 +276,8 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             margin: '0 1em 0 1em'
         }
         const inputPlaceholder = [
-            '123 box 23',
             '005000000123456',
+            '005000000123456, some additional info',
             '...'
         ].join('\n')
 
@@ -265,7 +297,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                                 multiline
                                 variant="outlined"
                                 style={{ width: '70em'}}
-                                defaultValue={this.toBarcodes(this.props.startingSamples).join('\n')}
+                                defaultValue={this.props.startingBarcodes?.map((n)=>`${n}`).join('\n')}
                                 onChange={(e) => { this.onLabelInputChanged(e) }}
                             >
                             </TextField>
@@ -328,12 +360,15 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
                                 onClick={this.onRefresh.bind(this)}
+                                disabled={this.state.refreshing}
                                 style={{
                                     margin: '0.6em',
                                 }}
                             >
+                                <Fade in={this.state.refreshing} style={{position: 'absolute'}}>
+                                    <CircularProgress size={33}/>
+                                </Fade>
                                 <RefreshRoundedIcon />
                             </Button>
                         </Grid>
@@ -341,7 +376,7 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
+                                disabled={!this.state.labelTemplateName || !this.state.printerName}
                                 style={buttonStyle}
                                 onClick={() => this.onPrintAll()}>
                                 Print All
@@ -349,14 +384,9 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
                             <Button
                                 variant="contained"
                                 color="primary"
-                                disabled={this.state.printAllDisabled}
                                 style={buttonStyle}
-                                onClick={() => navigator.clipboard.writeText(
-                                    ['Barcode\tTexts'] + this.state.labels.map((l) => {
-                                        return `${l.id}\t${l.text}`
-                                    }).join('\n')
-                                )}>
-                                Copy to Clipboard
+                                onClick={this.onToClipboard.bind(this)}>
+                                Copy to Clipboard {this.state.copied>0? `✔` : ``}
                             </Button>
                         </Grid>
                     </Grid>

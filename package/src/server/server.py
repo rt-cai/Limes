@@ -61,6 +61,7 @@ def Login():
 
     res = SL.Response()
     if e_res.token is not None and e_res.token != '':
+        print('login: %s'  % e_res.user.firstName)
         reg = server.RegisterClient.Request()
         reg.ELabKey = e_res.token
         reg.FirstName = e_res.user.firstName
