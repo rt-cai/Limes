@@ -148,6 +148,11 @@ def PrintOps():
     if req.Op == OPS.PRINT:
         pr = SP.PrintRequest.Parse(request.data, base=req)
         pr.ID = getID()
+        
+        for l in pr.Labels:
+            if l.Barcode == '':
+                l.Barcode = '0'
+
         sio.emit('print', pr.ToDict())
         res.ID = pr.ID
     elif req.Op == OPS.REFRESH_INFO:
