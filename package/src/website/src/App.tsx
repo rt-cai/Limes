@@ -53,7 +53,7 @@ export class App extends React.Component<AppProps, AppState> {
         makeNextPage: makePrintComponent
       },
       {
-        name: 'Samples By Storage Location',
+        name: 'Search By Storage Location',
         disabled: false,
         makeNextPage: makeStorageSearchComponent
       },
