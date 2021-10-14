@@ -9,6 +9,7 @@ import uuid
 
 from limes_common import config
 from limes_common.models import Model, server, elab
+from limes_common.utils import format_from_utc, current_time
 from server.authenticator import Authenticator
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
@@ -101,11 +102,21 @@ def SamplesByStorage():
 
 _printReports = {}
 _printInfo = {}
+
+def _log(msg: str):
+    with open("log.txt", "a") as myfile:
+        myfile.write('%s\n'% msg)
+
 def PrintOps():
     SP = server.Printing
     req = SP.BaseRequest.Parse(request.data)
     OPS = server.PrintOp
     res = SP.Response()
+
+    cl = _authenticator.Authenticate(req.ClientID)
+    if not cl.Success:
+        res.Code = 401
+        return _toRes(res)
 
     getID = lambda: '%012x' % (uuid.uuid1().int)
     INFO_ID = 'infoid'
@@ -118,7 +129,10 @@ def PrintOps():
                 l.Barcode = '0'
 
         sio.emit('print', pr.ToDict())
+        log = '%s| print: %s, %s, %s, %s' % (format_from_utc(current_time()), cl.FirstName, len(pr.Labels), pr.TemplateName, pr.PrinterName)
+        _log(log)
         res.ID = pr.ID
+
     elif req.Op == OPS.REFRESH_INFO:
         sio.emit('printers', {})
         sio.emit('templates', {})

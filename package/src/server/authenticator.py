@@ -41,9 +41,9 @@ class Authenticator:
         if loggedIn:
             if not isStatic and e_res is not None:
                 client: Client = Client(e_res.user.firstName, e_res.user.lastName, e_res.token)
-                self._clients.RegisterClient(client)
             else:
                 client: Client = Client(req.Username, '', '', ClientType.OTHER)
+            self._clients.RegisterClient(client)
             res.FirstName = client.FirstName
             res.LastName = client.LastName
             res.ClientID = client.ClientID
