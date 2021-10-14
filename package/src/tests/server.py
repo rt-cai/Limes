@@ -25,23 +25,25 @@ def all(env: dict):
 #     Assert.Equal(res.Success, False)
 
 @Test
-def serverRegClient(env: dict):
+def serverLogin(env: dict):
     ext = 'msl' if 'msl' in config.ELAB_URL else 'test' 
     path = '../../credentials/elab.%s' % ext
-    tok = list(line[:-1] for line in open(path, 'r').readlines())[2]
+    u, p, _ = list(map(lambda l: l.replace('\n', ''), open(path, 'r').readlines()))
     serv = getserv(env)
-    res = serv.RegisterClient('tester', 'smith', tok)
+    res = serv.Login(u, p)
 
     Assert.Equal(res.Code, 200)
+    env['name'] = (res.FirstName, res.LastName)
     Assert.Equal(res.Success, True)
 
 @Test
 def serverAuthenticate(env: dict):
     serv = getserv(env)
+    fn, ln = env.get('name', ('not', 'logged in'))
     res = serv.Authenticate()
     Assert.Equal(res.Code, 200)
-    Assert.Equal(res.FirstName, 'tester')
-    Assert.Equal(res.LastName, 'smith')
+    Assert.Equal(res.FirstName, fn)
+    Assert.Equal(res.LastName, ln)
     Assert.Equal(res.Token is not None, True)
 
 

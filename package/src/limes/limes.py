@@ -36,11 +36,11 @@ class Limes:
     def Login(self, username, password) -> tuple[bool, str]:
         if not self._server.Ready and not self._server.Reconnect(): 
             return False, 'unable to connect to server'
-        res = self._eLab.Login(username, password)
+        res = self._server.Login(username, password)
 
         if res.Code == 200:
-            self._server.RegisterClient(res.user.firstName, res.user.lastName, res.token)
-            return True, 'logged in as %s' % res.user.firstName
+            self._eLab.SetAuth(res.ElabToken)
+            return True, 'logged in as %s' % res.FirstName
         elif res.Code == 401:
             return False, 'incorrect credentials'
         else:

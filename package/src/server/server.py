@@ -9,6 +9,7 @@ import uuid
 
 from limes_common import config
 from limes_common.models import Model, server, elab
+from server.authenticator import Authenticator
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
@@ -21,76 +22,39 @@ _views: dict[str, Callable] = {}
 def _toRes(model: Model):
     return model.ToDict()
 
-_clientManager = ClientManager.GetInstance()
-_providers = ProviderHandler(_views, _clientManager)
+
+_providers = ProviderHandler(_views, ClientManager.GetInstance())
+_authenticator = Authenticator(_providers.GetElabCon())
 
 # todo: csrf + maybe encryption 
 def Init():
-    print('init')
+    print('init session')
     return _toRes(server.Init.Response('dummy token'))
 
-def RegisterClient():
-    SR = server.RegisterClient
-    req = SR.Request.Parse(request.data)
-    # print(request.data)
-    if not _clientManager.RegisterClient(req): return _toRes(SR.Response(False))
-    print('login: %s' % (req.FirstName))
-    return _toRes(SR.Response(True))
-
 def Authenticate():
-    SA = server.Authenticate
-    elab_res = SA.Request.Parse(request.data)
-    client = _clientManager.Get(elab_res.ClientID)
-
-    print('auth: %s' % (client.FirstName if client is not None else 'unknown'))
-    res = SA.Response()
-    if client is not None:
-        res.Success = True
-        res.Token = client.Token
-        res.FirstName = client.FirstName
-        res.LastName = client.LastName
-    else:
-        res.Success = False
+    MODEL = server.Authenticate
+    req = MODEL.Request.Parse(request.data)
+    res = _authenticator.Authenticate(req.ClientID)
+    if res.Success:
+        print('auth: %s' % (res.FirstName))
     return _toRes(res)
 
 def Login():
-    SL = server.Login
-    req = SL.Request.Parse(request.data)
-    elab = _providers.GetElabCon()
-    e_res = elab.Login(req.Username, req.Password)
-
-    res = SL.Response()
-    if e_res.token is not None and e_res.token != '':
-        print('login: %s'  % e_res.user.firstName)
-        reg = server.RegisterClient.Request()
-        reg.ELabKey = e_res.token
-        reg.FirstName = e_res.user.firstName
-        reg.LastName = e_res.user.lastName
-        reg.ClientID = '%012x' % (uuid.uuid1().int)
-        _clientManager.RegisterClient(reg)
-        
-        res.FirstName = reg.FirstName
-        res.LastName = reg.LastName
-        res.ClientID = reg.ClientID
-        res.Success = True
-        res.Code = 200
-    else:
-        res.Success = False
-        res.Code = e_res.Code
-
-    elab.Logout()
+    res = _authenticator.Login(request.data)
+    if res.Success:
+        print('login: %s'  % res.FirstName)
     return _toRes(res)
 
 def Barcodes():
     SB = server.BarcodeLookup
     req = SB.Request.Parse(request.data)
-    client = _clientManager.Get(req.ClientID)
+    auth = _authenticator.Authenticate(req.ClientID)
 
     res = SB.Response()
 
-    if client is not None:
+    if auth.Success:
         elab = _providers.GetElabCon()
-        elab.SetAuth(client.Token)
+        elab.SetAuth(auth.Token)
         res.Results = elab.LookupBarcodes(req.Barcodes)
         elab.Logout()
     else:
@@ -103,12 +67,12 @@ def Barcodes():
 def AllStorages():
     MODEL = server.AllStorages
     req = MODEL.Request.Parse(request.data)
-    client = _clientManager.Get(req.ClientID)
+    auth = _authenticator.Authenticate(req.ClientID)
     res = MODEL.Response()
 
-    if client is not None:
+    if auth.Success:
         elab = _providers.GetElabCon()
-        elab.SetAuth(client.Token)
+        elab.SetAuth(auth.Token)
         res.Results = elab.GetAllStorages()
         elab.Logout()
     else:
@@ -120,13 +84,13 @@ def AllStorages():
 def SamplesByStorage():
     MODEL = server.SamplesByStorage
     req = MODEL.Request.Parse(request.data)
-    client = _clientManager.Get(req.ClientID)
+    auth = _authenticator.Authenticate(req.ClientID)
 
     res = MODEL.Response()
 
-    if client is not None:
+    if auth.Success:
         elab = _providers.GetElabCon()
-        elab.SetAuth(client.Token)
+        elab.SetAuth(auth.Token)
         res.Results = elab.GetSampleByStorage(req.StorageLayerID).data
         elab.Logout()
     else:

@@ -1,6 +1,6 @@
 # secrets
 certFiles
-credentials
+credentials*
 static_providers*.json
 
 # caches

@@ -1,5 +1,4 @@
 import requests as Requests
-import uuid
 from getpass import getuser
 import os
 from typing import Any, Callable, TypeVar, Union
@@ -19,7 +18,6 @@ class ServerConnection(HttpConnection):
         self.Reconnect()
 
     def Reconnect(self) -> bool:
-        self._id = ('%012x:%s:%s' % (uuid.getnode(), getuser(), os.getppid()))
         self._csrf = ''
         req = Models.Init.Request()
         rawRes = self.MakeRequest(req, init=True)
@@ -72,19 +70,6 @@ class ServerConnection(HttpConnection):
             transaction.Response()
         )
 
-    def RegisterClient(self, firstName: str, lastName: str, token: str):
-        req = Models.RegisterClient.Request()
-        req.ELabKey = token
-        req.FirstName = firstName
-        req.LastName = lastName
-        transaction = Models.RegisterClient
-        res = self._makeParseRequest(
-            req,
-            transaction.Response.Parse,
-            transaction.Response()
-        )
-        return res
-
     def Login(self, username: str, password: str):
         req = Models.Login.Request()
         req.Username = username
@@ -95,6 +80,7 @@ class ServerConnection(HttpConnection):
             transaction.Response.Parse,
             transaction.Response()
         )
+        self._id = res.ClientID
         return res
 
     def List(self):
