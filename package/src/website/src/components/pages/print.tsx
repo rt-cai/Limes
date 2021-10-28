@@ -222,7 +222,10 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
             return this.awaitResults(id)
         }).then((data)=> {
             // console.log(data)
-            const printers = data.printers && data.printers.length>0? data.printers : ['default']
+            const printers = data.printers && data.printers.length>0? 
+                data.printers.filter((p: string)=>{
+                    return p.toLowerCase().includes('label')
+                }) : ['default']
             const templates = data.templates && data.templates.length>0? data.templates : ['default']
             this.setState({
                 availablePrinters: printers,

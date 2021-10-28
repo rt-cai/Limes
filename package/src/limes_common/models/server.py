@@ -8,7 +8,6 @@ from limes_common.models.provider import Transaction
 from limes_common.models.http import GET, POST
 
 class Endpoints(provider.Endpoints):
-    REGISTER_CLIENT = 'registerclient'
     LOGIN = 'login'
     AUTHENTICATE = 'authenticate'
     INIT = 'init'
@@ -49,20 +48,6 @@ class Authenticate(Transaction):
         FirstName: str
         LastName: str
 
-class RegisterClient(Transaction):
-    class Request(ServerRequest):
-        ELabKey: str
-        FirstName: str
-        LastName: str
-        def __init__(self) -> None:
-            super().__init__(Endpoints.REGISTER_CLIENT, POST)
-
-    class Response(ServerResponse):
-        Success: bool
-        def __init__(self, success: bool=False) -> None:
-            super().__init__()
-            self.Success = success
-
 class Login(Transaction):
     class Request(ServerRequest):
         Username: str
@@ -75,6 +60,7 @@ class Login(Transaction):
         FirstName: str
         LastName: str
         ClientID: str
+        ElabToken: str
         def __init__(self, success: bool=False) -> None:
             super().__init__()
             self.Success = success
