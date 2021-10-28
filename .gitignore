@@ -9,6 +9,9 @@ __pycache__
 .vs
 .ipynb_checkpoints
 
+# logs
+log.txt
+
 # dependencies
 node_modules
 
