@@ -2,6 +2,7 @@
 certFiles
 credentials*
 static_providers*.json
+secret
 
 # caches
 __pycache__

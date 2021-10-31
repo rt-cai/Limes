@@ -11,6 +11,7 @@ import { StorageSearchComponent } from './components/pages/storageSearch';
 import { AppProps, MainFunctionCardSettings } from './models/props';
 import { ApiService, ApiServiceFactory } from './services/api';
 import { DEBUG } from './config'
+import { ScannerComponent } from './components/pages/scanner';
 
 const theme = createTheme({
   palette: {
@@ -46,20 +47,22 @@ export class App extends React.Component<AppProps, AppState> {
         })
       }
     }/>
+    const makeScannerComponent = () => <ScannerComponent elabService={this.elabService} theme={theme}/>
     const mainFunctions: MainFunctionCardSettings[] = [
       {
         name: 'Print',
         disabled: false,
-        makeNextPage: makePrintComponent
+        makeNextPage: makePrintComponent,
       },
       {
         name: 'Search By Storage Location',
         disabled: false,
-        makeNextPage: makeStorageSearchComponent
+        makeNextPage: makeStorageSearchComponent,
       },
       {
-        name: 'Scanner coming soon!',
-        disabled: true,
+        name: 'Scanner',
+        disabled: false,
+        makeNextPage: makeScannerComponent,
       }
     ]
     this.defaultActiveComponent = (

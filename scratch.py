@@ -35,13 +35,17 @@ import json
 
 # DM({})
 
-def BE(x):
-    x()
-    return x
 
-@BE
-def fn():
-    print('b')
+import secrets
+x = secrets.token_urlsafe(64)
+print(x)
+# def BE(x):
+#     x()
+#     return x
+
+# @BE
+# def fn():
+#     print('b')
 
 
 

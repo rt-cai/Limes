@@ -15,7 +15,19 @@ from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
 app = Flask(__name__, static_url_path='', static_folder='public')
-app.config['SECRET_KEY'] = 'secret'
+def getSecret():
+    secret_path = 'server/secret'
+    try:
+        with open(secret_path, 'r') as s:
+            return s.readlines()[0][:-1]
+    except FileNotFoundError:
+        import secrets
+        with open(secret_path, 'w') as s:
+            tok = secrets.token_urlsafe(64)
+            s.write(tok)
+            s.flush()
+            return tok
+app.config['SECRET_KEY'] = getSecret()
 sio = SocketIO(app)
 
 _views: dict[str, Callable] = {}
