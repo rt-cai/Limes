@@ -174,7 +174,10 @@ class ELabConnection(HttpConnection):
         BARCODE_L = 15
         PREFIX_L = 3 # 005<ID>
 
-        def toBar(s):
+        def toBar(s: str):
+            if not s.isnumeric():
+                return s
+
             while len(s) < BARCODE_L - PREFIX_L:
                 s = '0%s' % s
             if len(s) == BARCODE_L - PREFIX_L:
@@ -185,16 +188,17 @@ class ELabConnection(HttpConnection):
 
         for b in barcodes:
             b = toBar(b)
-            if b.startswith(SAMPLE_PRE):
+            try:
+                code = int(b[PREFIX_L:])
+            except:
+                code = 0
+            storage = self.GetStorage(code, withPath=True)
+            res[b] = storage
+            if storage is None:
                 samples.append(b)
-            else:
-                try:
-                    code = int(b[PREFIX_L:])
-                except:
-                    code = 0
-                storage = self.GetStorage(code, withPath=True)
-                res[b] = storage
-        
+
+        # print(samples)
+
         if len(samples) > 0:
             transaction = Models.GetSamples
             s_req = transaction.Request({"barcodes": ','.join(samples)})
@@ -202,9 +206,11 @@ class ELabConnection(HttpConnection):
                 s_req,
                 transaction.Response.Parse,
                 transaction.Response())
+            # print(s_res.ToDict())
             if s_res.Code == 200:
                 for v in s_res.data:
-                    res[toBar(str(v.sampleID))] = v
+                    key = v.altID if v.altID is not None else v.barcode
+                    res[key] = v
         return res
     # def _truncateToId(self, id: str) -> str:
     #     return id[-9:] if len(id) > 9 else id

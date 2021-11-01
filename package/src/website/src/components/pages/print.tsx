@@ -5,7 +5,6 @@ import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import { ApiService } from "../../services/api";
 import { Sample } from "../../models/common";
-import { RawOff } from "@mui/icons-material";
 
 enum LabelType {
     SAMPLE = 'Sample',
@@ -91,8 +90,8 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
         }
         labels = labels.filter((s)=>{return s.trim().length>0})
         const l_tokens: string[][] = labels.map((l)=>l.includes('\t')? l.split('\t'): l.split(',').map(t=>t.trim()))
-        const isInteger = (v: string) => !/[^0-9]/.test(v)
-        const barcodes: string[] = l_tokens.filter((tok)=>isInteger(tok[0])).map((tok)=>tok[0])
+        // const isInteger = (v: string) => !/[^0-9]/.test(v)
+        const barcodes: string[] = l_tokens.map((tok)=>tok[0])
 
         const dispBar = (bar: string) => {
             const cut = Math.max(0, bar.length - 5)
@@ -117,15 +116,25 @@ export class PrintComponent extends React.Component<PrintProps, PrintState> {
 
                 if (tf) {
                     let bar: string = tf
-                    while (bar.length < 12) bar = `0${bar}`
-                    if (bar.length == 12) bar = `005${bar}`
-                    while (bar.length < 15) bar = `0${bar}`
-                    console.log(data)
-                    if (data[bar] !== undefined) {
+                    if (Number(bar)) {
+                        while (bar.length < 12) bar = `0${bar}`
+                        if (bar.length == 12) bar = `005${bar}`
+                        while (bar.length < 15) bar = `0${bar}`
+                    }
+                    // console.log(data)
+                    // console.log(bar) 
+                    if (data[bar]) {
                         const d: any = data[bar]
                         ret.name = d?.name
-                        ret.bar = bar
-                        ret.type = d['sampleID']? LabelType.SAMPLE: LabelType.STORAGE_LOCATION
+                        const altbar = data[bar]?.altID
+                        if (altbar) {
+                            ret.bar = altbar
+                            ret.bardisp = altbar
+                        } else {
+                            ret.bar = bar
+                        }
+                        ret.type = d?.sampleID? LabelType.SAMPLE: LabelType.STORAGE_LOCATION
+                        // console.log(ret)
                     }
                 }
 
