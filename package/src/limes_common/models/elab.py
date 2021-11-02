@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import Union
 from limes_common import config
 from limes_common.models import Model, provider as Models
-from limes_common.models.provider import GenericResponse, Transaction
-from limes_common.models.http import GET, POST, PUT
+from limes_common.models.provider import GenericResponse, Transaction, GenericRequest, Primitive
+from limes_common.models.http import GET, PATCH, POST, PUT
 
 class Endpoints(Models.Endpoints):
     AUTH = 'auth/user'
@@ -112,6 +112,11 @@ class GetSampleByStorage(Transaction):
 
     class Response(ELabResponse):
         data: list[Sample]
+
+class UpdateSample(Transaction):
+    class Request(ELabRequest, Sample):
+        def __init__(self) -> None:
+            super().__init__(Endpoints.SAMPLES, PATCH)
 
 class StorageSimple(Model):
     parentStorageLayerID: int

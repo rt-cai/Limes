@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 
 from limes_common import config
@@ -197,8 +198,6 @@ class ELabConnection(HttpConnection):
             if storage is None:
                 samples.append(b)
 
-        # print(samples)
-
         if len(samples) > 0:
             transaction = Models.GetSamples
             s_req = transaction.Request({"barcodes": ','.join(samples)})
@@ -212,59 +211,24 @@ class ELabConnection(HttpConnection):
                     key = v.altID if v.altID is not None else v.barcode
                     res[key] = v
         return res
-    # def _truncateToId(self, id: str) -> str:
-    #     return id[-9:] if len(id) > 9 else id
 
-    # def SearchSamplesById(self, strIds: list[str]) -> elab.Sample.ListResponse:
-    #     ids = list(self._truncateToId(id) for id in strIds)
-    #     query = '' if len(strIds)==0 else '?sampleID=' + reduce(lambda s, id: '%s,%s' % (s, id), ids, '')[1:]
-    #     return elab.Sample.ListResponse(self.session.get(
-    #         '%s/%s%s' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), 'get', query),
-    #         headers=self._getAuthHeader()
-    #     ))
+    def SetAltID(self, barcode: str, altID: str) -> Tuple[int, Models.Sample]:
+        res = self.LookupBarcodes([barcode])
+        if len(res) < 0: return 404, Models.Sample()
+        sample: Models.Sample = res[barcode]
+        
+        # print(sample.ToDict())
 
-    # def SearchSamplesByName(self, name: str) -> elab.Sample.ListResponse:
-    #     query = '' if len(name)==0 else '?name=' + reduce(lambda s, id: '%s,%s' % (s, id), [name], '')[1:]
-    #     return elab.Sample.ListResponse(self.session.get(
-    #         '%s%s' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), query),
-    #         headers=self._getAuthHeader()
-    #     ))
+        transaction = Models.UpdateSample
+        s_req = transaction.Request()
+        s_req.altID = altID
+        s_req.TargetEndpoint += '/%s' %(sample.sampleID)
+        s_res = self._makeParseRequest(
+            s_req,
+            transaction.Response.Parse,
+            transaction.Response())
+        
+        # print(s_req.ToDict())
+        # print(s_res.ToDict())
 
-    # def SearchSamples(self, token: str) -> elab.Sample.ListResponse:
-    #     return elab.Sample.ListResponse(self.session.get(
-    #         '%s%s%s' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), '?search=', token),
-    #         headers=self._getAuthHeader()
-    #     ))
-
-    # def GetSample(self, id: str) -> elab.Sample.Response:
-    #     id = self._truncateToId(id)
-    #     return elab.Sample.Response(self.session.get(
-    #         '%s/%s' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), id),
-    #         headers=self._getAuthHeader()
-    #     ))
-
-    # def GetSampleMeta(self, id: str) -> elab.SampleMeta.Response:
-    #     id = self._truncateToId(id)
-    #     return elab.SampleMeta.Response(self.session.get(
-    #         '%s/%s/meta' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), id),
-    #         headers=self._getAuthHeader()
-    #     ))
-
-    # def UpdateSampleMeta(self, sampleId: str, metaKey: str, newValue: str) -> elab.SampleMeta.UpdateResponse:
-    #     id = self._truncateToId(sampleId)
-    #     meta = self.GetSampleMeta(id)
-    #     fieldId=0
-    #     field = elab.MetaField()
-    #     for k, f in meta.Fields.items():
-    #         if k == metaKey:
-    #             fieldId = f.sampleMetaID
-    #             field = f
-    #             if field.sampleDataType in ['TEXTAREA']:
-    #                 field.value = newValue
-    #             else:
-    #                 print('cannot update a non text meta field')
-    #     return elab.SampleMeta.UpdateResponse(self.session.patch(
-    #         '%s/%s/meta/%s' % (self._makeUrl(ELabEndpoint.SAMPLES.Path), id, fieldId),
-    #         headers=self._getAuthHeader(),
-    #         data=field.ToDict(),
-    #     ))
+        return s_res.Code, sample

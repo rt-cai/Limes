@@ -18,6 +18,7 @@ class Endpoints(provider.Endpoints):
     RELOAD_PROVIDERS = 'reloadproviders'
     RELOAD_CACHE = 'reloadcache'
     BARCODES= 'barcodes'
+    SET_ALT_ID= 'setaltid'
     PRINT='printops'
     ALL_STORAGES='allstorages'
     SAMPLES_BY_STORAGE='samplesbystorage'
@@ -126,6 +127,16 @@ class BarcodeLookup(Transaction):
 
     class Response(ServerResponse):
         Results: dict
+
+class LinkBarcode(Transaction):
+    class Request(ServerRequest):
+        AltBarcode: str
+        SampleBarcode: str
+        def __init__(self) -> None:
+            super().__init__(Endpoints.SET_ALT_ID, POST)
+
+    class Response(ServerResponse):
+        Sample: elab.Sample
 
 class AllStorages(Transaction):
     class Request(ServerRequest):

@@ -77,6 +77,24 @@ def Barcodes():
     return _toRes(res)
     # return {}
 
+def SetAltID():
+    MODEL = server.LinkBarcode
+    req = MODEL.Request.Parse(request.data)
+    auth = _authenticator.Authenticate(req.ClientID)
+
+    res = MODEL.Response()
+    if auth.Success:
+        print('altid')
+        elab = _providers.GetElabCon()
+        elab.SetAuth(auth.Token)
+        res.Code, res.Sample = elab.SetAltID(req.SampleBarcode, req.AltBarcode)
+        elab.Logout()
+    else:
+        res.Code = 401
+        res.Error = 'Authentication failed'
+
+    return _toRes(res)
+
 def AllStorages():
     MODEL = server.AllStorages
     req = MODEL.Request.Parse(request.data)

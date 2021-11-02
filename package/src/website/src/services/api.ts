@@ -134,6 +134,21 @@ export abstract class ApiService {
             return raw.data.ID
         })
     }
+
+    public LinkBarcode(AltBarcode: string, SampleBarcode: string) {
+        const b = this.makeBody({
+            AltBarcode: AltBarcode,
+            SampleBarcode: SampleBarcode,
+        })
+        return this.requester.POST({
+            path: 'setaltid',
+            body: b
+        }).then(raw => {
+            const res = raw.data;
+            console.log(res)
+            return res;
+        })
+    }
 }
 
 class Prod_ApiService extends ApiService {

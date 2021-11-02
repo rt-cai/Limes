@@ -1,12 +1,11 @@
 #!/bin/bash
 
-python -m pip install --upgrade build
-python -m pip install --upgrade twine
-python -m pip install gunicorn
+# python -m pip install --upgrade build
+# python -m pip install --upgrade twine
 
 chmod 700 ./run.sh
 chmod 700 ./build.sh
-chmod 700 ./package/src/limes_server/certificate/gencert.sh
+# chmod 700 ./package/src/server/certificate/gencert.sh
 
 vsSetup=.vscode/settings.json
 if test -f "$vsSetup"; then
@@ -20,7 +19,7 @@ if test -f "$vsSetup"; then
     echo '"python.analysis.extraPaths": ["${workspaceFolder}/package/src"],'
     echo 'to settings.json'
 else
-    touch .vscode
+    mkdir .vscode
     touch $vsSetup
     $(echo '{"python.analysis.extraPaths": ["${workspaceFolder}/package/src"],}' > $vsSetup)
     chmod 755 $vsSetup
