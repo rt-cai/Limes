@@ -19,7 +19,7 @@ SERVER_API_VER = 'd1'
 if _DEBUG:
     SERVER_BIND = '127.0.0.1:8001'
 else:
-    SERVER_BIND = 'sh-lims.microbiology.ubc.ca:8001'
+    SERVER_BIND = '206.12.92.193:8001'
 SERVER_API_ENDPOINT = '/api/%s/' % (SERVER_API_VER)
 SERVER_URL = 'http://%s/api/%s/' % (SERVER_BIND, SERVER_API_VER)
 SERVER_SECRET_KEY_PATH = 'server/credentials/secret_key'
