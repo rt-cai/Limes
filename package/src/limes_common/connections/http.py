@@ -6,7 +6,7 @@ from limes_common import config
 from limes_common.utils import current_sec_time
 from limes_common.connections import Connection
 from limes_common.models import Primitive, Model, provider as Models
-from limes_common.models.http import GET, POST
+from limes_common.models.http import GET, POST, PATCH, PUT, DELETE
 
 T = TypeVar('T')
 class HttpConnection(Connection):
@@ -16,7 +16,10 @@ class HttpConnection(Connection):
         self._URL: str = url
         self.methods: dict[str, Callable[..., Requests.Response]] = {
             GET: self.session.get,
-            POST: self.session.post
+            POST: self.session.post,
+            PATCH: self.session.patch,
+            PUT: self.session.put,
+            DELETE: self.session.delete
         }
 
     def _makeUrl(self, ep: str):
@@ -51,7 +54,7 @@ class HttpConnection(Connection):
         if ep is None or doRequest is None:
             msg = 'no endpoint given' if ep is None else 'bad http method [%s]'%request.Method
             return Models.GenericResponse({}, 0, msg)
-        
+
         if isinstance(request, Models.GenericRequest):
             if isinstance(request.Body, dict):
                 body = request.Body
@@ -67,6 +70,7 @@ class HttpConnection(Connection):
             params = self._makeParams(request),
             timeout = config.HTTP_TIMEOUT
         )
+        
         code = res.status_code
         endTime = current_sec_time()
         try:

@@ -38,3 +38,7 @@ export interface LoginProps extends WithElabServiceProp { }
 export interface StorageSearchProps extends WithElabServiceProp {
     onPrintCallback: (barcodes: number[]) => void
 }
+
+export interface ScannerProps extends WithElabServiceProp {
+    theme: Theme
+}

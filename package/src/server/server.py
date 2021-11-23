@@ -15,7 +15,19 @@ from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
 app = Flask(__name__, static_url_path='', static_folder='public')
-app.config['SECRET_KEY'] = 'secret'
+def getSecret():
+    secret_path = 'server/secret'
+    try:
+        with open(secret_path, 'r') as s:
+            return s.readlines()[0][:-1]
+    except FileNotFoundError:
+        import secrets
+        with open(secret_path, 'w') as s:
+            tok = secrets.token_urlsafe(64)
+            s.write(tok)
+            s.flush()
+            return tok
+app.config['SECRET_KEY'] = getSecret()
 sio = SocketIO(app)
 
 _views: dict[str, Callable] = {}
@@ -64,6 +76,24 @@ def Barcodes():
 
     return _toRes(res)
     # return {}
+
+def SetAltID():
+    MODEL = server.LinkBarcode
+    req = MODEL.Request.Parse(request.data)
+    auth = _authenticator.Authenticate(req.ClientID)
+
+    res = MODEL.Response()
+    if auth.Success:
+        print('altid')
+        elab = _providers.GetElabCon()
+        elab.SetAuth(auth.Token)
+        res.Code, res.Sample = elab.SetAltID(req.SampleBarcode, req.AltBarcode)
+        elab.Logout()
+    else:
+        res.Code = 401
+        res.Error = 'Authentication failed'
+
+    return _toRes(res)
 
 def AllStorages():
     MODEL = server.AllStorages

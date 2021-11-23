@@ -19,6 +19,7 @@
     "axios": "^0.21.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
+    "react-qr-barcode-scanner": "^1.0.6",
     "react-scripts": "4.0.3",
     "typescript": "^4.4.3",
     "web-vitals": "^1.1.2"
@@ -47,5 +48,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://127.0.0.1:8001"
+  "proxy": "https://10.0.0.224:8001"
 }
