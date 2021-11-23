@@ -55,6 +55,8 @@ _afterAll: Union[Callable[[dict], None], None] = None
 _beforeAllCalled = False
 _exception: Union[tuple[Exception, str], None] = None
 
+_total_passed = 0
+_total_all = 0
 
 _passed = 0
 _all = 0
@@ -68,11 +70,12 @@ def PrintTitle(file):
     _cprint(_bcolors.OKBLUE, '%s\n' % file)
 
 def BeforeAll(fn: Callable[[dict], dict]) -> None:
-    global _beforeAll, _beforeAllCalled, _exception
+    global _beforeAll, _beforeAllCalled, _exception, _passed, _all
     _beforeAll = fn
     _beforeAllCalled = False
     _afterAll = None
     _exception = None
+    _passed, _all = 0, 0
 
 def Test(fn: Callable[[dict], None]) -> None:
     global _env
@@ -84,10 +87,13 @@ def Test(fn: Callable[[dict], None]) -> None:
 
     global _passed
     global _all
+    global _total_passed
+    global _total_all
     print('Test: %s' % fn.__name__)
     try:
         fn(_env)
         _passed += 1
+        _total_passed += 1
         _cprint(_bcolors.OKGREEN, 'passed!')
     except AssertionError as e:
         _cprint(_bcolors.FAIL, 'failed:\n%s' % (e))
@@ -96,6 +102,7 @@ def Test(fn: Callable[[dict], None]) -> None:
         if _exception is None: _exception = x, fn.__name__
         _cprint(_bcolors.FAIL, 'uncaught exception:\n%s' % (x))
     _all += 1
+    _total_all +=1
     print()
 
 def AfterAll(fn: Callable[[dict], None]) -> None:
@@ -103,16 +110,21 @@ def AfterAll(fn: Callable[[dict], None]) -> None:
     _afterAll = fn
 
 def PrintStats():
+    def report(p, a, msg=''):
+        col = _bcolors.WARNING
+        if p == a:
+            col = _bcolors.OKGREEN
+        elif p == 0 and a > 0:
+            col = _bcolors.FAIL
+        _cprint(col, '%s of %s passed %s' % (p, a, msg))
+    
     if _afterAll is not None:
-        print('finishing tests for %s' % _file)
+        _cprint(_bcolors.OKBLUE, 'finishing tests for %s' % _file)
         _afterAll(_env)
-
-    col = _bcolors.WARNING
-    if _passed == _all:
-        col = _bcolors.OKGREEN
-    elif _passed == 0 and _all > 0:
-        col = _bcolors.FAIL
-    _cprint(col, '%s of %s passed' % (_passed, _all))
+        
+    report(_passed, _all)
+    print('---------------------------------')
+    report(_total_passed, _total_passed, 'total')
     print('=================================')
 
     if _exception is not None:
