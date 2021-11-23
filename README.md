@@ -1,5 +1,6 @@
 # Limes
 #### inventory and data manager, powered by eLab
+https://limes-inventory.readthedocs.io/en/latest/
 
 # install & setup
 ### Client
