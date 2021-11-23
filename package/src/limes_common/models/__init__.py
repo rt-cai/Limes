@@ -6,7 +6,7 @@ import json
 
 
 # U = TypeVar('U')
-Primitive = Union[str, int, float, bool, list['Primitive'], dict[str, 'Primitive']]
+Primitive = type(Union[str, int, float, bool, list['Primitive'], dict[str, 'Primitive']])
 
 T = TypeVar('T')
 TypeDesc = Union[str, tuple[str, list['TypeDesc']]]
