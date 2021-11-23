@@ -185,7 +185,7 @@ class SerializableTypes:
             else:
                 return True, value
 
-        if base == 'typing.Union':
+        if base == 'typing.Union' or base == 'typing._UnionGenericAlias':
             order = ['dict', 'tuple', 'list', 'bool', 'float', 'int', 'str']
             sorted: list[Union[None, TypeDesc]] = [None] * len(order)
             others = []
