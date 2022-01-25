@@ -137,6 +137,7 @@ class LinkBarcode(Transaction):
 
     class Response(ServerResponse):
         Sample: elab.Sample
+        mcode: int
 
 class AllStorages(Transaction):
     class Request(ServerRequest):

@@ -9,6 +9,7 @@ from limes_common.models import Model, Primitive, server, provider
 from limes_common.connections import Connection
 from limes_common.connections.ssh import SshConnection
 from limes_common.connections.statics.eLab import ELabConnection
+from limes_common.connections.statics.mmap import MmapConnection
 from server.clientManager import Client, ClientManager
 # from limes_common.models.provider import Result as Result
 
@@ -78,8 +79,13 @@ def _loadStatics(reload=False):
                 t.start()
 
         # if len(loaded) > 0:
+        # todo: clean this
         elabcon = ELabConnection()
         loaded['elab'] = ProviderReference(elabcon, elabcon.GetSchema())
+        with open('server/secrets/mmap-Ocp-Apim-Subscription-Key','r') as mk:
+            oask = mk.readlines()[0]
+        mmapcon = MmapConnection(oask)
+        loaded['mmap'] = ProviderReference(mmapcon, mmapcon.GetSchema())
         print('loaded %s' % len(loaded))
         finish(loaded)
     except FileNotFoundError:
@@ -111,6 +117,13 @@ class Handler:
             if _statics is None: raise Exception(StaticsNotInitializedMessage)
             return _statics['elab'].Con
         con: ELabConnection = f()
+        return con
+
+    def GetMmapCon(self):
+        def f() -> Any:    
+            if _statics is None: raise Exception(StaticsNotInitializedMessage)
+            return _statics['mmap'].Con
+        con: MmapConnection = f()
         return con
 
     def List(self):

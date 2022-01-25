@@ -256,7 +256,7 @@ class Model(metaclass=AutoRegisterChildren):
         return d
 
     @classmethod
-    def Parse(cls, raw: bytes | str | dict, base: Model=None):
+    def Parse(cls, raw: bytes | str | list[str] | dict, base: Model=None):
         try:
             model = cls()
         except TypeError:
@@ -266,6 +266,7 @@ class Model(metaclass=AutoRegisterChildren):
             if isinstance(raw, dict):
                 d = raw
             else:
+                if isinstance(raw, list): raw = "\n".join(raw)
                 d = json.loads(raw)
                 model._jsonLoadSuccess = True
         except JSONDecodeError:

@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 import os
 import json
 
@@ -13,7 +13,7 @@ class Authenticator:
         self._elab = elab
 
     def _checkStaticLogins(self, username: str, password: str) -> bool:
-        CRED = './server/credentials.json'
+        CRED = './server/secrets/credentials.json'
         if os.path.isfile(CRED):
             with open(CRED, 'r') as f:
                 try:
@@ -26,7 +26,7 @@ class Authenticator:
                     pass
         return False
 
-    def Login(self, raw: bytes) -> Models.Login.Response:
+    def Login(self, raw: Union[bytes, list[str]]) -> Models.Login.Response:
         MODEL = Models.Login
         req = MODEL.Request.Parse(raw)
 

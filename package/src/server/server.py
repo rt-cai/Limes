@@ -16,7 +16,7 @@ from .clientManager import Client, ClientManager
 
 app = Flask(__name__, static_url_path='', static_folder='public')
 def getSecret():
-    secret_path = 'server/secret'
+    secret_path = 'server/secrets/secret'
     try:
         with open(secret_path, 'r') as s:
             return s.readlines()[0][:-1]
@@ -85,6 +85,10 @@ def SetAltID():
     res = MODEL.Response()
     if auth.Success:
         print('altid')
+        mmap = _providers.GetMmapCon()
+        mmapRes = mmap.SequencingFacilityQuery(req.AltBarcode, "Received")
+        res.mcode = mmapRes.Code
+
         elab = _providers.GetElabCon()
         elab.SetAuth(auth.Token)
         res.Code, res.Sample = elab.SetAltID(req.SampleBarcode, req.AltBarcode)

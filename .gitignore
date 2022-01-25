@@ -2,7 +2,7 @@
 certFiles
 credentials*
 static_providers*.json
-secret
+package/src/server/secrets/*
 credentials.json
 
 # caches
