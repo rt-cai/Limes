@@ -70,11 +70,13 @@ class HttpConnection(Connection):
             params = self._makeParams(request),
             timeout = config.HTTP_TIMEOUT
         )
-        
+
         code = res.status_code
         endTime = current_sec_time()
         try:
             body: dict[str, Primitive] = json.loads(res.text)
+            if type(body) != dict:
+                raise Exception()
         except Exception:
             body = {'raw': res.text}
         report = Models.GenericResponse(body, code)

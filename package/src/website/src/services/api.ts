@@ -149,6 +149,20 @@ export abstract class ApiService {
             return res;
         })
     }
+
+    public AddMmapSample(Barcode: string) {
+        const b = this.makeBody({
+            Barcode: Barcode,
+        })
+        return this.requester.POST({
+            path: 'mmapadd',
+            body: b
+        }).then(raw => {
+            const res = raw.data;
+            console.log(res)
+            return res;
+        })
+    }
 }
 
 class Prod_ApiService extends ApiService {

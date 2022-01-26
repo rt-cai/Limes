@@ -22,6 +22,7 @@ interface ScannerState {
     scanInfo: string[]
     actionButtonName: string
     actionDisabled: boolean
+    working: boolean
 }
 
 export class ScannerComponent extends React.Component<ScannerProps, ScannerState> {
@@ -46,6 +47,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             scanInfo: [this.NO_SCAN],
             actionButtonName: 'Go',
             actionDisabled: true,
+            working: false,
         }
     }
 
@@ -117,6 +119,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             const barInfo = this.barcodes[this.state.currentCode]
             this.setIDPair = null;
             let canAct: boolean = false
+            let working = this.state.working
             switch (+this.state.mode) {
                 case Modes.ELAB:
                     info = [
@@ -127,41 +130,47 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                             `${barInfo.name}`
                         ])
                         canAct = true;
+                        working = false;
                     }
                     break
                 case Modes.LINK:
-                    if (this.lastCode) {
-                        if(barInfo) { // this is sample that can be linked to
-                            info = [
-                                `Link [${this.lastCode}]`,
-                                `to [${barInfo.name}] ?`,
-                            ]
-                            canAct = true;
-                        } else {
-                            info = [
-                                `[${this.state.currentCode}] has no attached sample!`,
-                                `try again`
-                            ]
-                        }
-                        this.setIDPair = [this.lastCode, this.state.currentCode];
-                        this.lastCode = null // reset
-                    } else {
-                        if(barInfo) { // last is already in system, can't use
-                            info = [
-                                `Link [awaiting scan]`,
-                                `to sample barcode`,
-                                ``,
-                                `[${this.state.currentCode}] is already attached to`,
-                                `${barInfo.name}`
-                            ]
-                            this.lastCode = null
-                        } else {
-                            info = [
-                                `Link [${this.state.currentCode}]`,
-                                `to [awaiting scan]`,
-                            ]
-                        }
-                    }
+                    info = [
+                        `Barcode: [${this.state.currentCode}]`
+                    ]
+                    canAct = true;
+                    break
+                    // if (this.lastCode) {
+                    //     if(barInfo) { // this is sample that can be linked to
+                    //         info = [
+                    //             `Link [${this.lastCode}]`,
+                    //             `to [${barInfo.name}] ?`,
+                    //         ]
+                    //         canAct = true;
+                    //     } else {
+                    //         info = [
+                    //             `[${this.state.currentCode}] has no attached sample!`,
+                    //             `try again`
+                    //         ]
+                    //     }
+                    //     this.setIDPair = [this.lastCode, this.state.currentCode];
+                    //     this.lastCode = null // reset
+                    // } else {
+                    //     if(barInfo) { // last is already in system, can't use
+                    //         info = [
+                    //             `Link [awaiting scan]`,
+                    //             `to sample barcode`,
+                    //             ``,
+                    //             `[${this.state.currentCode}] is already attached to`,
+                    //             `${barInfo.name}`
+                    //         ]
+                    //         this.lastCode = null
+                    //     } else {
+                    //         info = [
+                    //             `Link [${this.state.currentCode}]`,
+                    //             `to [awaiting scan]`,
+                    //         ]
+                    //     }
+                    // }
                     break
                 default:
                     info = [this.NO_SCAN]
@@ -169,6 +178,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             this.setState({
                 scanInfo: info,
                 actionDisabled: !canAct,
+                working: working,
             })
         })
     }
@@ -179,17 +189,35 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 window.open(this.barcodes[this.state.currentCode].link, "_blank")
                 break
             case Modes.LINK:
-                if(this.setIDPair) {
-                    const [alt, sample] = this.setIDPair
-                    this.apiService.LinkBarcode(alt, sample).then((r) => {
-                        if(r.Code == 204) {
-                            alert('success!')
+                this.setState({working: true})
+                this.apiService.AddMmapSample(this.state.currentCode).then((r) => {
+                    const info = this.state.scanInfo
+                    if (info.length > 1) info.pop()
+                    if (r.Code == 200) {
+                        info.push('Add success')
+                    } else {
+                        if(r.Error === "Barcode exists"){
+                            info.push('Sample already added')
+                        } else if (r.Code == 404) {
+                            info.push('Unknown barcode')
                         } else {
-                            alert('failed to link')
+                            info.push('Error')
                         }
-                        this.updateInfo()
-                    })
-                }
+                    }
+
+                    this.setState({working: false, scanInfo:info})
+                })
+                // if(this.setIDPair) {
+                //     const [alt, sample] = this.setIDPair
+                //     this.apiService.LinkBarcode(alt, sample).then((r) => {
+                //         if(r.Code == 204) {
+                //             alert('success!')
+                //         } else {
+                //             alert('failed to link')
+                //         }
+                //         this.updateInfo()
+                //     })
+                // }
                 break
             default:
                 break
@@ -198,9 +226,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
     private onClear() {
         this.lastCode = null
+        this.barcodes = []
         this.setState({
             scanInfo: [this.NO_SCAN],
             currentCode: '',
+            actionDisabled: true,
         }, () => this.updateInfo())
     }
 
@@ -263,7 +293,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 </Typography>
                                 <RadioGroup row value={this.state.mode} onChange={(e) => {
                                     const newMode = (e.target.value as any) as Modes
-                                    const actionName = +newMode === Modes.ELAB.valueOf() ? 'Go' : 'Link';
+                                    const actionName = +newMode === Modes.ELAB.valueOf() ? 'Go' : 'Add';
                                     this.setState({
                                         mode: newMode,
                                         actionButtonName: actionName
@@ -277,7 +307,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                                 }
                                             }} />
                                         } />
-                                    <FormControlLabel value={Modes.LINK} label="Link Barcodes"
+                                    <FormControlLabel value={Modes.LINK} label="Receive Sample"
                                         control={
                                             <Radio sx={{
                                                 '&.Mui-checked': {
@@ -319,10 +349,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 variant="contained"
                                 color="primary"
                                 style={buttonStyle}
-                                disabled={this.state.actionDisabled}
+                                disabled={this.state.actionDisabled || this.state.working}
                                 onClick={()=> this.onAct()}
                             >
                                 {this.state.actionButtonName}
+                                <Fade in={this.state.working} style={{position: 'absolute'}}>
+                                    <CircularProgress size={33}/>
+                                </Fade>
                             </Button>
                         </Grid>
                         <Grid item>

@@ -22,6 +22,7 @@ class Endpoints(provider.Endpoints):
     PRINT='printops'
     ALL_STORAGES='allstorages'
     SAMPLES_BY_STORAGE='samplesbystorage'
+    MMAP_ADD = 'mmapadd'
 
 class ServerRequest(Models.ProviderRequest):
     ClientID: str
@@ -138,6 +139,18 @@ class LinkBarcode(Transaction):
     class Response(ServerResponse):
         Sample: elab.Sample
         mcode: int
+
+class MmapAdd(Transaction):
+    class Request(ServerRequest):
+        Barcode: str
+        def __init__(self) -> None:
+            super().__init__(Endpoints.MMAP_ADD, POST)
+
+    class Response(ServerResponse):
+        collectionDate: str
+        samplePreservationMethodology: str
+        sampleType: str
+        depth: float
 
 class AllStorages(Transaction):
     class Request(ServerRequest):

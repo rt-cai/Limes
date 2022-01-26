@@ -118,6 +118,29 @@ class UpdateSample(Transaction):
         def __init__(self) -> None:
             super().__init__(Endpoints.SAMPLES, PATCH)
 
+class AddSample(Transaction):
+    class Request(ELabRequest):
+        sampleTypeID: int
+        name: str
+        altID: str
+        storageLayerID: int
+        def __init__(self) -> None:
+            super().__init__(Endpoints.SAMPLES, POST)
+
+class AddSampleMeta(Transaction):
+    class Request(ELabRequest):
+        sampleDataType: str
+        key: str
+        value: str
+        sampleTypeMetaID: int
+        def __init__(self, sampleID: int, valD: dict) -> None:
+            super().__init__(Endpoints.SAMPLES, PUT)
+            self.TargetEndpoint += f'/{sampleID}/meta'
+            self.sampleDataType = valD['sampleDataType']
+            self.key = valD['key']
+            self.value = valD['value']
+            self.sampleTypeMetaID = valD['sampleTypeMetaID']
+
 class StorageSimple(Model):
     parentStorageLayerID: int
     storageLayerDefinitionID: int

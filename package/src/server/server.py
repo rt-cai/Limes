@@ -86,7 +86,7 @@ def SetAltID():
     if auth.Success:
         print('altid')
         mmap = _providers.GetMmapCon()
-        mmapRes = mmap.SequencingFacilityQuery(req.AltBarcode, "Received")
+        mmapRes = mmap.SequencingFacilityQuery(req.AltBarcode, "Pending")
         res.mcode = mmapRes.Code
 
         elab = _providers.GetElabCon()
@@ -97,6 +97,29 @@ def SetAltID():
         res.Code = 401
         res.Error = 'Authentication failed'
 
+    return _toRes(res)
+
+def MmapAdd():
+    MODEL = server.MmapAdd
+    req = MODEL.Request.Parse(request.data)
+    auth = _authenticator.Authenticate(req.ClientID)
+
+    res = MODEL.Response()
+    if auth.Success:
+        print('mmap add:', req.Barcode)
+        mmap = _providers.GetMmapCon()
+        mr = mmap.SequencingFacilityQuery(req.Barcode, "Pending")
+
+        if mr.Code == 200:
+            elab = _providers.GetElabCon()
+            elab.SetAuth(auth.Token)
+            res = elab.AddSample(req.Barcode, mr)
+            elab.Logout()
+        else:
+            res.Code = mr.Code
+    else:
+        res.Code = 401
+        res.Error = 'Authentication failed'
     return _toRes(res)
 
 def AllStorages():
