@@ -5,11 +5,16 @@ wdir=`pwd`
 
 test=false
 limes=true
+scratch=false
 
 src=package
 cd $src
 sw=$1
 case $sw in
+    --scratch | -s)
+    scratch=true
+    limes=false
+    ;;
     --test | -t)
     test=true
     limes=false
@@ -40,6 +45,14 @@ case $sw in
     ;;
 esac
 
+if $scratch ; then
+    cd $wdir/scratch
+    echo "> scratch"
+    echo ""
+    python scratch.py
+fi
+
+
 if $test ; then
     cd $wdir
     echo "> tests"
@@ -50,7 +63,7 @@ fi
 if $limes ; then
     echo "> limes"
     echo ""
-    $py -m src $args
+    $py -m limes $args
 fi
 
 cd $wdir

@@ -13,12 +13,11 @@ install=false
 build=true
 upload=false
 clean=false
-version=false
+version=true
 
 for arg in "$@"; do
     case $arg in
     --version | -v)
-        version=true
         build=false
         ;;
     --clean | -c)

@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 # https://stackoverflow.com/questions/54430694/python-setup-py-how-to-get-find-packages-to-identify-packages-in-subdirectori
 setuptools.setup(
     name="limes-inventory",
-	version="0.5.0.dev",
+	version="0.5.0.dev1",
     author="Tony Liu",
     author_email="contacttonyliu@gmail.com",
     description="limes distributed inventory interface",
@@ -21,11 +21,16 @@ setuptools.setup(
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(where="src"),
+    packages=setuptools.find_packages(),
     # package_data={
     #     # "":["*.txt"],
     #     # "package-name": ["*.txt"],
     #     "test_package": ["res/*.txt"],
     # },
     python_requires=">=3.9",
+    # entry_points={
+    #     "console_scripts": [
+    #         "limes = limes.__main__:main",
+    #     ],
+    # },
 )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import inspect
 import json
+import re
 from json.decoder import JSONDecodeError
 from typing import Callable, TypeVar, Union, Any, get_type_hints
 
@@ -96,7 +97,8 @@ class SerializableTypes:
 
     @classmethod
     def _registerModel(cls, child):
-        if str(child) == "<class 'limes_common.models.Model'>" or (inspect.isclass(child) and issubclass(child, Model)):
+        found = re.search("<class '[\\w]+.models.Model'>", str(child))
+        if found is not None or (inspect.isclass(child) and issubclass(child, Model)):
             name = cls._typeStr(child)
             if name not in cls.DefinedModels:
                 cls.DefinedModels[name] = child

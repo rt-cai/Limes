@@ -7,7 +7,7 @@ from functools import reduce
 
 from .tools.qol import Switch, T
 from .res import strings as Constants
-from limes_common import config
+from . import config
 
 def main(args:List[str] = sys.argv[1:]):
     # for later abstraction of help
@@ -23,21 +23,21 @@ def main(args:List[str] = sys.argv[1:]):
         def printLine(self):
             print('====================================================================')
 
-    def Login():
-        userKeys = ['-u', '--username']
-        passKeys = ['-p', '--password']
+    # def Login():
+    #     userKeys = ['-u', '--username']
+    #     passKeys = ['-p', '--password']
 
-        tries = 3
-        user = input('Username: ')
-        for _ in range(tries):
-            try:
-                password = getpass()
-            except KeyboardInterrupt:
-                return
+    #     tries = 3
+    #     user = input('Username: ')
+    #     for _ in range(tries):
+    #         try:
+    #             password = getpass()
+    #         except KeyboardInterrupt:
+    #             return
 
-            if limes.Login(user, password):
-                return
-        return '%s failed attempts, check your connection and credentials' % tries
+    #         if limes.Login(user, password):
+    #             return
+    #     return '%s failed attempts, check your connection and credentials' % tries
 
     def _printHelp(unkownArg=False):
         msg = 'use [-h] or [--help] to view options\nor view available documentation at https://github.com/Tony-xy-Liu/Limes/'
@@ -58,7 +58,7 @@ def main(args:List[str] = sys.argv[1:]):
 
     def base():
         print(Constants.version)
-        limes._auth()
+        # limes._auth()
 
     # the switch doesn't need to be fast, make it easier to make
     # also need to add hints here
@@ -66,7 +66,7 @@ def main(args:List[str] = sys.argv[1:]):
         '': base,
         '-h': lambda: Constants.help,
         '--help': lambda: Constants.help,
-        'login': Login
+        # 'login': Login
         # 'search': Search,
         # 'blast': Blast,
         # 'add': Add,

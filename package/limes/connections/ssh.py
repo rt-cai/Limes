@@ -7,10 +7,10 @@ import json
 import uuid
 import traceback
 
-from limes_common.utils import current_time
+from ..utils import current_time
 from . import Connection
-from limes_common import config
-from limes_common.models import Model, Primitive, provider as Models, ssh
+from .. import config
+from ..models import Model, Primitive, provider as Models, ssh
 
 _QUOTE = '\\q'
 def Serialize(model: Model) -> str:

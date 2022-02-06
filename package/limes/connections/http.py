@@ -2,11 +2,11 @@ import requests as Requests
 from typing import Callable, TypeVar, Union
 import json
 
-from limes_common import config
-from limes_common.utils import current_sec_time
-from limes_common.connections import Connection
-from limes_common.models import Primitive, Model, provider as Models
-from limes_common.models.http import GET, POST, PATCH, PUT, DELETE
+from .. import config
+from ..utils import current_sec_time
+from . import Connection
+from ..models import Primitive, Model, provider as Models
+from ..models.http import GET, POST, PATCH, PUT, DELETE
 
 T = TypeVar('T')
 class HttpConnection(Connection):
