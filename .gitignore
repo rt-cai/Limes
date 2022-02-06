@@ -22,16 +22,9 @@ dist
 build
 *.egg-info
 
-# building pip package
-package/README.md
-package/setup.cfg
-package/LICENSE
-package/pyproject.toml
-
 # scratch
-*.fasta
-*.fastq
 elab_cache.npy
 db/
 dbScratch/
 scratch/
+testSpace/

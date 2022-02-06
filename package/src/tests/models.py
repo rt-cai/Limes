@@ -2,7 +2,7 @@ from __future__ import annotations
 import json
 
 from tests.testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
-from limes_common.models import Model, Primitive, SerializableTypes, provider, server
+from limes_common.models import Model, Primitive, SerializableTypes, provider
 
 PrintTitle(__file__)
 

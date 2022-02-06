@@ -6,25 +6,6 @@ src=package/src
 cd $src
 sw=$1
 case $sw in
-    react | -r)
-    cd website
-    npm run start
-    ;;
-    server-rebuild-react | -sr)
-    cd $dir
-    ./build.sh -r
-    cd $src
-    gunicorn -c server/gunicorn.conf.py server.wsgi
-    ;;
-    server | -s)
-    gunicorn -c server/gunicorn.conf.py server.wsgi
-    # python -m server
-    ;;
-    fosdb | -f)
-    echo "> fosDB"
-    echo ""
-    $py -m fosDB
-    ;;
     test | -t)
     echo "> tests"
     echo ""
@@ -53,10 +34,11 @@ case $sw in
     else
         args=$@
     fi
-    echo "> limes"
-    echo ""
-    $py -m limes $args
     ;;
 esac
+
+echo "> limes"
+echo ""
+$py -m limes $args
 
 cd $dir
