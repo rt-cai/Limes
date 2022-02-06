@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json
 
-from tests.testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
+from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
 from ..models import Model, server, Primitive, SerializableTypes, provider
 
 PrintTitle(__file__)

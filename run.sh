@@ -54,10 +54,9 @@ fi
 
 
 if $test ; then
-    cd $wdir
     echo "> tests"
     echo ""
-    $py -m tests
+    $py -m limes -test
 fi
 
 if $limes ; then
