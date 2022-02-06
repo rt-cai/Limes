@@ -2,10 +2,10 @@ import os
 
 from numpy.lib.arraysetops import isin
 
-from limes_common.models import elab as Models, provider
+from ..models import elab as Models, provider
 from .testTools import Assert, BeforeAll, PrintStats, PrintTitle, Test
-from limes_common.connections.eLab import ELabConnection
-from limes_common import config
+from ..connections.eLab import ELabConnection
+from .. import config
 
 def getec(env) -> ELabConnection:
     return env['ec']

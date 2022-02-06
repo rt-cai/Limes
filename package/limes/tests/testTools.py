@@ -1,5 +1,5 @@
 from typing import Callable, Union
-from limes_common.models.basic import AbbreviatedEnum
+from ..models.basic import AbbreviatedEnum
 
 class _bcolors:
     HEADER = '\033[95m'

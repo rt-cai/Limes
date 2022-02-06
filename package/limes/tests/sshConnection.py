@@ -1,6 +1,6 @@
 from .testTools import AfterAll, Assert, BeforeAll, PrintStats, PrintTitle, Test
-from limes_common.connections.ssh import SshConnection
-from limes_common.models import Model, Primitive, provider as Models
+from ..connections.ssh import SshConnection
+from ..models import Model, Primitive, provider as Models
 
 PrintTitle(__file__)
 
