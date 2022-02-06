@@ -1,8 +1,6 @@
 from __future__ import annotations
 from typing import Union
 
-from requests.models import codes
-
 from . import Model, Primitive
     
 class Endpoints:

@@ -55,11 +55,11 @@ if $version ; then
     echo "update version strings"
 
     # update version
-    versionLine=`grep 'version' setup.cfg`
-    sed -i "s/$versionLine/version = $ver/" setup.cfg
+    versionLine=`grep 'version' setup.py`
+    sed -i "s/$versionLine/\tversion=\"$ver\",/" setup.py
 
-    versionLine=$(grep 'limes version' ./src/limes/res/strings.py)
-    sed -i "s/$versionLine/'limes version $ver'/" ./src/limes/res/strings.py
+    versionLine=$(grep 'limes version' ./src/res/strings.py)
+    sed -i "s/$versionLine/'limes version $ver'/" ./src/res/strings.py
 fi
 
 if $build ; then

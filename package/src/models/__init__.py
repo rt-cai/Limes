@@ -1,8 +1,9 @@
 from __future__ import annotations
 import inspect
+import json
 from json.decoder import JSONDecodeError
 from typing import Callable, TypeVar, Union, Any, get_type_hints
-import json
+
 
 
 # U = TypeVar('U')

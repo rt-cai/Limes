@@ -1,11 +1,11 @@
 from typing import Tuple
 import numpy as np
 
-from limes_common import config
-from limes_common import models
-from limes_common.connections import T
-from limes_common.connections.http import HttpConnection
-from limes_common.models import Model, elab as Models, provider as ProviderModels
+from .. import config
+from .. import models
+from . import T
+from .http import HttpConnection
+from ..models import Model, elab as Models, provider as ProviderModels
 
 class Storages:
     def __init__(self, storages: list[Models.Storage] = None) -> None:

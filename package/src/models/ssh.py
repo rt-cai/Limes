@@ -1,4 +1,4 @@
-from limes_common.models import Model
+from . import Model
 
 class Message(Model):
     MessageID: str

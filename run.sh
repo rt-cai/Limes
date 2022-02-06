@@ -1,15 +1,18 @@
 
 # py=python3
 py=python
-dir=`pwd`
-src=package/src
+wdir=`pwd`
+
+test=false
+limes=true
+
+src=package
 cd $src
 sw=$1
 case $sw in
-    test | -t)
-    echo "> tests"
-    echo ""
-    $py -m tests
+    --test | -t)
+    test=true
+    limes=false
     ;;
     *)
     if [[ $1 = 'add' || $1 = 'blast' ]] && [[ ! -z $2 ]]; then
@@ -37,8 +40,17 @@ case $sw in
     ;;
 esac
 
-echo "> limes"
-echo ""
-$py -m limes $args
+if $test ; then
+    cd $wdir
+    echo "> tests"
+    echo ""
+    $py -m tests
+fi
 
-cd $dir
+if $limes ; then
+    echo "> limes"
+    echo ""
+    $py -m src $args
+fi
+
+cd $wdir

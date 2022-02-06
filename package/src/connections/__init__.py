@@ -1,9 +1,9 @@
 from typing import Any, TypeVar, Union, Callable
-from limes_common.models.basic import AbbreviatedEnum
+from ..models.basic import AbbreviatedEnum
 
-from limes_common.models import Primitive, Model, provider as Models
-from limes_common.exceptions import AbstractMethodException
-from limes_common.utils import current_time
+from ..models import Primitive, Model, provider as Models
+from ..exceptions import AbstractMethodException
+from ..utils import current_time
 
 _notImplimentedMsg = 'Call on abstract provider. Funciton not implimented.'
 

@@ -3,7 +3,7 @@ import os
 
 from limes.tools.qol import Switch
 
-from limes_common.connections.statics import eLab
+from limes_common.connections import eLab
 from limes_common.models import Primitive, Model, provider as ProviderModels
 from limes_common.models.elab import Sample
 

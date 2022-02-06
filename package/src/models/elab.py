@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import Union
-from limes_common import config
-from limes_common.models import Model, provider as Models
-from limes_common.models.provider import GenericResponse, Transaction, GenericRequest, Primitive
-from limes_common.models.http import GET, PATCH, POST, PUT
+from .. import config
+from . import Model, provider as Models
+from .provider import GenericResponse, Transaction, GenericRequest, Primitive
+from .http import GET, PATCH, POST, PUT
 
 class Endpoints(Models.Endpoints):
     AUTH = 'auth/user'
