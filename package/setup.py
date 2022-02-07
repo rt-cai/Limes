@@ -16,12 +16,16 @@ setuptools.setup(
     project_urls={
         "Bug Tracker": "https://github.com/Tony-xy-Liu/Limes/issues",
     },
+    license='BSD License',
+    license_files=('LICENSE.txt',),
+    platforms=['any'],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(exclude=["scratch.py"]),
+    
     # package_data={
     #     # "":["*.txt"],
     #     # "package-name": ["*.txt"],

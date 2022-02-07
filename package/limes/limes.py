@@ -1,8 +1,6 @@
 from typing import Any, Union
 import os
 
-from .tools.qol import Switch
-
 from .connections import eLab
 from .models import Primitive, Model, provider as ProviderModels
 from .models.elab import Sample
