@@ -1,5 +1,5 @@
 import { RequestService, POST } from "./requests"
-import { U, P, T } from "../credentials/elab"
+import { U, P } from "../credentials/elab"
 import { DEBUG } from "../config"
 
 export abstract class ApiService {

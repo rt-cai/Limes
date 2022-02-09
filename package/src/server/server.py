@@ -16,7 +16,9 @@ from .clientManager import Client, ClientManager
 
 app = Flask(__name__, static_url_path='', static_folder='public')
 def getSecret():
-    secret_path = 'server/secrets/secret'
+    secret_path = 'server/secrets'
+    os.system(f'mkdir -p {secret_path}')
+    secret_path += '/secret'
     try:
         with open(secret_path, 'r') as s:
             return s.readlines()[0][:-1]
