@@ -20,3 +20,4 @@ class SequencingFacilityQuery(Transaction):
         samplePreservationMethodology: str
         sampleType: str
         depth: float
+        shippingCondition: str

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from werkzeug.wrappers import BaseRequest
-
 from limes_common.models import Model, Primitive, elab, provider as Models
 from limes_common.models import provider
 from limes_common.models.provider import Transaction

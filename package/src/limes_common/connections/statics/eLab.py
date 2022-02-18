@@ -121,14 +121,14 @@ class ELabConnection(HttpConnection):
     # for demo
     def AddSample(self, barcode, mr: MmapModels.SequencingFacilityQuery.Response):
 
-        type, pres, depth, col = (mr.sampleType, mr.samplePreservationMethodology,
-            mr.depth, mr.collectionDate)
+        type, pres, depth, col, cond = (mr.sampleType, mr.samplePreservationMethodology,
+            mr.depth, mr.collectionDate, mr.shippingCondition)
         transaction = Models.AddSample
         req = transaction.Request()
         req.storageLayerID = 784674
         req.sampleTypeID = 33687
         req.altID = barcode
-        req.name = f"Demo: {type} [{pres}]"
+        req.name = f"{type} [{pres}]"
 
         bres = self.LookupBarcodes([barcode])
         if bres[barcode] is not None:
@@ -142,6 +142,13 @@ class ELabConnection(HttpConnection):
             transaction.Response.Parse,
             transaction.Response()
         )
+
+        if 'raw' not in res.Body:
+            res = transaction.Response()
+            res.Code = 400
+            res.Error = "Barcode exists"
+            return res
+
         sampleID = res.Body['raw']
         # add meta fields
         metas = [
@@ -149,6 +156,7 @@ class ELabConnection(HttpConnection):
             {'sampleDataType': 'TEXT', 'key': 'Preservation Methodology', 'value': pres, 'sampleTypeMetaID': 215090},
             {'sampleDataType': 'TEXT', 'key': 'Depth', 'value': depth, 'sampleTypeMetaID': 215091},
             {'sampleDataType': 'TEXT', 'key': 'Collection Date', 'value': col, 'sampleTypeMetaID': 215092},
+            {'sampleDataType': 'TEXT', 'key': 'Shipping Condition', 'value': cond, 'sampleTypeMetaID': 215093},
         ]
         for m in metas:
             transaction = Models.AddSampleMeta
