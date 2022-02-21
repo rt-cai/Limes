@@ -8,31 +8,33 @@ import FormControl from '@mui/material/FormControl';
 import { Typography, Grid, Card, Button, CircularProgress, Fade, Container } from '@material-ui/core';
 import { ScannerProps } from '../../models/props';
 import { ApiService } from "../../services/api";
-import { DataGrid, GridColDef, GridRowParams } from '@material-ui/data-grid';
+import { DataGrid, GridColDef, GridRowParams, GridSelectionModel } from '@material-ui/data-grid';
 
-enum Modes {
-    ELAB, LINK
-}
+// enum Modes {
+//     ELAB, LINK
+// }
 
 enum ScanType {
-    UNK, EXISTING, NEW
+    UNK, EXISTING
 }
 
 interface ScanInfo {
-    id: number
     barcode: string
+    id: number
     info: string
     raw: any
     type: ScanType
 }
 
 interface ScannerState {
-    scans: ScanInfo[]
+    scans: Map<number, ScanInfo>
+    selectedScanIDs: GridSelectionModel
+    lastID: number
     cardBorderColour: any
     w: number
     h: number
-    mode: Modes
-    actionButtonName: string
+    // mode: Modes
+    // actionButtonName: string
     actionDisabled: boolean
     redirecting: boolean
     working: boolean
@@ -46,12 +48,14 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         super(props)
         this.apiService = props.elabService
         this.state = {
-            scans: [],
+            scans: new Map(),
+            selectedScanIDs: [],
+            lastID: -1,
             cardBorderColour: 'transparent',
             w: 300,
             h: 300,
-            mode: Modes.ELAB,
-            actionButtonName: 'Go',
+            // mode: Modes.ELAB,
+            // actionButtonName: 'Open',
             actionDisabled: true,
             redirecting: false,
             working: false,
@@ -70,7 +74,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     }
 
     private onScan(code: string) {
-        const newscans: ScanInfo[] = []
+        const newscans = this.state.scans
         return new Promise<void>((resolve, reject) => {
             this.setState({
                 cardBorderColour: this.props.theme.palette.primary.main,
@@ -93,18 +97,17 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 .then(() => setcol('transparent', 500))
 
         }).then(() => {
-            const ID = this.state.scans.length
-            let foundScan: ScanInfo | null = null
-            for (let i = this.state.scans.length-1; i>=0; i--) {
-                const info = this.state.scans[i]
-                if (info.barcode === code) {
-                    foundScan = info
-                } else {
-                    newscans.push(info)
-                }
-            }
+            const ID = this.state.lastID+1
 
             const searchCache = (): Promise<ScanInfo|undefined> => {
+                let foundScan: ScanInfo | null = null
+                for (let [id, info] of newscans) {
+                    if (info.barcode === code) {
+                        foundScan = info
+                        newscans.delete(id)
+                        break
+                    }
+                }
                 return Promise.resolve(foundScan? foundScan : undefined)
             }
 
@@ -114,8 +117,8 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                     const result = remote.length > 0 ? results[remote[0]] : null
                     if (result) {
                         const newinfo: ScanInfo = {
-                            id: ID,
                             barcode: code,
+                            id: ID,
                             info: result.name,
                             type: ScanType.EXISTING,
                             raw: result,
@@ -139,8 +142,8 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                         return attemptAll(i+1)
                     } else {
                         const unk: ScanInfo = {
-                            id: ID,
                             barcode: code,
+                            id: ID,
                             info: "Unknown",
                             type: ScanType.UNK,
                             raw: {},
@@ -151,57 +154,80 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             }
             return attemptAll(0)
         }).then((newinfo: ScanInfo) => {
-            newscans.unshift(newinfo)
+            newscans.set(newinfo.id, newinfo)
             this.setState({
                 scans: newscans,
                 working: false,
+                lastID: Math.max(newinfo.id, this.state.lastID),
             })
         })
     }
 
     private updateInfo() {
+        // currently not used
+        // for future feedback of actions
+    }
 
+    private updateCanAct() {
+        const selected = this.state.selectedScanIDs
+        const scans = this.state.scans
+        let canAct: boolean = false
+
+        canAct = selected
+        .map((i) => scans.get(Number(i)))
+        .reduce((p: boolean, c) => p || c?.type === ScanType.UNK, false)
+
+        this.setState({
+            actionDisabled: !canAct
+        })
+    }
+
+    private tryNavigateRow(row: GridRowParams) {
+        const scans = this.state.scans
+        const info = scans.get(Number(row.id))
+        if (info?.type === ScanType.EXISTING) {
+            window.open(info.raw.link, "_blank")
+        }
     }
 
     private onAct() {
-        // switch (+this.state.mode) {
-        //     case Modes.ELAB:
-        //         window.open(this.barcodes[this.state.lastCode].link, "_blank")
-        //         break
-        //     case Modes.LINK:
-        //         this.setState({working: true})
-        //         this.apiService.AddMmapSample(this.state.lastCode).then((r) => {
-        //             const info = this.state.scanInfo
-        //             if (info.length > 1) info.pop()
-        //             if (r.Code == 200) {
-        //                 info.push('Add success')
-        //             } else {
-        //                 if(r.Error === "Barcode exists"){
-        //                     info.push('Sample already added')
-        //                 } else if (r.Code == 404) {
-        //                     info.push('Unknown barcode')
-        //                 } else {
-        //                     info.push('Error')
-        //                 }
-        //             }
+        for(let selected of this.state.selectedScanIDs) {
+            const info = this.state.scans.get(Number(selected))
+            console.log(`impliment add - ${info?.barcode} ${info?.info}`)
+        }   
+        // this.setState({working: true})
+        // this.apiService.AddMmapSample(this.state.lastCode).then((r) => {
+        //     const info = this.state.scanInfo
+        //     if (info.length > 1) info.pop()
+        //     if (r.Code == 200) {
+        //         info.push('Add success')
+        //     } else {
+        //         if(r.Error === "Barcode exists"){
+        //             info.push('Sample already added')
+        //         } else if (r.Code == 404) {
+        //             info.push('Unknown barcode')
+        //         } else {
+        //             info.push('Error')
+        //         }
+        //     }
 
-        //             this.setState({working: false, scanInfo:info})
-        //         })
-        //         break
-        //     default:
-        //         break
-        // }
+        //     this.setState({working: false, scanInfo:info})
+        // })
     }
 
     private onDeleteSelected() {
+        const selected = new Set(this.state.selectedScanIDs)
+        const scans = this.state.scans
+        for (let selected of this.state.selectedScanIDs) {
+            scans.delete(Number(selected))
+        }
         this.setState({
-            scans: [],
-            actionDisabled: true,
+            scans: scans
         }, () => this.updateInfo())
     }
 
     private onToClipboard() {
-        navigator.clipboard.writeText(this.state.scans.reduce((p, c: ScanInfo) => {
+        navigator.clipboard.writeText([...this.state.scans.values()].reduce((p, c: ScanInfo) => {
             return `${p}\n${c.barcode}\t${c.info}`
         }, ''))
     }
@@ -255,57 +281,52 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
                         </Grid>
                         <Grid item>
-                            <FormControl component="fieldset">
-                                <RadioGroup row value={this.state.mode} onChange={(e) => {
-                                    const newMode = (e.target.value as any) as Modes
-                                    const actionName = +newMode === Modes.ELAB.valueOf() ? 'Go' : 'Add';
-                                    this.setState({
-                                        mode: newMode,
-                                        actionButtonName: actionName
-                                    }, () => this.updateInfo())
+                            <Typography
+                                style={{
+                                    color: 'primary',
+                                    marginBottom: '0.4em'
                                 }}>
-                                    <FormControlLabel value={Modes.ELAB} label="Open in eLab"
-                                        control={
-                                            <Radio sx={{
-                                                '&.Mui-checked': {
-                                                    color: this.props.theme.palette.primary.main
-                                                }
-                                            }} />
-                                        } />
-                                    <FormControlLabel value={Modes.LINK} label="Receive Sample"
-                                        control={
-                                            <Radio sx={{
-                                                '&.Mui-checked': {
-                                                    color: this.props.theme.palette.primary.main
-                                                }
-                                            }} />
-                                        } />
-                                </RadioGroup>
-                            </FormControl>
+                                *Double click on added rows to open in eLab
+                            </Typography>
                         </Grid>
                         <Grid item>
                             <Container style={{
                                 // margin: '-3em 0 -3em 0',
+                                // height: '48em'
                             }}>
                                 <DataGrid
-                                    rows={Object.values(this.state.scans)}
+                                    rows={[...this.state.scans.values()].map((o: ScanInfo) => {
+                                        let row: any = o
+                                        row.inElab = o.type != ScanType.UNK? '✓' : ''
+                                        return row
+                                    }).reverse()}
                                     columns={[
                                         // { field: 'disabled', hide: true },
                                         { field: 'id', headerName: 'ID', hide: true },
                                         { field: 'barcode', headerName: 'Barcode', width: 200, sortable: false },
+                                        { field: 'inElab', headerName: 'Added?', width: 85, sortable: false },
                                         { field: 'info', headerName: 'Info', width: 700, sortable: false },
                                         // { field: 'addText', headerName: 'Additional Text', width: 600, sortable: false },
                                     ]}
                                     rowsPerPageOptions={[100]}
                                     onPageSizeChange={() => {}}
                                     // isRowSelectable={(params: GridRowParams) => !params.row.disabled}
+                                    onSelectionModelChange={(ids: GridSelectionModel) => {
+                                        this.setState({
+                                            selectedScanIDs: ids,
+                                        }, () => this.updateCanAct())
+                                    }}
+                                    onRowDoubleClick={(row) => this.tryNavigateRow(row)}
                                     disableSelectionOnClick
                                     checkboxSelection={true}
                                     disableColumnMenu
                                     disableColumnFilter
                                     disableColumnSelector
-                                    style={{opacity: this.state.working? 0.25: 1,
-                                        minHeight: `${12+(this.state.scans.length*4)}em`}}
+                                    style={{
+                                            opacity: this.state.working? 0.25: 1,
+                                            minHeight: `${12+this.state.scans.size*4}em`,
+                                            maxHeight: '48em'
+                                    }}
                                 />
                                 <Fade in={this.state.working} style={{position: 'absolute'}}>
                                     <CircularProgress size={33}/>
@@ -319,7 +340,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 style={buttonStyle}
                                 onClick={() => this.onDeleteSelected()}
                             >
-                                Delete Selected
+                                Remove Selected
                             </Button>
                             <Button
                                 variant="contained"
@@ -328,7 +349,8 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 disabled={this.state.actionDisabled || this.state.redirecting}
                                 onClick={()=> this.onAct()}
                             >
-                                {this.state.actionButtonName}
+                                {/* {this.state.actionButtonName} */}
+                                Recieve & Add
                                 <Fade in={this.state.redirecting} style={{position: 'absolute'}}>
                                     <CircularProgress size={33}/>
                                 </Fade>
