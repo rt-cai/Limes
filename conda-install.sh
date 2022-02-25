@@ -4,7 +4,7 @@ conda install -y \
     -c conda-forge \
     gunicorn flask flask-socketio \
     python-socketio gevent-websocket \
-    numpy pytz
+    numpy pytz requests
 
 # conda install -y gunicorn
 # conda install -y requests
